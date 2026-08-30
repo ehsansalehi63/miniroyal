@@ -17,6 +17,8 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [aiStep, setAiStep] = useState<number>(0);
   const [aiRendered, setAiRendered] = useState<boolean>(false);
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -60,6 +62,8 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
       reader.onload = (event) => {
         const url = event.target?.result as string;
         setUserPhoto(url);
+        setAiResult(null);
+        setAiError("");
         startAITryonProcessing();
       };
       reader.readAsDataURL(file);
@@ -68,6 +72,8 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
 
   const startAITryonProcessing = () => {
     setIsProcessing(true);
+    setAiError("");
+    setAiResult(null);
     setAiRendered(false);
     setAiStep(1);
 
@@ -99,11 +105,12 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
         canvas.width = bgImg.width || 800;
         canvas.height = bgImg.height || 1000;
 
-        // 1. Draw base child photo
+        // 1. Draw the generated AI result when available.
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        if (aiResult) return;
 
-        // 2. Overlay product clothing
+        // 2. Otherwise overlay the transparent garment locally.
         const clothImg = new Image();
         clothImg.crossOrigin = "anonymous";
         clothImg.src = tryonImage;
@@ -136,7 +143,48 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
         };
       };
     }
-  }, [aiRendered, userPhoto, tryonImage, clothX, clothY, clothScale, clothRotate, clothOpacity]);
+  }, [aiRendered, userPhoto, aiResult, tryonImage, clothX, clothY, clothScale, clothRotate, clothOpacity]);
+
+  const runAiTryon = async () => {
+    if (!userPhoto) return;
+    setIsProcessing(true);
+    setAiError("");
+    try {
+      const toDataUri = async (source: string) => {
+        if (source.startsWith("data:")) return source;
+        const response = await fetch(source);
+        const blob = await response.blob();
+        return await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("image read failed"));
+          reader.readAsDataURL(blob);
+        });
+      };
+      const personData = await toDataUri(userPhoto);
+      const garmentResponse = await fetch(tryonImage);
+      const garmentBlob = await garmentResponse.blob();
+      const garmentData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("garment read failed"));
+        reader.readAsDataURL(garmentBlob);
+      });
+      const response = await fetch("/api/ai-tryon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personImage: personData, garmentImage: garmentData }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success || !data.imageUrl) throw new Error(data.error || "AI failed");
+      setAiResult(data.imageUrl);
+      setAiRendered(true);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : "سرویس هوش مصنوعی در دسترس نیست.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Touch / Mouse Drag Logic directly on viewport
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -341,15 +389,15 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                       onPointerUp={handlePointerUp}
                       className="relative overflow-hidden rounded-3xl border-2 border-violet-400/50 bg-stone-950 aspect-[4/5] sm:aspect-[4/3] w-full shadow-2xl flex items-center justify-center cursor-move select-none"
                     >
-                      {/* عکس اصلی کودک */}
+                      {/* عکس اصلی کودک یا خروجی AI */}
                       <img
-                        src={userPhoto}
+                        src={aiResult || userPhoto}
                         alt="عکس کودک"
                         className="absolute inset-0 size-full object-cover pointer-events-none"
                       />
 
-                      {/* لایه پرو لباس */}
-                      <div
+                      {/* لایه پرو دستی لباس */}
+                      {!aiResult && <div
                         className="absolute pointer-events-none transition-transform duration-75"
                         style={{
                           left: `${clothX}%`,
@@ -364,7 +412,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                           alt="لباس پرو شده"
                           className="w-full drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
                         />
-                      </div>
+                      </div>}
 
                       {/* نشان زنده فیت بودن */}
                       <div className="absolute top-3 right-3 z-10 rounded-full bg-emerald-500/90 backdrop-blur-md px-3 py-1 text-xs font-black text-stone-950 shadow-lg flex items-center gap-1">
@@ -482,6 +530,14 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                   >
                     🎯 انطباق هوشمند خودکار (Auto Align)
                   </button>
+                  <button
+                    onClick={runAiTryon}
+                    disabled={isProcessing}
+                    className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 py-3 text-xs font-black text-white shadow-lg hover:brightness-110 disabled:opacity-50"
+                  >
+                    {isProcessing ? "در حال تولید تصویر واقعی..." : "✨ پرو لباس با AI مولد"}
+                  </button>
+                  {aiError && <p className="text-xs font-bold text-rose-300">{aiError}</p>}
                 </div>
 
                 <div className="rounded-3xl border border-emerald-500/30 bg-emerald-950/40 p-5 space-y-2">
