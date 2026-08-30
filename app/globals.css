@@ -5,28 +5,18 @@
   --foreground: #1c1917;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-vazirmatn), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
-}
-
-html {
-  scroll-behavior: smooth;
-  overflow-x: hidden;
-}
-
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
+  font-family: var(--font-vazirmatn), ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
 ::selection {
-  background: #7c3aed;
-  color: #fff;
+  background-color: #7c3aed;
+  color: #ffffff;
 }
 
 @keyframes float {
