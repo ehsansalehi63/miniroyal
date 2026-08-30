@@ -1,0 +1,359 @@
+"use client";
+
+import { useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { useCart } from "../lib/cart";
+import { formatToman } from "../lib/utils";
+import Link from "next/link";
+import { ShieldCheck, MapPin, Truck, CreditCard } from "lucide-react";
+
+function useIsMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+}
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const isMounted = useIsMounted();
+  const { items, getRawSubtotal, getDiscountAmount, getFinalTotal, clearCart } = useCart();
+
+  // Form State
+  const [recipientName, setRecipientName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [province, setProvince] = useState("تهران");
+  const [city, setCity] = useState("تهران");
+  const [address, setAddress] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [shippingProvider, setShippingProvider] = useState<"tipax" | "post" | "peyk">("tipax");
+  const [paymentMethod, setPaymentMethod] = useState<"zarinpal" | "cod">("zarinpal");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isMounted) return null;
+
+  if (items.length === 0) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <h1 className="text-xl font-bold text-stone-900">سبد خرید شما خالی است.</h1>
+        <Link href="/shop" className="mt-4 inline-block text-xs font-bold text-violet-700 underline">
+          بازگشت به فروشگاه
+        </Link>
+      </div>
+    );
+  }
+
+  const subtotal = getRawSubtotal();
+  const discount = getDiscountAmount();
+  const shippingCost = subtotal >= 500000 ? 0 : 45000;
+  const finalTotal = getFinalTotal() + shippingCost;
+
+  const handleSubmitOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recipientName || !phone || !address || !postalCode) {
+      alert("لطفاً تمام اطلاعات آدرس و گیرنده را تکمیل کنید.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const orderNumber = `MR-${Date.now().toString().slice(-6)}`;
+
+    // Store order into localStorage order registry
+    const newOrder = {
+      orderNumber,
+      items,
+      recipientName,
+      phone,
+      province,
+      city,
+      address,
+      postalCode,
+      shippingProvider,
+      paymentMethod,
+      finalTotal,
+      status: "processing",
+      createdAt: new Date().toISOString(),
+    };
+
+    const existingOrders = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
+    localStorage.setItem("miniroyal_orders", JSON.stringify([newOrder, ...existingOrders]));
+
+    setTimeout(() => {
+      clearCart();
+      if (paymentMethod === "zarinpal") {
+        // Redirect to Zarinpal sandbox verification
+        router.push(`/payment/verify?orderNumber=${orderNumber}&amount=${finalTotal}`);
+      } else {
+        // COD Direct Success
+        router.push(`/order/success/${orderNumber}`);
+      }
+    }, 1000);
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8">
+      <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
+        <Link href="/" className="hover:text-violet-700">خانه</Link>
+        <span>/</span>
+        <Link href="/cart" className="hover:text-violet-700">سبد خرید</Link>
+        <span>/</span>
+        <span className="text-stone-900 font-bold">تسویه حساب و پرداخت</span>
+      </nav>
+
+      <h1 className="text-2xl font-black text-stone-900 sm:text-3xl">تسویه حساب سفارش</h1>
+
+      <form onSubmit={handleSubmitOrder} className="mt-8 grid gap-8 lg:grid-cols-12">
+        {/* اطلاعات گیرنده و آدرس */}
+        <div className="flex flex-col gap-6 lg:col-span-8">
+          {/* آدرس تحویل */}
+          <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-stone-900 border-b border-stone-100 pb-4">
+              <MapPin className="size-5 text-violet-600" />
+              <span>۱. آدرس تحویل مرسوله</span>
+            </h2>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-stone-700">نام و نام خانوادگی گیرنده *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: زهرا محمدی"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700">شماره موبایل جهت هماهنگی تحویل *</label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700">استان *</label>
+                <input
+                  type="text"
+                  required
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700">شهر *</label>
+                <input
+                  type="text"
+                  required
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-stone-700">آدرس دقیق پستی *</label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="خیابان، کوچه، پلاک، واحد..."
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700">کد پستی ۱۰ رقمی *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="۱۲۳۴۵۶۷۸۹۰"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* روش ارسال */}
+          <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-stone-900 border-b border-stone-100 pb-4">
+              <Truck className="size-5 text-violet-600" />
+              <span>۲. روش ارسال</span>
+            </h2>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[
+                { id: "tipax" as const, title: "تیپاکس (ارسال سریع)", time: "۱ الی ۲ روز کاری" },
+                { id: "post" as const, title: "پست پیشتاز", time: "۲ الی ۴ روز کاری" },
+              ].map((m) => (
+                <label
+                  key={m.id}
+                  className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
+                    shippingProvider === m.id
+                      ? "border-violet-700 bg-violet-50/50 ring-2 ring-violet-200"
+                      : "border-stone-200 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="shippingProvider"
+                      checked={shippingProvider === m.id}
+                      onChange={() => setShippingProvider(m.id)}
+                      className="accent-violet-600"
+                    />
+                    <div>
+                      <span className="block text-xs font-bold text-stone-900">{m.title}</span>
+                      <span className="text-[11px] text-stone-500">{m.time}</span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-violet-700">
+                    {shippingCost === 0 ? "رایگان" : formatToman(45000)}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* روش پرداخت */}
+          <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+            <h2 className="flex items-center gap-2 text-base font-black text-stone-900 border-b border-stone-100 pb-4">
+              <CreditCard className="size-5 text-violet-600" />
+              <span>۳. روش پرداخت</span>
+            </h2>
+
+            <div className="mt-4 space-y-3">
+              <label
+                className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
+                  paymentMethod === "zarinpal"
+                    ? "border-violet-700 bg-violet-50/50 ring-2 ring-violet-200"
+                    : "border-stone-200 bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "zarinpal"}
+                    onChange={() => setPaymentMethod("zarinpal")}
+                    className="accent-violet-600"
+                  />
+                  <div>
+                    <span className="block text-xs font-bold text-stone-900">
+                      پرداخت آنلاین امن (درگاه آزمایشی زرین‌پال Sandbox)
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      پرداخت با کلیه کارت‌های شتاب بدون پول واقعی (محیط تست)
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xl">💳</span>
+              </label>
+
+              <label
+                className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
+                  paymentMethod === "cod"
+                    ? "border-violet-700 bg-violet-50/50 ring-2 ring-violet-200"
+                    : "border-stone-200 bg-white"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "cod"}
+                    onChange={() => setPaymentMethod("cod")}
+                    className="accent-violet-600"
+                  />
+                  <div>
+                    <span className="block text-xs font-bold text-stone-900">
+                      پرداخت در محل (COD)
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      پرداخت وجه هنگام تحویل گرفتن مرسوله درب منزل
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xl">💵</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* خلاصه فاکتور نهایی */}
+        <div className="flex flex-col gap-6 lg:col-span-4">
+          <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+            <h2 className="text-base font-black text-stone-900 border-b border-stone-100 pb-4">
+              اقلام سفارش ({items.length})
+            </h2>
+
+            <div className="mt-4 space-y-3 max-h-60 overflow-y-auto pl-1 divide-y divide-stone-100">
+              {items.map((item) => (
+                <div key={item.id} className="pt-2 flex items-center justify-between text-xs">
+                  <div>
+                    <strong className="block text-stone-900 font-bold">{item.product.title}</strong>
+                    <span className="text-stone-500 text-[11px]">
+                      سایز: {item.variant.size} × {item.quantity}
+                    </span>
+                  </div>
+                  <span className="font-bold text-stone-800">
+                    {formatToman((item.product.salePrice ?? item.product.basePrice) * item.quantity)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 border-t border-stone-100 pt-4 space-y-2 text-xs">
+              <div className="flex justify-between text-stone-600">
+                <span>مبلغ کالاها:</span>
+                <span className="font-bold text-stone-900">{formatToman(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-rose-600 font-bold">
+                  <span>تخفیف:</span>
+                  <span>- {formatToman(discount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-stone-600">
+                <span>هزینه ارسال:</span>
+                <span className="font-bold text-stone-900">
+                  {shippingCost === 0 ? "رایگان" : formatToman(shippingCost)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm font-black text-violet-700 border-t border-stone-100 pt-3">
+                <span>مبلغ نهایی:</span>
+                <span>{formatToman(finalTotal)}</span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-6 w-full rounded-2xl bg-violet-700 py-3.5 text-xs font-bold text-white shadow-xl shadow-violet-200 transition hover:bg-violet-800 disabled:opacity-50"
+            >
+              {isSubmitting ? "در حال ثبت سفارش..." : "تأیید نهایی و پرداخت سفارش 🔒"}
+            </button>
+
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-stone-500">
+              <ShieldCheck className="size-4 text-emerald-600" />
+              <span>پرداخت امن و تضمین اصالت مینی رویال</span>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
