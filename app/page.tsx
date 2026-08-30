@@ -2,7 +2,8 @@ import Link from "next/link";
 import ProductCard from "./components/ProductCard";
 import Hero3DSlideshow from "./components/Hero3DSlideshow";
 import { getFeaturedProducts } from "./lib/catalog";
-import { Sparkles, ShieldCheck, Truck, RotateCcw, ArrowRight, Heart, Award, CheckCircle2, Clock } from "lucide-react";
+import { mockProducts } from "./lib/data/mockProducts";
+import { Sparkles, ShieldCheck, Truck, RotateCcw, ArrowRight } from "lucide-react";
 
 export const metadata = {
   title: "مینی رویال | فروشگاه پوشاک کودک و نوجوان با پرو آنلاین لباس",
@@ -19,7 +20,12 @@ const categories = [
 ];
 
 export default async function HomePage() {
-  const featuredProducts = await getFeaturedProducts(8);
+  let featuredProducts = [];
+  try {
+    featuredProducts = await getFeaturedProducts(8);
+  } catch (err) {
+    featuredProducts = mockProducts.filter((p) => p.isFeatured).slice(0, 8);
+  }
 
   return (
     <div className="space-y-12">
