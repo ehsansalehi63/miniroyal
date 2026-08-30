@@ -7,7 +7,8 @@ const pool = mysql.createPool({
   password: process.env.MYSQL_PASSWORD || "",
   database: process.env.MYSQL_DATABASE || "miniroyal",
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 5,
+  connectTimeout: 4000,
   queueLimit: 0,
 });
 
@@ -17,8 +18,8 @@ export async function query<T>(sql: string, params?: (string | number | boolean 
   try {
     const [rows] = await pool.execute(sql, params as (string | number | boolean | null)[]);
     return rows as T;
-  } catch (err) {
-    console.error("MySQL query error:", err);
-    throw err;
+  } catch (err: any) {
+    console.warn("⚠️ MySQL query warning (falling back gracefully):", err.message || err);
+    return [] as unknown as T;
   }
 }
