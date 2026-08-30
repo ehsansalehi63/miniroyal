@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Product } from "../lib/types/catalog";
 import { calculateDiscountPercent, formatToman, toPersianDigits } from "../lib/utils";
@@ -9,6 +10,15 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const fallbackImg =
+    product.gender === "girl"
+      ? "/images/products/girl-dress.svg"
+      : product.categorySlug === "nozad"
+      ? "/images/products/baby-suit.svg"
+      : "/images/products/boy-hoodie.svg";
+
+  const [imgSrc, setImgSrc] = useState(product.images[0] || fallbackImg);
+
   const discountPercent = calculateDiscountPercent(
     product.basePrice,
     product.salePrice
@@ -19,13 +29,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   const sizes = Array.from(new Set(product.variants.map((v) => v.size)));
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-stone-200/80 bg-white p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl">
+    <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-stone-200/80 bg-white p-2.5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl font-sans dir-rtl">
       {/* تصویر و نشان‌ها */}
       <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-stone-100">
         <Link href={`/product/${product.slug}`} className="block h-full w-full">
           <img
-            src={product.images[0]}
+            src={imgSrc}
             alt={product.title}
+            onError={() => setImgSrc(fallbackImg)}
             className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />

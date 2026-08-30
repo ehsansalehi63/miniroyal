@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#6d28d9" />
+    </linearGradient>
+    <linearGradient id="cloth" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#bg)" />
+  <circle cx="400" cy="500" r="320" fill="white" opacity="0.1" />
+  <!-- Hoodie Graphic -->
+  <path d="M 280 280 Q 400 240 520 280 L 640 400 L 560 480 L 520 440 L 520 780 L 280 780 L 280 440 L 240 480 L 160 400 Z" fill="url(#cloth)" rx="30" />
+  <path d="M 340 280 Q 400 360 460 280 Q 400 240 340 280 Z" fill="#b45309" />
+  <!-- Crown Icon -->
+  <text x="400" y="580" font-size="120" text-anchor="middle" fill="white">👑</text>
+  <text x="400" y="700" font-size="36" font-family="sans-serif" font-weight="900" text-anchor="middle" fill="white">MiniRoyal Kidswear</text>
+</svg>
