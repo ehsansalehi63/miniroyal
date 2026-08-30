@@ -83,8 +83,8 @@ export default function CheckoutPage() {
     setTimeout(() => {
       clearCart();
       if (paymentMethod === "zarinpal") {
-        // Redirect to Zarinpal sandbox verification
-        router.push(`/payment/verify?orderNumber=${orderNumber}&amount=${finalTotal}`);
+        // Redirect to Real Interactive Shaparak / Zarinpal Bank Gateway
+        router.push(`/payment/gateway?orderNumber=${orderNumber}&amount=${finalTotal}`);
       } else {
         // COD Direct Success
         router.push(`/order/success/${orderNumber}`);

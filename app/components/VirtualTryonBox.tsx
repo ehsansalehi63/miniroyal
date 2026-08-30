@@ -18,6 +18,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
   const [aiStep, setAiStep] = useState<number>(0);
   const [aiRendered, setAiRendered] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Interactive Layering Controls
   const [clothX, setClothX] = useState<number>(50); // percentage (0 to 100)
@@ -25,7 +26,6 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
   const [clothScale, setClothScale] = useState<number>(65); // size percentage (20 to 120)
   const [clothRotate, setClothRotate] = useState<number>(0); // deg (-45 to 45)
   const [clothOpacity, setClothOpacity] = useState<number>(95); // opacity (30 to 100)
-  const [blendMode, setBlendMode] = useState<"normal" | "multiply" | "overlay">("normal");
 
   // Avatar Slider State
   const [height, setHeight] = useState<number>(104);
@@ -60,23 +60,82 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
     setAiRendered(false);
     setAiStep(1);
 
-    setTimeout(() => setAiStep(2), 800);
-    setTimeout(() => setAiStep(3), 1600);
+    setTimeout(() => setAiStep(2), 600);
+    setTimeout(() => setAiStep(3), 1200);
     setTimeout(() => {
       setIsProcessing(false);
       setAiRendered(true);
-      // Reset cloth position to optimal center
       setClothX(50);
       setClothY(42);
       setClothScale(65);
       setClothRotate(0);
       setClothOpacity(95);
-    }, 2400);
+    }, 1800);
+  };
+
+  // Render to Canvas for HD Export / Download
+  useEffect(() => {
+    if (aiRendered && userPhoto && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const bgImg = new Image();
+      bgImg.crossOrigin = "anonymous";
+      bgImg.src = userPhoto;
+
+      bgImg.onload = () => {
+        canvas.width = bgImg.width || 800;
+        canvas.height = bgImg.height || 1000;
+
+        // Draw background child photo
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+        // Draw clothing overlay
+        const clothImg = new Image();
+        clothImg.crossOrigin = "anonymous";
+        clothImg.src = productImage;
+
+        clothImg.onload = () => {
+          ctx.save();
+          const targetWidth = (canvas.width * clothScale) / 100;
+          const targetHeight = (clothImg.height / clothImg.width) * targetWidth;
+
+          const posX = (canvas.width * clothX) / 100;
+          const posY = (canvas.height * clothY) / 100;
+
+          ctx.translate(posX, posY);
+          ctx.rotate((clothRotate * Math.PI) / 180);
+          ctx.globalAlpha = clothOpacity / 100;
+
+          ctx.drawImage(
+            clothImg,
+            -targetWidth / 2,
+            -targetHeight / 2,
+            targetWidth,
+            targetHeight
+          );
+          ctx.restore();
+        };
+      };
+    }
+  }, [aiRendered, userPhoto, productImage, clothX, clothY, clothScale, clothRotate, clothOpacity]);
+
+  // Download Merged Canvas Photo
+  const handleDownloadResult = () => {
+    if (canvasRef.current) {
+      const dataUrl = canvasRef.current.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `miniroyal-tryon-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
   };
 
   // Smart size calculation
   const calculateSize = () => {
-    let baseSize = "2-3 سال";
+    let baseSize = "۲ تا ۳ سال";
     let confidence = 98;
     let fitText = "کاملاً فیت و ایده‌آل";
 
@@ -103,6 +162,9 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
 
   return (
     <div className="overflow-hidden rounded-[2.5rem] border border-violet-300/40 bg-gradient-to-br from-violet-950 via-stone-900 to-fuchsia-950 p-6 sm:p-8 text-white shadow-2xl font-sans dir-rtl">
+      {/* Hidden Canvas for High Quality PNG Download */}
+      <canvas ref={canvasRef} className="hidden" />
+
       {/* هدر پرو آنلاین */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-5 gap-4">
         <div className="flex items-center gap-3">
@@ -111,7 +173,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
           </span>
           <div>
             <h3 className="text-base sm:text-lg font-black text-white">
-              سامانه پرو آنلاین هوش مصنوعی (AI Virtual Try-On)
+              سامانه پرو آنلاین هوشمند (AI 3D Virtual Try-On)
             </h3>
             <p className="text-xs text-violet-200">
               عکس فرزندتان را آپلود کنید تا هوش مصنوعی لباس <strong className="text-amber-300">{targetProduct.title}</strong> را تن او پرو کند!
@@ -128,7 +190,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
             }`}
           >
             <Wand2 className="size-3.5" />
-            <span>پرو با عکس کودک 📸</span>
+            <span>پرو با عکس واقعی کودک 📸</span>
           </button>
           <button
             onClick={() => setActiveTab("avatar")}
@@ -177,7 +239,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                   <span className="text-xs font-bold text-amber-300 block mb-1">💡 تست سریع بدون نیاز به آپلود</span>
                   <h4 className="text-sm font-black text-white">از عکس‌های مدل آماده کودک استفاده کنید:</h4>
                   <p className="text-xs text-stone-300 mt-1">
-                    یکی از آواتارهای زیر را انتخاب کنید تا پرو ۳ بعدی لباس را بلافاصله مشاهده کنید.
+                    یکی از مدل‌های زیر را انتخاب کنید تا پرو ۳ بعدی لباس را بلافاصله مشاهده کنید.
                   </p>
                 </div>
 
@@ -208,7 +270,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-12">
-              {/* بخش پردازش هوش مصنوعی / کانواس پرو واقعی */}
+              {/* بخش کانواس پرو واقعی */}
               <div className="lg:col-span-7 space-y-4">
                 {isProcessing ? (
                   <div className="rounded-3xl border border-violet-500/30 bg-violet-900/40 p-8 text-center space-y-4 min-h-[380px] flex flex-col items-center justify-center">
@@ -230,14 +292,13 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                   <div className="space-y-4">
                     {/* Viewport کانواس تعاملی پرو */}
                     <div className="relative overflow-hidden rounded-3xl border-2 border-violet-400/50 bg-stone-950 aspect-[4/5] sm:aspect-[4/3] w-full shadow-2xl flex items-center justify-center">
-                      {/* تصویر پس‌زمینه (عکس کودک) */}
                       <img
                         src={userPhoto}
                         alt="عکس کودک"
                         className="absolute inset-0 size-full object-cover"
                       />
 
-                      {/* لایه لباس خروجی پرو با قابلیت تنظیم انطباق */}
+                      {/* لایه لباس خروجی پرو */}
                       <div
                         className="absolute pointer-events-none transition-all duration-75"
                         style={{
@@ -246,7 +307,6 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                           width: `${clothScale}%`,
                           transform: `translate(-50%, -50%) rotate(${clothRotate}deg)`,
                           opacity: clothOpacity / 100,
-                          mixBlendMode: blendMode,
                         }}
                       >
                         <img
@@ -267,16 +327,26 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                         <span className="text-amber-300 font-black">سایز پیشنهادی: {rec.size}</span>
                       </div>
                     </div>
+
+                    {/* دکمه دانلود عینی تصویر پرو شده */}
+                    <button
+                      type="button"
+                      onClick={handleDownloadResult}
+                      className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3.5 text-xs font-black text-white shadow-lg hover:from-emerald-700 hover:to-teal-700 transition"
+                    >
+                      <Download className="size-4" />
+                      <span>📸 ذخیره و دانلود تصویر پرو شده در گالری گوشی/کامپیوتر</span>
+                    </button>
                   </div>
                 ) : null}
               </div>
 
-              {/* پنل تنظیمات تعاملی پرو (جابه‌جایی، چرخش، سایز لباس) */}
+              {/* پنل تنظیمات تعاملی پرو */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="rounded-3xl border border-white/15 bg-white/5 p-5 backdrop-blur-md space-y-4">
                   <div className="flex items-center justify-between border-b border-white/10 pb-3">
                     <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                      <Sliders className="size-4" /> تنظیم دقیق انطباق لباس (Fine Tuning)
+                      <Sliders className="size-4" /> تنظیم انطباق لباس روی بدن (Fine Tuning)
                     </span>
                     <button
                       onClick={() => setUserPhoto(null)}
@@ -286,7 +356,6 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                     </button>
                   </div>
 
-                  {/* کنترل موقعیت افقی و عمودی */}
                   <div className="space-y-3 text-xs">
                     <div>
                       <div className="flex justify-between font-bold mb-1">
@@ -349,7 +418,6 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                     </div>
                   </div>
 
-                  {/* دکمه انطباق خودکار */}
                   <button
                     onClick={() => {
                       setClothX(50);
@@ -364,7 +432,6 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                   </button>
                 </div>
 
-                {/* نتیجه محاسباتی سایز */}
                 <div className="rounded-3xl border border-emerald-500/30 bg-emerald-950/40 p-5 space-y-2">
                   <div className="flex items-center justify-between text-xs font-black text-emerald-300">
                     <span>پیشنهاد سایز هوشمند مینی رویال:</span>
