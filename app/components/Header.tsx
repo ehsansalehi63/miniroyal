@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useSyncExternalStore } from "react";
-import { Search, ShoppingBag, User, Menu, X, Sparkles, LogOut, ShieldCheck } from "lucide-react";
+import { Search, ShoppingBag, User, Menu, X, Sparkles, LogOut } from "lucide-react";
 import { searchAutocomplete } from "../lib/catalog";
 import { formatToman, toPersianDigits } from "../lib/utils";
 import { useCart } from "../lib/cart";
+import { logoutAdmin, useIsAdminAuthenticated } from "../lib/adminAuth";
 
 const navItems = [
   { href: "/", label: "خانه" },
@@ -32,8 +33,8 @@ export default function Header() {
   const router = useRouter();
   const isMounted = useIsMounted();
   const { getTotalItems } = useCart();
-  
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const isLoggedIn = useIsAdminAuthenticated();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<{
     products: { id: number; title: string; slug: string; image: string; price: number }[];
@@ -45,13 +46,6 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   const totalCartItems = isMounted ? getTotalItems() : 0;
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("miniroyal_admin_token");
-      setIsLoggedIn(token === "authenticated_admin");
-    }
-  }, []);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -83,8 +77,7 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("miniroyal_admin_token");
-    setIsLoggedIn(false);
+    logoutAdmin();
     router.push("/");
   };
 

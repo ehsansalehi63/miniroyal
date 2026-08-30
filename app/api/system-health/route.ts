@@ -8,13 +8,18 @@ export async function GET() {
 
   // ۱. تست دیتابیس MySQL
   try {
-    const dbTest = await query("SELECT COUNT(*) as count FROM products");
-    const count = (dbTest as any[])?.[0]?.count ?? 0;
-    checks["database"] = {
-      status: "ok",
-      detail: `اتصال دیتابیس MySQL برقرار است (${count} محصول در جدول محصولات ثبت شده).`,
-    };
-  } catch (err: any) {
+    const dbTest = await query<{ count: number }[]>("SELECT COUNT(*) as count FROM products");
+    const row = dbTest?.[0];
+    checks["database"] = row
+      ? {
+          status: "ok",
+          detail: `اتصال دیتابیس MySQL برقرار است (${row.count} محصول در جدول محصولات ثبت شده).`,
+        }
+      : {
+          status: "warning",
+          detail: "دیتابیس در حالت Graceful Degradation از داده‌های mock استفاده می‌کند.",
+        };
+  } catch {
     checks["database"] = {
       status: "warning",
       detail: "دیتابیس در حالت Graceful Degradation از داده‌های mock استفاده می‌کند.",
@@ -28,10 +33,10 @@ export async function GET() {
       status: "ok",
       detail: `کاتالوگ فعال است (${products.length} محصول شاخص آماده نمایش).`,
     };
-  } catch (err: any) {
+  } catch (err) {
     checks["catalog"] = {
       status: "error",
-      detail: `خطا در کاتالوگ: ${err.message}`,
+      detail: `خطا در کاتالوگ: ${err instanceof Error ? err.message : String(err)}`,
     };
   }
 

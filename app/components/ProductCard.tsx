@@ -58,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* دکمه سریع پرو آنلاین */}
         <Link
-          href={`/product/${product.slug}?tryon=true`}
+          href={`/product/${product.slug}#tryon-section`}
           className="absolute bottom-3 left-3 z-10 flex size-9 items-center justify-center rounded-2xl bg-white/90 text-violet-700 backdrop-blur-md shadow-md transition hover:bg-violet-700 hover:text-white"
           title="پرو آنلاین لباس کودک"
         >

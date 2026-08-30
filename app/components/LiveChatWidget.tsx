@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, X, Send, Bot, User, Sparkles, CheckCircle2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User } from "lucide-react";
 
 interface Message {
   id: string;

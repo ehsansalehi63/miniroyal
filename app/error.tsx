@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { RefreshCw, Home, ShoppingBag } from "lucide-react";
+import { RefreshCw, Home } from "lucide-react";
 
 export default function Error({
   error,

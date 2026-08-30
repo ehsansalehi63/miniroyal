@@ -1,14 +1,7 @@
 import Link from "next/link";
 import { mockProducts } from "../lib/data/mockProducts";
 import { formatToman, toPersianDigits } from "../lib/utils";
-import {
-  TrendingUp,
-  ShoppingBag,
-  PackageCheck,
-  Users,
-  AlertTriangle,
-  Sparkles,
-} from "lucide-react";
+import { TrendingUp, ShoppingBag, PackageCheck, AlertTriangle } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const totalProducts = mockProducts.length;

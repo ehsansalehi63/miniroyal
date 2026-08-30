@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatToman, toPersianDigits } from "../../lib/utils";
-import { Users, Shield, Award } from "lucide-react";
+import {  } from "lucide-react";
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState([

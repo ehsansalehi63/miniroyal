@@ -3,7 +3,15 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatToman, toPersianDigits } from "../../lib/utils";
-import { ShieldCheck, Lock, RefreshCw, CreditCard, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { Lock, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+
+interface StoredOrder {
+  orderNumber: string;
+  status: string;
+  paymentRefId?: string;
+  paidAt?: string;
+  [key: string]: unknown;
+}
 
 function PaymentGatewayContent() {
   const router = useRouter();
@@ -89,12 +97,16 @@ function PaymentGatewayContent() {
     setErrorMessage("");
 
     const cleanCard = cardNumber.replace(/\D/g, "");
-    if (cleanCard.length < 16) {
+    if (!/^\d{16}$/.test(cleanCard)) {
       setErrorMessage("شماره کارت باید ۱۶ رقم باشد.");
       return;
     }
-    if (cvv2.length < 3) {
-      setErrorMessage("کد CVV2 نامعتبر است.");
+    if (!/^\d{3,4}$/.test(cvv2)) {
+      setErrorMessage("کد CVV2 باید ۳ یا ۴ رقم باشد.");
+      return;
+    }
+    if (!/^(0[1-9]|1[0-2])$/.test(expMonth) || !/^\d{2}$/.test(expYear)) {
+      setErrorMessage("تاریخ انقضای کارت نامعتبر است.");
       return;
     }
     if (captchaInput !== captchaCode) {
@@ -102,8 +114,12 @@ function PaymentGatewayContent() {
       refreshCaptcha();
       return;
     }
-    if (!otpInput) {
-      setErrorMessage("لطفاً رمز پویا را وارد کنید یا دکمه دریافت رمز پویا را بزنید.");
+    if (!otpSent) {
+      setErrorMessage("لطفاً ابتدا دکمه دریافت رمز پویا را بزنید.");
+      return;
+    }
+    if (!/^\d{6}$/.test(otpInput)) {
+      setErrorMessage("رمز پویا باید ۶ رقم باشد.");
       return;
     }
 
@@ -114,8 +130,8 @@ function PaymentGatewayContent() {
 
     setTimeout(() => {
       // Record order payment status in localStorage
-      const existingOrders = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
-      const updatedOrders = existingOrders.map((ord: any) =>
+      const existingOrders: StoredOrder[] = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
+      const updatedOrders = existingOrders.map((ord) =>
         ord.orderNumber === orderNumber
           ? { ...ord, status: "paid", paymentRefId: refId, paidAt: new Date().toISOString() }
           : ord
@@ -299,7 +315,8 @@ function PaymentGatewayContent() {
                   required
                   placeholder="رمز پویا"
                   value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value)}
+                  maxLength={6}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   className="flex-1 rounded-2xl border border-stone-300 p-3 text-sm font-mono text-center font-bold outline-none focus:border-amber-500 dir-ltr"
                 />
                 <button

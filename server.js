@@ -57,8 +57,14 @@ const server = createServer(async (req, res) => {
   }
 });
 
+// A server without a listening socket can never answer Nginx, so fail fast and
+// let the process manager restart it instead of idling forever.
+server.on("error", (err) => {
+  console.error("❌ HTTP server error:", err.message || err);
+  process.exit(1);
+});
+
 // Bind HTTP server immediately to prevent 502 Bad Gateway / Connection Refused on Nginx
-server.listen(port, (err) => {
-  if (err) throw err;
+server.listen(port, () => {
   console.log(`🚀 MiniRoyal HTTP Server bound immediately to port/socket: ${port}`);
 });

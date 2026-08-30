@@ -12,7 +12,6 @@ import { calculateDiscountPercent, formatToman, toPersianDigits } from "../../li
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ tryon?: string }>;
 }
 
 export async function generateMetadata({ params }: ProductPageProps) {
@@ -34,9 +33,8 @@ export async function generateMetadata({ params }: ProductPageProps) {
   };
 }
 
-export default async function ProductPage({ params, searchParams }: ProductPageProps) {
+export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const { tryon } = await searchParams;
   const product = await getProductBySlug(slug);
 
   if (!product) {
