@@ -46,6 +46,11 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
   };
 
   const productImage = targetProduct.images?.[0] || "/images/products/boy-hoodie.svg";
+  const tryonImage = productImage.includes("girl-dress")
+    ? "/images/products/tryon-girl-dress.svg"
+    : productImage.includes("boy-hoodie")
+      ? "/images/products/tryon-boy-hoodie.svg"
+      : productImage;
 
   // Handle Photo File Upload from Gallery/Camera
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,7 +106,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
         // 2. Overlay product clothing
         const clothImg = new Image();
         clothImg.crossOrigin = "anonymous";
-        clothImg.src = productImage;
+        clothImg.src = tryonImage;
 
         clothImg.onload = () => {
           ctx.save();
@@ -131,7 +136,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
         };
       };
     }
-  }, [aiRendered, userPhoto, productImage, clothX, clothY, clothScale, clothRotate, clothOpacity]);
+  }, [aiRendered, userPhoto, tryonImage, clothX, clothY, clothScale, clothRotate, clothOpacity]);
 
   // Touch / Mouse Drag Logic directly on viewport
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -355,7 +360,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
                         }}
                       >
                         <img
-                          src={productImage}
+                          src={tryonImage}
                           alt="لباس پرو شده"
                           className="w-full drop-shadow-[0_12px_24px_rgba(0,0,0,0.5)]"
                         />
