@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Product } from "../lib/types/catalog";
 import { toPersianDigits } from "../lib/utils";
-import { Camera, CheckCircle2, RefreshCw, Wand2, User, Sliders, Download, Layers, Sparkles, Move } from "lucide-react";
+import { Camera, CheckCircle2, RefreshCw, Wand2, User, Sliders, Download, Move } from "lucide-react";
 
 interface VirtualTryonBoxProps {
   product?: Product;

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export default function AdminAutomationPage() {
-  const [jobs, setJobs] = useState([
+  const [jobs] = useState([
     {
       id: "JOB-9012",
       source: "telegram",

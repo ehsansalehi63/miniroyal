@@ -3,6 +3,7 @@ import ProductCard from "./components/ProductCard";
 import Hero3DSlideshow from "./components/Hero3DSlideshow";
 import { getFeaturedProducts } from "./lib/catalog";
 import { mockProducts } from "./lib/data/mockProducts";
+import { Product } from "./lib/types/catalog";
 import { Sparkles, ShieldCheck, Truck, RotateCcw, ArrowRight } from "lucide-react";
 
 export const metadata = {
@@ -20,10 +21,14 @@ const categories = [
 ];
 
 export default async function HomePage() {
-  let featuredProducts = [];
+  let featuredProducts: Product[] = [];
   try {
     featuredProducts = await getFeaturedProducts(8);
-  } catch (err) {
+  } catch {
+    featuredProducts = [];
+  }
+
+  if (featuredProducts.length === 0) {
     featuredProducts = mockProducts.filter((p) => p.isFeatured).slice(0, 8);
   }
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { formatToman } from "../../../lib/utils";
+import { useStoredOrdersJson } from "../../../lib/orders";
 import { CheckCircle2, Printer } from "lucide-react";
 
 interface OrderData {
@@ -25,29 +26,38 @@ export default function OrderSuccessPage() {
   const params = useParams();
   const orderNumber = params.orderNumber as string;
 
-  const [order] = useState<OrderData>(() => {
-    if (typeof window !== "undefined") {
-      const orders = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
-      const found = orders.find((o: OrderData) => o.orderNumber === orderNumber);
-      if (found) return found;
-    }
-    return {
-      orderNumber,
-      recipientName: "مشتری عزیز مینی رویال",
-      phone: "۰۹۱۲۳۴۵۶۷۸۹",
-      province: "تهران",
-      city: "تهران",
-      address: "تهران، خیابان ولیعصر، خیابان فرشته، پلاک ۱۲",
-      postalCode: "۱۲۳۴۵۶۷۸۹۰",
-      shippingProvider: "tipax",
-      paymentMethod: "zarinpal",
-      finalTotal: 780000,
-      status: "processing",
-      createdAt: new Date().toISOString(),
-    };
-  });
+  const ordersJson = useStoredOrdersJson();
 
-  if (!order) return null;
+  const order = useMemo<OrderData | null>(() => {
+    if (ordersJson === null) return null;
+    try {
+      const orders: OrderData[] = JSON.parse(ordersJson || "[]");
+      return orders.find((o) => o.orderNumber === orderNumber) ?? null;
+    } catch {
+      return null;
+    }
+  }, [ordersJson, orderNumber]);
+
+  if (!order) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-12">
+        <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-bold text-stone-900">
+            سفارشی با شماره {orderNumber} روی این دستگاه پیدا نشد.
+          </p>
+          <p className="mt-2 text-xs text-stone-500">
+            اگر تازه خرید کرده‌اید چند لحظه صبر کنید؛ در غیر این صورت از صفحه رهگیری سفارش استفاده کنید.
+          </p>
+          <Link
+            href="/order/track"
+            className="mt-6 inline-block rounded-full bg-violet-700 px-8 py-3 text-xs font-bold text-white hover:bg-violet-800"
+          >
+            رهگیری سفارش
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">

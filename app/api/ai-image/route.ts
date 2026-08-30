@@ -1,48 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { prompt = "", category = "پسرانه" } = body;
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
 
-    if (!prompt || typeof prompt !== "string") {
-      return NextResponse.json(
-        { success: false, error: "لطفاً توضیحات یا نام محصول را وارد کنید." },
-        { status: 400 }
-      );
-    }
-
-    const enhancedPrompt = prompt.trim();
-
-    // Map keywords to specific high-res photorealistic SVG canvas / data templates
-    // or Pollinations AI image fetcher with base64 buffer conversion on server side!
-    const seed = Math.floor(Math.random() * 1000000);
-    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
-      enhancedPrompt + ", high quality studio product photography of kids clothing, 8k, photorealistic"
-    )}?width=800&height=1000&seed=${seed}&nologo=true`;
-
-    let finalImageUrl = pollinationsUrl;
-
-    // Try server-side fetching with timeout
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-      const response = await fetch(pollinationsUrl, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("image")) {
-          const buffer = await response.arrayBuffer();
-          const base64 = Buffer.from(buffer).toString("base64");
-          finalImageUrl = `data:${contentType};base64,${base64}`;
-        }
-      }
-    } catch (e) {
-      // If server timeout occurs, fall back to dynamic SVG vector studio renderer
-      const titleText = prompt.length > 25 ? prompt.substring(0, 25) + "..." : prompt;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
+function buildStudioSvgDataUri(prompt: string) {
+  const rawTitle = prompt.length > 25 ? `${prompt.substring(0, 25)}...` : prompt;
+  const titleText = escapeXml(rawTitle);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="100%" height="100%">
         <defs>
           <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#1e1b4b"/>
@@ -61,8 +31,47 @@ export async function POST(req: NextRequest) {
         <text x="400" y="870" fill="#fbbf24" font-family="Vazirmatn, sans-serif" font-size="22" font-weight="700" text-anchor="middle">تولید شده با هوش مصنوعی مینی رویال 👑</text>
       </svg>`;
 
-      const base64Svg = Buffer.from(svg).toString("base64");
-      finalImageUrl = `data:image/svg+xml;base64,${base64Svg}`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const prompt: unknown = body?.prompt;
+
+    if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
+      return NextResponse.json(
+        { success: false, error: "لطفاً توضیحات یا نام محصول را وارد کنید." },
+        { status: 400 }
+      );
+    }
+
+    const enhancedPrompt = prompt.trim();
+
+    // Fetch the generated image server-side and inline it as a data URI so the
+    // browser never has to reach an external host (blocked on some Iranian ISPs).
+    const seed = Math.floor(Math.random() * 1000000);
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(
+      enhancedPrompt + ", high quality studio product photography of kids clothing, 8k, photorealistic"
+    )}?width=800&height=1000&seed=${seed}&nologo=true`;
+
+    let finalImageUrl = buildStudioSvgDataUri(enhancedPrompt);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+      const response = await fetch(pollinationsUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType?.includes("image")) {
+        const buffer = await response.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString("base64");
+        finalImageUrl = `data:${contentType};base64,${base64}`;
+      }
+    } catch (err) {
+      console.warn("AI image provider unavailable, using local studio fallback:", err);
     }
 
     return NextResponse.json({
@@ -71,7 +80,7 @@ export async function POST(req: NextRequest) {
       enhancedPrompt: `${enhancedPrompt}, studio photography, 8k resolution`,
       seed,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error in AI image route:", err);
     return NextResponse.json(
       {

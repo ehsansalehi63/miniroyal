@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { toPersianDigits } from "../../lib/utils";
-import { MessageSquare, CheckCircle, XCircle } from "lucide-react";
+import {  } from "../../lib/utils";
+import {  } from "lucide-react";
 
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState([

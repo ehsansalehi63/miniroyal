@@ -9,17 +9,7 @@ export const metadata = {
 
 export default async function VirtualTryonPage() {
   const featured = await getFeaturedProducts(1);
-  const sampleProduct = featured[0] || {
-    id: 1,
-    title: "ست هودی و شلوار پاییزی مینی رویال",
-    slug: "hoodie-pants-set",
-    price: 680000,
-    images: ["/images/products/boy-hoodie.svg"],
-    sku: "MR-101",
-    basePrice: 680000,
-    inventory: 20,
-    isActive: true,
-  };
+  const sampleProduct = featured[0];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -36,7 +26,7 @@ export default async function VirtualTryonPage() {
       </div>
 
       <div className="mt-10">
-        <VirtualTryonBox product={sampleProduct as any} />
+        <VirtualTryonBox product={sampleProduct} />
       </div>
 
       <div className="mt-12 rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm">

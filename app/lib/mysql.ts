@@ -22,10 +22,10 @@ export async function query<T>(sql: string, params?: (string | number | boolean 
       setTimeout(() => reject(new Error("Database query timeout")), 1500)
     );
 
-    const [rows] = (await Promise.race([queryPromise, timeoutPromise])) as any[];
+    const [rows] = (await Promise.race([queryPromise, timeoutPromise])) as Awaited<typeof queryPromise>;
     return rows as T;
-  } catch (err: any) {
-    console.warn("⚠️ MySQL query graceful fallback:", err.message || err);
+  } catch (err) {
+    console.warn("⚠️ MySQL query graceful fallback:", err instanceof Error ? err.message : err);
     return [] as unknown as T;
   }
 }

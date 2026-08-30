@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { UploadCloud, Image as ImageIcon, X, Sparkles, Wand2, Loader2, CheckCircle2 } from "lucide-react";
+import { UploadCloud, X, Wand2, Loader2 } from "lucide-react";
 
 interface DropzoneImageUploaderProps {
   images: string[];

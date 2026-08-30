@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { mockCategories } from "../../lib/data/mockProducts";
-import { Plus, Edit, FolderTree } from "lucide-react";
+import {  } from "lucide-react";
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState(mockCategories);

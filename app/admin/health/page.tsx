@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Activity, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Server, ShieldCheck, Database, ShoppingBag, CreditCard, MessageSquare, Image, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Activity, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Server, Database, ShoppingBag, CreditCard, MessageSquare, Image, Sparkles } from "lucide-react";
 
 interface HealthCheckResult {
   status: "healthy" | "unhealthy";
@@ -10,25 +10,25 @@ interface HealthCheckResult {
 }
 
 export default function AdminHealthPage() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<HealthCheckResult | null>(null);
 
-  const runHealthCheck = async () => {
+  const fetchHealth = useCallback(() => {
+    return fetch("/api/system-health")
+      .then((res) => res.json() as Promise<HealthCheckResult>)
+      .then((json) => setData(json))
+      .catch((err) => console.error("Health check error:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const runHealthCheck = () => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/system-health");
-      const json = await res.json();
-      setData(json);
-    } catch (err) {
-      console.error("Health check error:", err);
-    } finally {
-      setLoading(false);
-    }
+    void fetchHealth();
   };
 
   useEffect(() => {
-    runHealthCheck();
-  }, []);
+    void fetchHealth();
+  }, [fetchHealth]);
 
   const getIcon = (key: string) => {
     switch (key) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Server, Save, Store, Bell, CreditCard, Truck, KeyRound, MessageSquareCode, CheckCircle2, ShieldCheck, Activity } from "lucide-react";
+import { Save, Store, CreditCard, Truck, KeyRound, MessageSquareCode } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [siteName, setSiteName] = useState("مینی رویال");
@@ -10,9 +10,6 @@ export default function AdminSettingsPage() {
   const [mobile, setMobile] = useState("۰۹۱۲۳۴۵۶۷۸۹");
   const [address, setAddress] = useState("تهران، خیابان ولیعصر، مجتمع تجاری رویال، پلاک ۴۲");
   
-  const [announcementText, setAnnouncementText] = useState("👑 ارسال رایگان خریدهای بالای ۵۰۰ هزار تومان | 👗 پرو آنلاین لباس با تضمین سایز");
-  const [heroTitle, setHeroTitle] = useState("شیک‌ترین لباس‌های فصل برای فرشته‌های کوچک شما 👑");
-  const [heroSubtitle, setHeroSubtitle] = useState("کالکشن جدید پاییزه و زمستانه با پارچه‌های ۱۰۰٪ پنبه ارگانیک ضد حساسیت");
 
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(500000);
   const [baseShippingFee, setBaseShippingFee] = useState(45000);

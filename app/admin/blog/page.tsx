@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Sparkles, Plus } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export default function AdminBlogPage() {
   const [articles, setArticles] = useState([

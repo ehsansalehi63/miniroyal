@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -17,6 +17,7 @@ import {
   LogOut,
   Activity,
 } from "lucide-react";
+import { loginAdmin, logoutAdmin, useIsAdminAuthenticated } from "../lib/adminAuth";
 
 const adminNav = [
   { href: "/admin", label: "پیشخوان KPI", icon: LayoutDashboard },
@@ -42,17 +43,10 @@ function useIsMounted() {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const isMounted = useIsMounted();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const isAuthenticated = useIsAdminAuthenticated();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-
-  useEffect(() => {
-    const token = localStorage.getItem("miniroyal_admin_token");
-    if (token === "authenticated_admin") {
-      setIsAuthenticated(true);
-    }
-  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,8 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       (username === "admin" || username === "admin@miniroyal.shop" || username === "09123456789") &&
       password === storedPassword
     ) {
-      localStorage.setItem("miniroyal_admin_token", "authenticated_admin");
-      setIsAuthenticated(true);
+      loginAdmin();
       setLoginError("");
     } else {
       setLoginError("نام کاربری یا رمز عبور اشتباه است.");
@@ -71,8 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("miniroyal_admin_token");
-    setIsAuthenticated(false);
+    logoutAdmin();
   };
 
   if (!isMounted) {
