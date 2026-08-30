@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Product } from "../lib/types/catalog";
 import { toPersianDigits } from "../lib/utils";
-import { Sparkles, ShieldCheck, Upload, Camera, CheckCircle2, RefreshCw, Wand2, User } from "lucide-react";
+import { Sparkles, ShieldCheck, Upload, Camera, CheckCircle2, RefreshCw, Wand2, User, Move, ZoomIn, RotateCw, Sliders, Download, Layers } from "lucide-react";
 
 interface VirtualTryonBoxProps {
   product?: Product;
@@ -11,13 +11,21 @@ interface VirtualTryonBoxProps {
 
 export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
   const [activeTab, setActiveTab] = useState<"ai_photo" | "avatar">("ai_photo");
-  
+
   // AI Photo Try-On State
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [aiStep, setAiStep] = useState<number>(0);
   const [aiRendered, setAiRendered] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Interactive Layering Controls
+  const [clothX, setClothX] = useState<number>(50); // percentage (0 to 100)
+  const [clothY, setClothY] = useState<number>(45); // percentage (0 to 100)
+  const [clothScale, setClothScale] = useState<number>(65); // size percentage (20 to 120)
+  const [clothRotate, setClothRotate] = useState<number>(0); // deg (-45 to 45)
+  const [clothOpacity, setClothOpacity] = useState<number>(95); // opacity (30 to 100)
+  const [blendMode, setBlendMode] = useState<"normal" | "multiply" | "overlay">("normal");
 
   // Avatar Slider State
   const [height, setHeight] = useState<number>(104);
@@ -27,10 +35,12 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
 
   const targetProduct = product || {
     id: 1,
-    title: "ست هودی و شلوار پاییزی مینی رویال 👑",
+    title: "هودی گرم پسرانه طرح خرس رویایی مینی رویال 👑",
     price: 680000,
-    images: ["https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&auto=format&fit=crop"],
+    images: ["/images/products/boy-hoodie.svg"],
   };
+
+  const productImage = targetProduct.images?.[0] || "/images/products/boy-hoodie.svg";
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,43 +60,51 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
     setAiRendered(false);
     setAiStep(1);
 
-    setTimeout(() => setAiStep(2), 1200);
-    setTimeout(() => setAiStep(3), 2400);
+    setTimeout(() => setAiStep(2), 800);
+    setTimeout(() => setAiStep(3), 1600);
     setTimeout(() => {
       setIsProcessing(false);
       setAiRendered(true);
-    }, 3500);
+      // Reset cloth position to optimal center
+      setClothX(50);
+      setClothY(42);
+      setClothScale(65);
+      setClothRotate(0);
+      setClothOpacity(95);
+    }, 2400);
   };
 
   // Smart size calculation
   const calculateSize = () => {
     let baseSize = "2-3 سال";
-    let confidence = 96;
+    let confidence = 98;
+    let fitText = "کاملاً فیت و ایده‌آل";
 
-    if (height < 80) baseSize = "0-6 ماه";
-    else if (height < 90) baseSize = "6-12 ماه";
-    else if (height < 98) baseSize = "1-2 سال";
-    else if (height < 108) baseSize = "3-4 سال";
-    else if (height < 118) baseSize = "5-6 سال";
-    else if (height < 128) baseSize = "7-8 سال";
-    else baseSize = "9-10 سال";
+    if (height < 80) baseSize = "۰ تا ۶ ماه";
+    else if (height < 90) baseSize = "۶ تا ۱۲ ماه";
+    else if (height < 98) baseSize = "۱ تا ۲ سال";
+    else if (height < 108) baseSize = "۳ تا ۴ سال";
+    else if (height < 118) baseSize = "۵ تا ۶ سال";
+    else if (height < 128) baseSize = "۷ تا ۸ سال";
+    else baseSize = "۹ تا ۱۰ سال";
 
     if (buyForGrowth) {
-      if (baseSize === "1-2 سال") baseSize = "3-4 سال";
-      else if (baseSize === "3-4 سال") baseSize = "5-6 سال";
-      else if (baseSize === "5-6 سال") baseSize = "7-8 سال";
-      confidence = 92;
+      if (baseSize === "۱ تا ۲ سال") baseSize = "۳ تا ۴ سال";
+      else if (baseSize === "۳ تا ۴ سال") baseSize = "۵ تا ۶ سال";
+      else if (baseSize === "۵ تا ۶ سال") baseSize = "۷ تا ۸ سال";
+      confidence = 94;
+      fitText = "کمی آزاد برای استفاده ۲ فصلی (+۱ سایز بزرگ‌تر)";
     }
 
-    return { size: baseSize, confidence };
+    return { size: baseSize, confidence, fitText };
   };
 
   const rec = calculateSize();
 
   return (
-    <div className="overflow-hidden rounded-[2.5rem] border border-violet-200 bg-gradient-to-br from-violet-950 via-stone-900 to-fuchsia-950 p-6 sm:p-8 text-white shadow-2xl font-sans dir-rtl">
+    <div className="overflow-hidden rounded-[2.5rem] border border-violet-300/40 bg-gradient-to-br from-violet-950 via-stone-900 to-fuchsia-950 p-6 sm:p-8 text-white shadow-2xl font-sans dir-rtl">
       {/* هدر پرو آنلاین */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-4 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-5 gap-4">
         <div className="flex items-center gap-3">
           <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-2xl shadow-lg">
             👗
@@ -96,16 +114,16 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
               سامانه پرو آنلاین هوش مصنوعی (AI Virtual Try-On)
             </h3>
             <p className="text-xs text-violet-200">
-              عکس فرزندتان را آپلود کنید تا هوش مصنوعی لباس <strong className="text-amber-300">{targetProduct.title}</strong> را تن او بپوشاند!
+              عکس فرزندتان را آپلود کنید تا هوش مصنوعی لباس <strong className="text-amber-300">{targetProduct.title}</strong> را تن او پرو کند!
             </p>
           </div>
         </div>
 
-        {/* دکمه‌های سوییچ تب بین پرو با عکس و پرو با آواتار */}
+        {/* سوییچ بین پرو با عکس و پرو با آواتار */}
         <div className="flex rounded-2xl bg-white/10 p-1 border border-white/10">
           <button
             onClick={() => setActiveTab("ai_photo")}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition ${
               activeTab === "ai_photo" ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow" : "text-stone-300 hover:text-white"
             }`}
           >
@@ -114,7 +132,7 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
           </button>
           <button
             onClick={() => setActiveTab("avatar")}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition ${
               activeTab === "avatar" ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow" : "text-stone-300 hover:text-white"
             }`}
           >
@@ -124,97 +142,241 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
         </div>
       </div>
 
-      {/* تب ۱: پرو هوش مصنوعی با عکس واقعی کاربر */}
+      {/* تب ۱: پرو هوش مصنوعی تعاملی با عکس کاربر */}
       {activeTab === "ai_photo" && (
         <div className="mt-6 space-y-6">
           {!userPhoto ? (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="group cursor-pointer rounded-3xl border-2 border-dashed border-violet-400/40 bg-white/5 p-8 text-center transition hover:border-violet-400 hover:bg-white/10"
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handlePhotoUpload}
-              />
-              <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-violet-600/30 text-violet-300 shadow-inner group-hover:scale-110 transition">
-                <Camera className="size-8" />
-              </div>
-              <h4 className="mt-4 text-sm font-black text-white">
-                آپلود عکس تمام قد کودک یا گرفتن عکس با دوربین 📷
-              </h4>
-              <p className="mt-1 text-xs text-stone-300">
-                فرمت‌های JPG، PNG از گالری موبایل یا دوربین؛ هوش مصنوعی لباس را تن کودک شما پرو می‌کند!
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-12 items-center">
-              {/* تصویر اصلی عکس کاربر */}
-              <div className="lg:col-span-5 relative flex flex-col items-center rounded-3xl border border-white/20 bg-white/5 p-4 backdrop-blur-md">
-                <span className="text-[11px] font-bold text-violet-300 mb-2">عکس اولیه فرزند شما</span>
-                <div className="relative size-64 overflow-hidden rounded-2xl border-2 border-white/30 shadow-xl">
-                  <img src={userPhoto} alt="عکس کودک" className="size-full object-cover" />
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* باکس آپلود عکس */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="group cursor-pointer rounded-3xl border-2 border-dashed border-violet-400/40 bg-white/5 p-8 text-center transition hover:border-violet-400 hover:bg-white/10 flex flex-col items-center justify-center min-h-[260px]"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
+                <div className="grid size-16 place-items-center rounded-2xl bg-violet-600/40 text-violet-200 shadow-inner group-hover:scale-110 transition">
+                  <Camera className="size-8" />
                 </div>
-                <button
-                  onClick={() => setUserPhoto(null)}
-                  className="mt-3 text-xs text-amber-300 underline font-bold"
-                >
-                  تغییر و آپلود عکس جدید
-                </button>
+                <h4 className="mt-4 text-sm font-black text-white">
+                  آپلود عکس کودک یا استفاده از دوربین 📷
+                </h4>
+                <p className="mt-2 text-xs text-stone-300 max-w-xs">
+                  فرمت‌های JPG، PNG؛ هوش مصنوعی آناتومی را تشخیص داده و لباس را تن او تنظیم می‌کند.
+                </p>
               </div>
 
-              {/* رندر هوش مصنوعی پرو لباس */}
+              {/* نمونه عکس پیش‌فرض برای تست سریع */}
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-bold text-amber-300 block mb-1">💡 تست سریع بدون نیاز به آپلود</span>
+                  <h4 className="text-sm font-black text-white">از عکس‌های مدل آماده کودک استفاده کنید:</h4>
+                  <p className="text-xs text-stone-300 mt-1">
+                    یکی از آواتارهای زیر را انتخاب کنید تا پرو ۳ بعدی لباس را بلافاصله مشاهده کنید.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <button
+                    onClick={() => {
+                      setUserPhoto("/images/products/boy-hoodie.svg");
+                      startAITryonProcessing();
+                    }}
+                    className="flex items-center gap-2 rounded-2xl bg-white/10 p-3 hover:bg-violet-600/40 transition border border-white/10"
+                  >
+                    <img src="/images/products/boy-hoodie.svg" alt="مدل پسر" className="size-10 rounded-xl object-cover bg-white/10" />
+                    <span className="text-xs font-bold text-white text-right">مدل پسربچه 🧢</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setUserPhoto("/images/products/girl-dress.svg");
+                      startAITryonProcessing();
+                    }}
+                    className="flex items-center gap-2 rounded-2xl bg-white/10 p-3 hover:bg-fuchsia-600/40 transition border border-white/10"
+                  >
+                    <img src="/images/products/girl-dress.svg" alt="مدل دختر" className="size-10 rounded-xl object-cover bg-white/10" />
+                    <span className="text-xs font-bold text-white text-right">مدل دختربچه 🎀</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-12">
+              {/* بخش پردازش هوش مصنوعی / کانواس پرو واقعی */}
               <div className="lg:col-span-7 space-y-4">
                 {isProcessing ? (
-                  <div className="rounded-3xl border border-violet-500/30 bg-violet-900/40 p-6 text-center space-y-4">
-                    <RefreshCw className="mx-auto size-10 animate-spin text-fuchsia-400" />
-                    <h4 className="text-sm font-black text-white">هوش مصنوعی در حال پردازش و پرو لباس تن کودک شماست...</h4>
-                    <div className="space-y-2 text-xs font-bold text-violet-200 max-w-sm mx-auto">
+                  <div className="rounded-3xl border border-violet-500/30 bg-violet-900/40 p-8 text-center space-y-4 min-h-[380px] flex flex-col items-center justify-center">
+                    <RefreshCw className="size-12 animate-spin text-fuchsia-400" />
+                    <h4 className="text-sm font-black text-white">هوش مصنوعی در حال پرو و منطبق‌سازی لباس تن کودک شماست...</h4>
+                    <div className="space-y-2 text-xs font-bold text-violet-200 max-w-sm mx-auto text-right">
                       <p className={aiStep >= 1 ? "text-emerald-300" : "opacity-40"}>
-                        {aiStep >= 1 ? "✅" : "⏳"} گام ۱: آنالیز هوشمند آناتومی و قد کودک در تصویر
+                        {aiStep >= 1 ? "✅" : "⏳"} گام ۱: اسکن آناتومی، قد و سینه کودک در تصویر
                       </p>
                       <p className={aiStep >= 2 ? "text-emerald-300" : "opacity-40"}>
-                        {aiStep >= 2 ? "✅" : "⏳"} گام ۲: منطبق‌سازی ۳ بعدی پارچه {targetProduct.title} روی بدن
+                        {aiStep >= 2 ? "✅" : "⏳"} گام ۲: منطبق‌سازی ۳ بعدی پارچه {targetProduct.title}
                       </p>
                       <p className={aiStep >= 3 ? "text-emerald-300" : "opacity-40"}>
-                        {aiStep >= 3 ? "✅" : "⏳"} گام ۳: محاسبه افتادگی پارچه، سایه‌ها و فیت بودن سایز
+                        {aiStep >= 3 ? "✅" : "⏳"} گام ۳: تنظیم نور، سایه‌ها و افتادگی طبیعی پارچه
                       </p>
                     </div>
                   </div>
                 ) : aiRendered ? (
-                  <div className="rounded-3xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/60 to-stone-900 p-6 space-y-4 shadow-xl">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <span className="flex items-center gap-1.5 text-xs font-black text-emerald-300">
-                        <CheckCircle2 className="size-4" /> پرو آنلاین هوش مصنوعی با موفقیت انجام شد!
-                      </span>
-                      <span className="rounded-full bg-emerald-400 px-3 py-1 text-xs font-black text-stone-950">
-                        تطابق: %۹۸
-                      </span>
-                    </div>
-
-                    <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-400/50 p-2 bg-stone-950 flex items-center justify-center">
+                  <div className="space-y-4">
+                    {/* Viewport کانواس تعاملی پرو */}
+                    <div className="relative overflow-hidden rounded-3xl border-2 border-violet-400/50 bg-stone-950 aspect-[4/5] sm:aspect-[4/3] w-full shadow-2xl flex items-center justify-center">
+                      {/* تصویر پس‌زمینه (عکس کودک) */}
                       <img
-                        src={targetProduct.images[0]}
-                        alt="نتیجه پرو"
-                        className="h-64 w-full object-cover rounded-xl shadow-2xl"
+                        src={userPhoto}
+                        alt="عکس کودک"
+                        className="absolute inset-0 size-full object-cover"
                       />
-                      <div className="absolute bottom-3 left-3 right-3 rounded-xl bg-black/80 p-2.5 backdrop-blur-md text-xs font-bold text-white flex justify-between items-center">
-                        <span>لباس انتخاب شده تن کودک شما کاملاً فیت است!</span>
+
+                      {/* لایه لباس خروجی پرو با قابلیت تنظیم انطباق */}
+                      <div
+                        className="absolute pointer-events-none transition-all duration-75"
+                        style={{
+                          left: `${clothX}%`,
+                          top: `${clothY}%`,
+                          width: `${clothScale}%`,
+                          transform: `translate(-50%, -50%) rotate(${clothRotate}deg)`,
+                          opacity: clothOpacity / 100,
+                          mixBlendMode: blendMode,
+                        }}
+                      >
+                        <img
+                          src={productImage}
+                          alt="لباس پرو شده"
+                          className="w-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
+                        />
+                      </div>
+
+                      {/* نشان زنده فیت بودن */}
+                      <div className="absolute top-3 right-3 z-10 rounded-full bg-emerald-500/90 backdrop-blur-md px-3 py-1 text-xs font-black text-stone-950 shadow-lg flex items-center gap-1">
+                        <CheckCircle2 className="size-4 text-stone-950" />
+                        <span>تطابق تن‌خور: %۹۸</span>
+                      </div>
+
+                      <div className="absolute bottom-3 left-3 right-3 z-10 rounded-2xl bg-stone-950/85 backdrop-blur-md p-3 text-xs font-bold text-white flex flex-wrap justify-between items-center gap-2 border border-white/10">
+                        <span>لباس انتخاب‌شده روی بدن کودک فیت است!</span>
                         <span className="text-amber-300 font-black">سایز پیشنهادی: {rec.size}</span>
                       </div>
                     </div>
-
-                    <button
-                      onClick={startAITryonProcessing}
-                      className="w-full rounded-xl bg-violet-700 py-3 text-xs font-black text-white hover:bg-violet-800"
-                    >
-                      تست مجدد هوش مصنوعی 🔄
-                    </button>
                   </div>
                 ) : null}
+              </div>
+
+              {/* پنل تنظیمات تعاملی پرو (جابه‌جایی، چرخش، سایز لباس) */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="rounded-3xl border border-white/15 bg-white/5 p-5 backdrop-blur-md space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <span className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                      <Sliders className="size-4" /> تنظیم دقیق انطباق لباس (Fine Tuning)
+                    </span>
+                    <button
+                      onClick={() => setUserPhoto(null)}
+                      className="text-[11px] text-stone-300 hover:text-white underline font-bold"
+                    >
+                      تغییر عکس 📷
+                    </button>
+                  </div>
+
+                  {/* کنترل موقعیت افقی و عمودی */}
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <div className="flex justify-between font-bold mb-1">
+                        <span>جابه‌جایی عمودی (بالا/پایین):</span>
+                        <span className="text-amber-300">{clothY}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={10}
+                        max={90}
+                        value={clothY}
+                        onChange={(e) => setClothY(Number(e.target.value))}
+                        className="w-full accent-violet-400 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between font-bold mb-1">
+                        <span>بزرگ‌نمایی لباس (سایز تن‌خور):</span>
+                        <span className="text-amber-300">{clothScale}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={30}
+                        max={110}
+                        value={clothScale}
+                        onChange={(e) => setClothScale(Number(e.target.value))}
+                        className="w-full accent-fuchsia-400 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between font-bold mb-1">
+                        <span>چرخش زاویه شانه:</span>
+                        <span className="text-amber-300">{clothRotate} درجه</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-30}
+                        max={30}
+                        value={clothRotate}
+                        onChange={(e) => setClothRotate(Number(e.target.value))}
+                        className="w-full accent-amber-400 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between font-bold mb-1">
+                        <span>شفافیت و فیت بودن پارچه:</span>
+                        <span className="text-amber-300">{clothOpacity}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={40}
+                        max={100}
+                        value={clothOpacity}
+                        onChange={(e) => setClothOpacity(Number(e.target.value))}
+                        className="w-full accent-emerald-400 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* دکمه انطباق خودکار */}
+                  <button
+                    onClick={() => {
+                      setClothX(50);
+                      setClothY(42);
+                      setClothScale(65);
+                      setClothRotate(0);
+                      setClothOpacity(95);
+                    }}
+                    className="w-full rounded-2xl bg-white/10 py-2.5 text-xs font-bold text-white hover:bg-white/20 transition border border-white/10"
+                  >
+                    🎯 انطباق هوشمند خودکار (Auto Align)
+                  </button>
+                </div>
+
+                {/* نتیجه محاسباتی سایز */}
+                <div className="rounded-3xl border border-emerald-500/30 bg-emerald-950/40 p-5 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-black text-emerald-300">
+                    <span>پیشنهاد سایز هوشمند مینی رویال:</span>
+                    <span className="rounded-full bg-emerald-400 px-2.5 py-0.5 text-[10px] text-stone-950">اطمینان %{rec.confidence}</span>
+                  </div>
+                  <p className="text-sm font-black text-white">
+                    سایز مناسب فرزند شما: <strong className="text-amber-300">{rec.size}</strong>
+                  </p>
+                  <p className="text-xs text-emerald-200">
+                    {rec.fitText}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -228,13 +390,13 @@ export default function VirtualTryonBox({ product }: VirtualTryonBoxProps) {
             <span className="text-[11px] font-bold text-violet-300 mb-3">
               آواتار {gender === "girl" ? "دخترانه 🎀" : "پسرانه 🧢"} (قد {toPersianDigits(height)}cm)
             </span>
-            <div className="relative size-52 rounded-full bg-gradient-to-b from-violet-500/20 to-fuchsia-500/20 p-3 border border-white/20 shadow-2xl flex items-center justify-center">
+            <div className="relative size-56 rounded-full bg-gradient-to-b from-violet-500/20 to-fuchsia-500/20 p-3 border border-white/20 shadow-2xl flex items-center justify-center">
               <img
-                src={targetProduct.images[0]}
+                src={productImage}
                 alt="پرو آنلاین"
-                className="size-44 object-cover rounded-3xl shadow-xl transition-all duration-300 border-2 border-white/40"
+                className="size-48 object-cover rounded-3xl shadow-xl transition-all duration-300 border-2 border-white/40"
               />
-              <div className="absolute -top-2 -right-2 rounded-2xl bg-amber-400 px-3 py-1 text-xs font-black text-stone-950 shadow-lg">
+              <div className="absolute -top-2 -right-2 rounded-2xl bg-amber-400 px-3.5 py-1 text-xs font-black text-stone-950 shadow-lg">
                 سایز {rec.size}
               </div>
             </div>

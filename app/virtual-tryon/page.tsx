@@ -14,7 +14,7 @@ export default async function VirtualTryonPage() {
     title: "ست هودی و شلوار پاییزی مینی رویال",
     slug: "hoodie-pants-set",
     price: 680000,
-    images: ["https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&auto=format&fit=crop"],
+    images: ["/images/products/boy-hoodie.svg"],
     sku: "MR-101",
     basePrice: 680000,
     inventory: 20,

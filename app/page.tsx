@@ -11,12 +11,12 @@ export const metadata = {
 };
 
 const categories = [
-  { slug: "pesaraneh", name: "پسرانه", icon: "🧢", image: "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&auto=format&fit=crop" },
-  { slug: "dokhtaraneh", name: "دخترانه", icon: "🎀", image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=600&auto=format&fit=crop" },
-  { slug: "nozad", name: "نوزاد", icon: "🍼", image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&auto=format&fit=crop" },
-  { slug: "set", name: "ست‌ها", icon: "✨", image: "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&auto=format&fit=crop" },
-  { slug: "madreseh", name: "مدرسه", icon: "🎒", image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?w=600&auto=format&fit=crop" },
-  { slug: "majlesi", name: "مجلسی", icon: "👗", image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&auto=format&fit=crop" },
+  { slug: "pesaraneh", name: "پسرانه", icon: "🧢", image: "/images/products/boy-hoodie.svg" },
+  { slug: "dokhtaraneh", name: "دخترانه", icon: "🎀", image: "/images/products/girl-dress.svg" },
+  { slug: "nozad", name: "نوزاد", icon: "🍼", image: "/images/products/baby-suit.svg" },
+  { slug: "set", name: "ست‌ها", icon: "✨", image: "/images/products/boy-tshirt.svg" },
+  { slug: "madreseh", name: "مدرسه", icon: "🎒", image: "/images/products/boy-jacket.svg" },
+  { slug: "majlesi", name: "مجلسی", icon: "👗", image: "/images/products/girl-skirt.svg" },
 ];
 
 export default async function HomePage() {

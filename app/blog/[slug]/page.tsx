@@ -23,7 +23,7 @@ const mockArticlesMap: Record<
     date: "۱ شهریور ۱۴۰۵",
     author: "تیم هوش مصنوعی مینی رویال",
     readTime: "۴ دقیقه",
-    image: "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&auto=format&fit=crop",
+    image: "/images/products/blog-1.svg",
     content: `
 خرید اینترنتی لباس برای کودکان همواره یکی از چالش‌برانگیزترین تجربه‌های والدین است. سرعت رشد بالای کودکان و تفاوت استاندارد سایزبندی در برندهای مختلف باعث می‌شود که در بیشتر موارد سایز خریده‌شده یا کوچک از آب درآید یا آن‌قدر گشاد باشد که قابل استفاده نباشد.
 
@@ -45,7 +45,7 @@ const mockArticlesMap: Record<
     date: "۲۵ مرداد ۱۴۰۵",
     author: "کارشناس نساجی مینی رویال",
     readTime: "۵ دقیقه",
-    image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&auto=format&fit=crop",
+    image: "/images/products/baby-suit.svg",
     content: `
 پوست نوزادان تا ۵ برابر نازک‌تر و حساس‌تر از پوست بزرگسالان است. انتخاب پارچه نا‌مناسب می‌تواند به خارش، قرمزی و اگزمای نوزادی منجر شود.
 

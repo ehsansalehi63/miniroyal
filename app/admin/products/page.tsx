@@ -20,7 +20,7 @@ export default function AdminProductsPage() {
   const [salePrice, setSalePrice] = useState(295000);
   const [sku, setSku] = useState("KID-BOY-NEW");
   const [images, setImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&auto=format&fit=crop",
+    "/images/products/boy-hoodie.svg",
   ]);
 
   const filtered = products.filter(
@@ -32,7 +32,7 @@ export default function AdminProductsPage() {
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalImages = images.length > 0 ? images : ["https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&auto=format&fit=crop"];
+    const finalImages = images.length > 0 ? images : ["/images/products/boy-hoodie.svg"];
 
     if (editingProduct) {
       // Update existing
@@ -110,7 +110,7 @@ export default function AdminProductsPage() {
           onClick={() => {
             setEditingProduct(null);
             setTitle("");
-            setImages(["https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=800&auto=format&fit=crop"]);
+            setImages(["/images/products/boy-hoodie.svg"]);
             setShowFormModal(true);
           }}
           className="flex items-center gap-1.5 rounded-2xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"

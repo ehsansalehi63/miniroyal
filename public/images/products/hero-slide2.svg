@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="heroBg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#831843" />
+      <stop offset="50%" stop-color="#be185d" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="600" rx="32" fill="url(#heroBg2)" />
+  <circle cx="750" cy="300" r="220" fill="#ffffff" opacity="0.12" />
+
+  <text x="80" y="240" fill="#ffffff" font-family="Vazirmatn, sans-serif" font-size="48" font-weight="900">لباس‌های مجلسی و پرنسسی دخترانه 🎀</text>
+  <text x="80" y="310" fill="#fbcfe8" font-family="Vazirmatn, sans-serif" font-size="24" font-weight="700">پارچه‌های فوق‌العاده نرم با آستر ۱۰۰٪ پنبه ارگانیک</text>
+</svg>
