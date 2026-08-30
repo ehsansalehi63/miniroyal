@@ -18,6 +18,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
+      <head>
+        {/* استایل‌های بحرانی درون‌خطی Inline Critical CSS جهت جلوگیری ۱۰۰٪ از به هم ریختگی ظاهر در شبکه */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #fffdfa; color: #1c1917; }
+          a { text-decoration: none; color: inherit; }
+          * { box-sizing: border-box; }
+        ` }} />
+      </head>
       <body className="min-h-screen bg-stone-50/50 text-stone-900 font-sans antialiased flex flex-col selection:bg-violet-100 selection:text-violet-900">
         <Header />
         <main className="flex-1">{children}</main>
