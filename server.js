@@ -4,7 +4,7 @@ const next = require("next");
 const fs = require("fs");
 const path = require("path");
 
-// Global exception safety
+// Global exception safety to ensure zero crashes
 process.on("uncaughtException", (err) => {
   console.error("⚠️ Global Uncaught Exception:", err.message || err);
 });
@@ -15,7 +15,11 @@ process.on("unhandledRejection", (reason) => {
 
 const dev = false;
 const hostname = "0.0.0.0";
-const port = parseInt(process.env.PORT || "3000", 10);
+const port = process.env.PORT
+  ? isNaN(Number(process.env.PORT))
+    ? process.env.PORT
+    : Number(process.env.PORT)
+  : 3000;
 
 const app = next({ dev, hostname, port, dir: __dirname });
 const handle = app.getRequestHandler();
@@ -72,7 +76,7 @@ app.prepare().then(() => {
     });
   }).listen(port, (err) => {
     if (err) throw err;
-    console.log(`🚀 MiniRoyal Production Server Running on http://${hostname}:${port}`);
+    console.log(`🚀 MiniRoyal Production Server Running on port/socket: ${port}`);
   });
 }).catch((err) => {
   console.error("❌ Failed to prepare Next.js server:", err);
