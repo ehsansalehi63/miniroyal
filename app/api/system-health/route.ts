@@ -41,10 +41,12 @@ export async function GET() {
     detail: "الگوریتم Smart Fit با ۲۸ جدول سایزبندی آماده به کار است.",
   };
 
-  // ۴. تست درگاه پرداخت زرین‌پال
+  // ۴. وضعیت درگاه پرداخت زرین‌پال
   checks["payment_gateway"] = {
-    status: "ok",
-    detail: "درگاه پرداخت آزمایشی زرین‌پال (Sandbox) فعال و آماده دریافت تراکنش است.",
+    status: process.env.ZARINPAL_MERCHANT_ID && process.env.PAYMENT_STATE_SECRET ? "ok" : "warning",
+    detail: process.env.ZARINPAL_MERCHANT_ID && process.env.PAYMENT_STATE_SECRET
+      ? "درگاه زرین‌پال برای پرداخت واقعی پیکربندی شده است."
+      : "Merchant ID یا کلید امضای پرداخت در Environment Variables تنظیم نشده است.",
   };
 
   // ۵. تست سامانه پیامک OTP

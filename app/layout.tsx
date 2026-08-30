@@ -8,7 +8,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "مینی رویال | فروشگاه پوشاک کودک و نوجوان با پرو آنلاین لباس",
   description: "خرید شیک‌ترین لباس‌های دخترانه، پسرانه و نوزاد با پرو آنلاین، جدول سایز سانتی‌متری و ارسال سریع به سراسر کشور.",
-  metadataBase: new URL("https://miniroyal.shop"),
+  metadataBase: new URL(process.env.SITE_URL || "https://miniroyal.ir"),
 };
 
 export default function RootLayout({

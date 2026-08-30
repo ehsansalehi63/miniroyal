@@ -80,16 +80,12 @@ export default function CheckoutPage() {
     const existingOrders = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
     localStorage.setItem("miniroyal_orders", JSON.stringify([newOrder, ...existingOrders]));
 
-    setTimeout(() => {
-      clearCart();
-      if (paymentMethod === "zarinpal") {
-        // Redirect to Real Interactive Shaparak / Zarinpal Bank Gateway
-        router.push(`/payment/gateway?orderNumber=${orderNumber}&amount=${finalTotal}`);
-      } else {
-        // COD Direct Success
-        router.push(`/order/success/${orderNumber}`);
-      }
-    }, 1000);
+    clearCart();
+    if (paymentMethod === "zarinpal") {
+      router.push(`/payment/gateway?orderNumber=${orderNumber}&amount=${finalTotal}`);
+    } else {
+      router.push(`/order/success/${orderNumber}`);
+    }
   };
 
   return (
@@ -253,7 +249,7 @@ export default function CheckoutPage() {
                   />
                   <div>
                     <span className="block text-xs font-bold text-stone-900">
-                      پرداخت آنلاین امن (درگاه آزمایشی زرین‌پال Sandbox)
+                      پرداخت آنلاین امن زرین‌پال
                     </span>
                     <span className="text-[11px] text-stone-500">
                       پرداخت با کلیه کارت‌های شتاب بدون پول واقعی (محیط تست)
