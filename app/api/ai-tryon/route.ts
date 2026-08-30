@@ -50,7 +50,18 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok || !image) {
       console.error("Pollinations try-on failed:", result);
-      return NextResponse.json({ success: false, error: "تولید تصویر پرو لباس ناموفق بود." }, { status: 502 });
+      const providerMessage = typeof result?.error === "string"
+        ? result.error
+        : typeof result?.error?.message === "string"
+          ? result.error.message
+          : "";
+      return NextResponse.json(
+        {
+          success: false,
+          error: providerMessage || `سرویس AI پاسخ ${response.status} برگرداند.`,
+        },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ success: true, imageUrl: image });
