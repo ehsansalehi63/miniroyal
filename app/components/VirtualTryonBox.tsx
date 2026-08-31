@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, DragEvent, useMemo, useState } from "react";
 import { Camera, Download, Loader2, RotateCcw, Sparkles, UserRound } from "lucide-react";
 import { Product } from "../lib/types/catalog";
 import { recommendSize } from "../lib/smartFit";
@@ -41,14 +41,14 @@ export default function VirtualTryonBox({ product }: Props) {
   const [resultImage, setResultImage] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
   const fit = useMemo(
     () => recommendSize(product, { heightCm, weightKg, ageMonths, gender, buyForGrowth, chestCm, waistCm }),
     [product, heightCm, weightKg, ageMonths, gender, buyForGrowth, chestCm, waistCm]
   );
 
-  const onUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const acceptFile = async (file?: File) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("فقط فایل تصویری قابل استفاده است.");
@@ -61,6 +61,17 @@ export default function VirtualTryonBox({ product }: Props) {
     setError("");
     setResultImage(undefined);
     setPersonImage(await fileToDataUrl(file));
+  };
+
+  const onUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    void acceptFile(event.target.files?.[0]);
+    event.target.value = "";
+  };
+
+  const onDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    void acceptFile(event.dataTransfer.files?.[0]);
   };
 
   const runTryOn = async () => {
@@ -163,11 +174,11 @@ export default function VirtualTryonBox({ product }: Props) {
       ) : (
         <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-3xl border border-dashed border-violet-300/50 bg-white/5 p-6">
-            <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-white/10 p-8 text-center hover:bg-white/10">
+            <label onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={onDrop} className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border p-8 text-center transition ${isDragging ? "border-amber-300 bg-amber-300/20" : "border-white/10 hover:bg-white/10"}`}>
               <Camera className="size-10 text-violet-300" />
               <span className="mt-3 text-sm font-black">عکس تمام‌قد کودک را انتخاب کن</span>
               <span className="mt-2 text-xs text-violet-200">JPG یا PNG، حداکثر ۸ مگابایت</span>
-              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onUpload} />
+              <input type="file" accept="image/jpeg,image/png,image/webp" capture="user" className="hidden" onChange={onUpload} />
             </label>
             {personImage && <img src={resultImage ?? personImage} alt="پیش‌نمایش پرو آنلاین" className="mt-5 max-h-[420px] w-full rounded-2xl object-contain" />}
             {error && <p className="mt-4 rounded-xl bg-rose-950/60 p-3 text-xs font-bold text-rose-200">{error}</p>}
