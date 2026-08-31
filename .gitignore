@@ -36,3 +36,5 @@ Thumbs.db
 next-env.d.ts
 .vercel/
 coverage/
+.webhook-audit.log
+.deploy-history.json

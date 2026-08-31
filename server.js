@@ -36,6 +36,11 @@ app.prepare()
   });
 
 const server = createServer(async (req, res) => {
+  if (req.url === "/_health") {
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(JSON.stringify({ status: "ok", ready: isReady, timestamp: new Date().toISOString() }));
+    return;
+  }
   // If request arrives during initial 1-2s startup, wait briefly until Next.js is ready
   if (!isReady) {
     let waitChecks = 0;
