@@ -3,6 +3,8 @@ import ProductCard from "./components/ProductCard";
 import Hero3DSlideshow from "./components/Hero3DSlideshow";
 import { getFeaturedProducts } from "./lib/catalog";
 import { mockProducts } from "./lib/data/mockProducts";
+import { getSuggestedSets } from "./lib/sets";
+import SuggestedSets from "./components/SuggestedSets";
 import { Sparkles, ShieldCheck, Truck, RotateCcw, ArrowRight } from "lucide-react";
 
 export const metadata = {
@@ -31,6 +33,8 @@ export default async function HomePage() {
     <div className="space-y-12">
       {/* اسلاید شو ۳ بعدی هیرو */}
       <Hero3DSlideshow />
+
+      <SuggestedSets sets={getSuggestedSets(featuredProducts)} />
 
       {/* مزایای رقابتی و تضمین کیفیت */}
       <section className="mx-auto max-w-7xl px-4">

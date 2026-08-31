@@ -30,6 +30,7 @@ const adminNav = [
   { href: "/admin/blog", label: "بلاگ و محتوای AI", icon: FileText },
   { href: "/admin/automation", label: "پایپ‌لاین اتوماسیون", icon: Bot },
   { href: "/admin/settings", label: "تنظیمات سایت و دیپلوی", icon: Settings },
+  { href: "/admin/slides", label: "مدیریت اسلایدشو صفحه اصلی", icon: Globe },
 ];
 
 function useIsMounted() {

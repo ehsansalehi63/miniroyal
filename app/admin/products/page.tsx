@@ -25,6 +25,15 @@ export default function AdminProductsPage() {
   const [sizeChart, setSizeChart] = useState<SizeChartRow[]>([
     { size: "۴ سال", ageRange: "۳ تا ۴ سال", heightCm: "۹۸ تا ۱۰۴", chestCm: "۵۴ تا ۵۶", lengthCm: "۴۲" },
   ]);
+  const [fitProfile, setFitProfile] = useState<NonNullable<Product["fitProfile"]>>({
+    garmentType: "top",
+    measurementMethod: "garment",
+    preferredBodyMeasurement: "height",
+    easeCm: 7,
+    stretch: "low",
+    sizeSystem: "age",
+    tryOnAnchors: { shoulder: 50, waist: 52, length: 68 },
+  });
 
   const filtered = products.filter(
     (p) =>
@@ -42,7 +51,7 @@ export default function AdminProductsPage() {
       setProducts(
         products.map((p) =>
           p.id === editingProduct.id
-          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, sizeChartJson: sizeChart }
+          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, sizeChartJson: sizeChart, fitProfile }
             : p
         )
       );
@@ -72,6 +81,7 @@ export default function AdminProductsPage() {
         status: "active",
         fitType: "normal",
         sizeChartJson: sizeChart,
+        fitProfile,
         images: finalImages,
         variants: [{ id: Date.now(), productId: Date.now(), sku: `${sku}-01`, size: "2-3 سال", color: "سفید", stock: 10, priceAdjustment: 0 }],
         publishedAt: new Date().toISOString().split("T")[0],
@@ -92,6 +102,7 @@ export default function AdminProductsPage() {
     setSku(p.sku);
     setImages(p.images || []);
     setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : [{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
+    setFitProfile(p.fitProfile ?? fitProfile);
     setShowFormModal(true);
   };
 
@@ -117,6 +128,7 @@ export default function AdminProductsPage() {
             setTitle("");
             setImages(["/images/products/boy-hoodie.svg"]);
             setSizeChart([{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
+            setFitProfile({ garmentType: "top", measurementMethod: "garment", preferredBodyMeasurement: "height", easeCm: 7, stretch: "low", sizeSystem: "age", tryOnAnchors: { shoulder: 50, waist: 52, length: 68 } });
             setShowFormModal(true);
           }}
           className="flex items-center gap-1.5 rounded-2xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
@@ -234,12 +246,30 @@ export default function AdminProductsPage() {
                 </div>
                 <div className="mt-3 space-y-2">
                   {sizeChart.map((row, index) => (
-                    <div key={index} className="grid gap-2 sm:grid-cols-5">
-                      {(["size", "ageRange", "heightCm", "chestCm", "lengthCm"] as const).map((field) => (
-                        <input key={field} required placeholder={{ size: "سایز", ageRange: "بازه سنی", heightCm: "قد (cm)", chestCm: "سینه (cm)", lengthCm: "قد لباس (cm)" }[field]} value={row[field]} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, [field]: e.target.value } : item))} className="rounded-lg border border-emerald-200 bg-white p-2 text-[10px] outline-none" />
+                    <div key={index} className="grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
+                      {(["size", "ageRange", "heightCm", "chestCm", "waistCm", "hipCm", "shoulderCm", "garmentLengthCm"] as const).map((field) => (
+                        <input key={field} required={field !== "waistCm" && field !== "hipCm" && field !== "shoulderCm"} placeholder={{ size: "سایز", ageRange: "بازه سنی", heightCm: "قد کودک", chestCm: "سینه کودک", waistCm: "کمر", hipCm: "باسن", shoulderCm: "شانه", garmentLengthCm: "قد لباس" }[field]} value={row[field] ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, [field]: e.target.value } : item))} className="rounded-lg border border-emerald-200 bg-white p-2 text-[10px] outline-none" />
                       ))}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4" dir="rtl">
+                <h4 className="text-xs font-black text-violet-950">پروفایل اختصاصی فیت و پرو محصول</h4>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <select value={fitProfile.garmentType} onChange={(e) => setFitProfile({ ...fitProfile, garmentType: e.target.value as NonNullable<Product["fitProfile"]>["garmentType"] })} className="rounded-lg border border-violet-200 bg-white p-2 text-xs">
+                    <option value="top">بالاپوش</option><option value="bottom">شلوار/دامن</option><option value="dress">پیراهن</option><option value="outerwear">کاپشن</option><option value="set">ست</option><option value="baby">نوزادی</option>
+                  </select>
+                  <select value={fitProfile.measurementMethod} onChange={(e) => setFitProfile({ ...fitProfile, measurementMethod: e.target.value as NonNullable<Product["fitProfile"]>["measurementMethod"] })} className="rounded-lg border border-violet-200 bg-white p-2 text-xs">
+                    <option value="garment">اندازه خود لباس</option><option value="body">اندازه بدن</option>
+                  </select>
+                  <select value={fitProfile.stretch} onChange={(e) => setFitProfile({ ...fitProfile, stretch: e.target.value as NonNullable<Product["fitProfile"]>["stretch"] })} className="rounded-lg border border-violet-200 bg-white p-2 text-xs">
+                    <option value="none">بدون کشسانی</option><option value="low">کشسانی کم</option><option value="medium">کشسانی متوسط</option><option value="high">کشسانی زیاد</option>
+                  </select>
+                  <label className="text-[10px] font-bold">آزادی لباس (cm)<input type="number" min="0" max="30" value={fitProfile.easeCm} onChange={(e) => setFitProfile({ ...fitProfile, easeCm: Number(e.target.value) })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
+                  <label className="text-[10px] font-bold">لنگر شانه (%)<input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.shoulder} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, shoulder: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
+                  <label className="text-[10px] font-bold">لنگر کمر (%)<input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.waist} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, waist: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
                 </div>
               </div>
 

@@ -30,6 +30,8 @@ export default function VirtualTryonBox({ product }: Props) {
   const [tab, setTab] = useState<"fit" | "photo">("fit");
   const [heightCm, setHeightCm] = useState(104);
   const [weightKg, setWeightKg] = useState(17);
+  const [chestCm, setChestCm] = useState(56);
+  const [waistCm, setWaistCm] = useState(52);
   const [ageMonths, setAgeMonths] = useState(72);
   const [gender, setGender] = useState<"boy" | "girl" | "unisex">(
     product.gender === "unisex" ? "unisex" : product.gender
@@ -41,8 +43,8 @@ export default function VirtualTryonBox({ product }: Props) {
   const [error, setError] = useState("");
 
   const fit = useMemo(
-    () => recommendSize(product, { heightCm, weightKg, ageMonths, gender, buyForGrowth }),
-    [product, heightCm, weightKg, ageMonths, gender, buyForGrowth]
+    () => recommendSize(product, { heightCm, weightKg, ageMonths, gender, buyForGrowth, chestCm, waistCm }),
+    [product, heightCm, weightKg, ageMonths, gender, buyForGrowth, chestCm, waistCm]
   );
 
   const onUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -129,6 +131,14 @@ export default function VirtualTryonBox({ product }: Props) {
             <label className="rounded-2xl bg-white/10 p-4 text-xs font-bold">سن کودک
               <span className="mt-2 block text-lg text-amber-300">{toPersianDigits(Math.floor(ageMonths / 12))} سال</span>
               <input className="mt-3 w-full accent-amber-400" type="range" min="0" max="204" value={ageMonths} onChange={(e) => setAgeMonths(Number(e.target.value))} />
+            </label>
+            <label className="rounded-2xl bg-white/10 p-4 text-xs font-bold">دور سینه
+              <span className="mt-2 block text-lg text-amber-300">{toPersianDigits(chestCm)} سانتی‌متر</span>
+              <input className="mt-3 w-full accent-amber-400" type="range" min="30" max="110" value={chestCm} onChange={(e) => setChestCm(Number(e.target.value))} />
+            </label>
+            <label className="rounded-2xl bg-white/10 p-4 text-xs font-bold">دور کمر
+              <span className="mt-2 block text-lg text-amber-300">{toPersianDigits(waistCm)} سانتی‌متر</span>
+              <input className="mt-3 w-full accent-amber-400" type="range" min="25" max="100" value={waistCm} onChange={(e) => setWaistCm(Number(e.target.value))} />
             </label>
             <label className="rounded-2xl bg-white/10 p-4 text-xs font-bold">جنسیت
               <select value={gender} onChange={(e) => setGender(e.target.value as typeof gender)} className="mt-3 w-full rounded-lg bg-stone-900 p-2 text-white">
