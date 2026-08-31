@@ -2,324 +2,67 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef, useSyncExternalStore } from "react";
-import { Search, ShoppingBag, User, Menu, X, Sparkles, LogOut, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ChevronDown, Menu, Search, ShoppingBag, Sparkles, User, X } from "lucide-react";
 import { searchAutocomplete } from "../lib/catalog";
+import { mockCategories } from "../lib/data/mockProducts";
+import { kidsCategories } from "../lib/kidsCategories";
 import { formatToman, toPersianDigits } from "../lib/utils";
 import { useCart } from "../lib/cart";
 
-const navItems = [
-  { href: "/", label: "خانه" },
-  { href: "/shop", label: "همه محصولات" },
-  { href: "/category/pesaraneh", label: "پسرانه" },
-  { href: "/category/dokhtaraneh", label: "دخترانه" },
-  { href: "/category/nozad", label: "نوزاد" },
-  { href: "/category/set", label: "ست‌ها" },
-  { href: "/category/madreseh", label: "لباس مدرسه" },
-  { href: "/category/majlesi", label: "مجلسی" },
-  { href: "/blog", label: "مجله کودک" },
-];
+const allCategories = [...mockCategories, ...kidsCategories];
+const parentCategories = mockCategories;
 
 function useIsMounted() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
+  return useSyncExternalStore(() => () => {}, () => true, () => false);
 }
 
 export default function Header() {
   const router = useRouter();
   const isMounted = useIsMounted();
   const { getTotalItems } = useCart();
-  
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<{
-    products: { id: number; title: string; slug: string; image: string; price: number }[];
-    categories: { name: string; slug: string }[];
-  }>({ products: [], categories: [] });
-  const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [searchResults, setSearchResults] = useState<{ products: { id: number; title: string; slug: string; image: string; price: number }[]; categories: { name: string; slug: string }[] }>({ products: [], categories: [] });
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const totalCartItems = isMounted ? getTotalItems() : 0;
-
+  useEffect(() => setIsLoggedIn(localStorage.getItem("miniroyal_admin_token") === "authenticated_admin"), []);
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("miniroyal_admin_token");
-      setIsLoggedIn(token === "authenticated_admin");
-    }
-  }, []);
-
-  useEffect(() => {
-    const fetchResults = async () => {
-      if (searchQuery.trim().length >= 1) {
-        setIsSearching(true);
-        const res = await searchAutocomplete(searchQuery);
-        setSearchResults(res);
-        setIsSearching(false);
-        setShowDropdown(true);
-      } else {
-        setSearchResults({ products: [], categories: [] });
-        setShowDropdown(false);
-      }
-    };
-
-    const timer = setTimeout(fetchResults, 200);
+    const timer = setTimeout(async () => {
+      if (!searchQuery.trim()) { setSearchResults({ products: [], categories: [] }); return; }
+      setSearchResults(await searchAutocomplete(searchQuery));
+      setShowSearch(true);
+    }, 180);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  // Click outside to close dropdown
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    const close = (event: MouseEvent) => { if (searchRef.current && !searchRef.current.contains(event.target as Node)) setShowSearch(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("miniroyal_admin_token");
-    setIsLoggedIn(false);
-    router.push("/");
-  };
+  const totalItems = isMounted ? getTotalItems() : 0;
+  const closeMobile = () => setMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-white/95 backdrop-blur-md">
-      {/* نوار اطلاع‌رسانی بالایی */}
-      <div className="bg-gradient-to-r from-violet-700 via-fuchsia-600 to-violet-700 py-1.5 text-center text-xs font-semibold text-white px-4 flex justify-center items-center gap-4">
-        <span>👑 ارسال رایگان خریدهای بالای ۵۰۰ هزار تومان | 👗 پرو آنلاین لباس با تضمین سایز</span>
-      </div>
-
-      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-6">
-        {/* همبرگر برای موبایل */}
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-xl border border-stone-200 p-2 text-stone-700 lg:hidden"
-          aria-label="منو"
-        >
-          {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
-
-        {/* لوگو برند */}
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-xl shadow-md transition hover:scale-105">
-            👑
-          </span>
-          <span className="hidden flex-col leading-tight sm:flex">
-            <span className="text-xl font-black tracking-tight text-stone-900">
-              مینی رویال
-            </span>
-            <span className="text-[11px] font-semibold text-violet-600">
-              فروشگاه پوشاک کودک و نوجوان
-            </span>
-          </span>
-        </Link>
-
-        {/* جستجوی زنده با آکاردئون پیشنهادات */}
-        <div ref={searchRef} className="relative flex-1 max-w-xl">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (searchQuery.trim()) {
-                setShowDropdown(false);
-                router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-              }
-            }}
-            className="relative"
-          >
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => {
-                if (searchQuery.trim().length >= 1) setShowDropdown(true);
-              }}
-              placeholder="جستجو در لباس کودک، سایز، دخترانه، پسرانه..."
-              className="w-full rounded-full border border-stone-200 bg-stone-50 px-4 py-2.5 pr-10 text-sm outline-none transition focus:border-violet-500 focus:bg-white focus:ring-4 focus:ring-violet-100"
-              aria-label="جستجو"
-            />
-            <Search className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+    <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-[#fffaf3]/95 backdrop-blur-xl">
+      <div className="bg-stone-950 px-4 py-2 text-center text-[11px] font-bold tracking-wide text-amber-200">ارسال رایگان خریدهای بالای ۵۰۰ هزار تومان <span className="mx-2 text-stone-500">•</span> پرو آنلاین هوشمند برای انتخاب سایز</div>
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4 lg:gap-8">
+        <button onClick={() => setMenuOpen((value) => !value)} className="rounded-full border border-stone-300 p-2 lg:hidden" aria-label="باز کردن منو">{menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}</button>
+        <Link href="/" className="group flex shrink-0 items-center gap-3"><span className="grid size-11 place-items-center rounded-full border border-amber-400 bg-stone-950 text-xl text-amber-300 shadow-lg transition group-hover:rotate-6">♛</span><span className="hidden leading-none sm:block"><span className="block text-xl font-black tracking-tight text-stone-950">مینی رویال</span><span className="mt-1 block text-[10px] font-bold tracking-[0.18em] text-violet-700">KIDS COUTURE</span></span></Link>
+        <div ref={searchRef} className="relative flex-1 lg:max-w-md">
+          <form onSubmit={(event) => { event.preventDefault(); if (searchQuery.trim()) { setShowSearch(false); router.push(`/search?q=${encodeURIComponent(searchQuery)}`); } }}>
+            <Search className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" /><input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} onFocus={() => searchQuery && setShowSearch(true)} placeholder="جست‌وجوی لباس، سایز یا دسته‌بندی..." className="w-full rounded-full border border-stone-200 bg-white px-11 py-3 text-xs outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100" />
           </form>
-
-          {/* منوی دراپ‌داون نتایج جستجوی زنده */}
-          {showDropdown && (
-            <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-stone-100 bg-white p-2 shadow-2xl">
-              {isSearching ? (
-                <div className="p-4 text-center text-xs text-stone-500">
-                  در حال جستجو...
-                </div>
-              ) : (
-                <>
-                  {/* دسته‌بندی‌های پیشنهادی */}
-                  {searchResults.categories.length > 0 && (
-                    <div className="mb-2 p-2 border-b border-stone-100">
-                      <span className="text-[11px] font-bold text-stone-400">
-                        دسته‌بندی‌های مرتبط
-                      </span>
-                      <div className="mt-1 flex flex-wrap gap-1.5">
-                        {searchResults.categories.map((c) => (
-                          <Link
-                            key={c.slug}
-                            href={`/category/${c.slug}`}
-                            onClick={() => setShowDropdown(false)}
-                            className="rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-100"
-                          >
-                            {c.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* محصولات پیدا شده */}
-                  {searchResults.products.length > 0 ? (
-                    <div>
-                      <span className="p-2 text-[11px] font-bold text-stone-400">
-                        محصولات پیشنهادی
-                      </span>
-                      <div className="mt-1 flex flex-col gap-1">
-                        {searchResults.products.map((p) => (
-                          <Link
-                            key={p.id}
-                            href={`/product/${p.slug}`}
-                            onClick={() => setShowDropdown(false)}
-                            className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-stone-50"
-                          >
-                            <img
-                              src={p.image}
-                              alt={p.title}
-                              className="size-10 rounded-lg object-cover"
-                            />
-                            <div className="flex-1 overflow-hidden">
-                              <h4 className="truncate text-xs font-bold text-stone-800">
-                                {p.title}
-                              </h4>
-                              <span className="text-[11px] font-extrabold text-violet-700">
-                                {formatToman(p.price)}
-                              </span>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    searchResults.categories.length === 0 && (
-                      <div className="p-4 text-center text-xs text-stone-500">
-                        نتیجه‌ای برای «{searchQuery}» پیدا نشد.
-                      </div>
-                    )
-                  )}
-
-                  <Link
-                    href={`/search?q=${encodeURIComponent(searchQuery)}`}
-                    onClick={() => setShowDropdown(false)}
-                    className="mt-2 block rounded-xl bg-stone-100 p-2 text-center text-xs font-bold text-stone-700 hover:bg-violet-50 hover:text-violet-700"
-                  >
-                    مشاهده همه نتایج برای «{searchQuery}» ←
-                  </Link>
-                </>
-              )}
-            </div>
-          )}
+          {showSearch && searchQuery && <div className="absolute inset-x-0 top-full mt-2 overflow-hidden rounded-2xl border border-stone-200 bg-white p-2 shadow-2xl">{searchResults.categories.map((category) => <Link key={category.slug} href={`/category/${category.slug}`} onClick={() => setShowSearch(false)} className="block rounded-xl px-3 py-2 text-xs font-bold hover:bg-violet-50">{category.name}</Link>)}{searchResults.products.map((product) => <Link key={product.id} href={`/product/${product.slug}`} onClick={() => setShowSearch(false)} className="flex items-center gap-3 rounded-xl p-2 hover:bg-stone-50"><img src={product.image} alt={product.title} className="size-10 rounded-lg object-cover" /><span className="truncate text-xs font-bold">{product.title}<small className="mt-1 block text-violet-700">{formatToman(product.price)}</small></span></Link>)}{!searchResults.categories.length && !searchResults.products.length && <p className="p-3 text-center text-xs text-stone-500">نتیجه‌ای پیدا نشد.</p>}</div>}
         </div>
-
-        {/* دکمه‌های سمت چپ (پرو آنلاین، ورود / حساب کاربری، سبد خرید) */}
-        <div className="flex items-center gap-2">
-          <Link
-            href="/virtual-tryon"
-            className="hidden items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3.5 py-2 text-xs font-bold text-violet-700 transition hover:bg-violet-100 sm:flex"
-          >
-            <Sparkles className="size-4" />
-            <span>پرو آنلاین</span>
-          </Link>
-
-          {isLoggedIn ? (
-            <div className="flex items-center gap-1">
-              <Link
-                href="/admin"
-                className="flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3.5 py-2 text-xs font-bold text-violet-800 transition hover:bg-violet-100"
-                title="مدیریت حساب کاربری"
-              >
-                <User className="size-4 text-violet-600" />
-                <span>حساب کاربری 👤</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="p-2 text-stone-400 hover:text-rose-600"
-                title="خروج از حساب"
-              >
-                <LogOut className="size-4" />
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 rounded-full border border-stone-200 px-3.5 py-2 text-stone-700 transition hover:border-violet-300 hover:bg-stone-50"
-              title="ورود به حساب کاربری"
-            >
-              <User className="size-4 text-stone-600" />
-              <span className="hidden text-xs font-semibold md:inline">ورود / ثبت‌نام</span>
-            </Link>
-          )}
-
-          <Link
-            href="/cart"
-            className="relative flex items-center gap-2 rounded-full bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-violet-200 transition hover:bg-violet-800"
-          >
-            <ShoppingBag className="size-4" />
-            <span className="hidden sm:inline">سبد خرید</span>
-            <span className="grid size-5 place-items-center rounded-full bg-amber-400 text-[11px] font-black text-stone-950">
-              {toPersianDigits(totalCartItems)}
-            </span>
-          </Link>
-        </div>
+        <div className="flex items-center gap-2"><Link href="/virtual-tryon" className="hidden items-center gap-2 rounded-full bg-violet-100 px-4 py-2.5 text-xs font-black text-violet-800 transition hover:bg-violet-200 sm:flex"><Sparkles className="size-4" /> پرو آنلاین</Link><Link href="/admin" className="hidden rounded-full border border-stone-200 p-2.5 text-stone-700 transition hover:border-violet-400 hover:text-violet-700 sm:block" aria-label={isLoggedIn ? "حساب کاربری" : "ورود"}><User className="size-4" /></Link><Link href="/cart" className="relative grid size-11 place-items-center rounded-full bg-violet-700 text-white shadow-lg shadow-violet-200 transition hover:bg-violet-800" aria-label="سبد خرید"><ShoppingBag className="size-5" /><span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-amber-400 text-[10px] font-black text-stone-950">{toPersianDigits(totalItems)}</span></Link></div>
       </div>
-
-      {/* منوی دسته‌بندی دسکتاپ */}
-      <nav className="hidden border-t border-stone-100 bg-stone-50/60 lg:block">
-        <div className="mx-auto flex max-w-7xl items-center gap-1 px-4 py-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg px-3.5 py-1.5 text-xs font-bold text-stone-700 transition hover:bg-violet-100 hover:text-violet-800"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-
-      {/* منوی کشویی موبایل */}
-      {isMobileMenuOpen && (
-        <div className="border-t border-stone-200 bg-white p-4 shadow-lg lg:hidden">
-          <div className="flex flex-col gap-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="rounded-xl px-3 py-2 text-sm font-bold text-stone-800 transition hover:bg-violet-50 hover:text-violet-700"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Link
-              href="/virtual-tryon"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-violet-700 py-3 text-sm font-bold text-white shadow-md"
-            >
-              <Sparkles className="size-4" />
-              👗 پرو آنلاین لباس
-            </Link>
-          </div>
-        </div>
-      )}
+      <nav className="hidden border-t border-stone-200/70 bg-white/60 lg:block"><div className="mx-auto flex max-w-7xl items-center gap-1 px-4"><Link href="/" className="px-4 py-3 text-xs font-black text-stone-900 hover:text-violet-700">خانه</Link><Link href="/shop" className="px-4 py-3 text-xs font-black text-stone-900 hover:text-violet-700">فروشگاه</Link><div className="relative" onMouseEnter={() => setCategoryOpen(true)} onMouseLeave={() => setCategoryOpen(false)}><button onClick={() => setCategoryOpen((value) => !value)} className="flex items-center gap-1 px-4 py-3 text-xs font-black text-stone-900 hover:text-violet-700">همه دسته‌بندی‌ها <ChevronDown className="size-3.5" /></button>{categoryOpen && <div className="absolute right-0 top-full z-50 grid w-[760px] grid-cols-3 gap-6 rounded-b-3xl border border-stone-200 bg-[#fffaf3] p-6 shadow-2xl">{parentCategories.map((parent) => <div key={parent.slug}><Link href={`/category/${parent.slug}`} className="flex items-center gap-2 border-b border-stone-200 pb-2 text-sm font-black text-stone-950 hover:text-violet-700"><span>{parent.icon}</span>{parent.name}</Link><div className="mt-3 space-y-1.5">{allCategories.filter((category) => category.parentSlug === parent.slug).map((category) => <Link key={category.slug} href={`/category/${category.slug}`} className="block text-[11px] font-semibold text-stone-500 hover:text-violet-700">{category.icon} {category.name}</Link>)}</div></div>)}</div>}</div><Link href="/virtual-tryon" className="px-4 py-3 text-xs font-black text-violet-700 hover:text-violet-900">پرو آنلاین</Link><Link href="/blog" className="px-4 py-3 text-xs font-black text-stone-900 hover:text-violet-700">مجله استایل</Link><Link href="/contact" className="mr-auto px-4 py-3 text-xs font-bold text-stone-500 hover:text-violet-700">تماس با ما</Link></div></nav>
+      {menuOpen && <div className="border-t border-stone-200 bg-[#fffaf3] p-4 shadow-xl lg:hidden"><div className="grid grid-cols-2 gap-2"><Link href="/shop" onClick={closeMobile} className="rounded-xl bg-stone-950 p-3 text-center text-xs font-black text-white">همه محصولات</Link><Link href="/virtual-tryon" onClick={closeMobile} className="rounded-xl bg-violet-100 p-3 text-center text-xs font-black text-violet-800">پرو آنلاین</Link></div><div className="mt-5 grid gap-4">{parentCategories.map((parent) => <div key={parent.slug}><Link href={`/category/${parent.slug}`} onClick={closeMobile} className="block border-b border-stone-200 pb-2 text-sm font-black">{parent.icon} {parent.name}</Link><div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2">{allCategories.filter((category) => category.parentSlug === parent.slug).map((category) => <Link key={category.slug} href={`/category/${category.slug}`} onClick={closeMobile} className="text-[11px] font-semibold text-stone-500">{category.icon} {category.name}</Link>)}</div></div>)}</div></div>}
     </header>
   );
 }

@@ -1,107 +1,38 @@
 import Link from "next/link";
+import { mockCategories } from "../lib/data/mockProducts";
+import { kidsCategories } from "../lib/kidsCategories";
 
-const categoryLinks = [
-  { href: "/category/pesaraneh", label: "پوشاک پسرانه" },
-  { href: "/category/dokhtaraneh", label: "پوشاک دخترانه" },
-  { href: "/category/nozad", label: "پوشاک نوزاد" },
-  { href: "/category/madreseh", label: "لباس مدرسه" },
-  { href: "/category/majlesi", label: "لباس مجلسی" },
-  { href: "/category/set", label: "ست‌ها" },
-];
-
-const serviceLinks = [
-  { href: "/returns", label: "شرایط بازگشت کالا" },
-  { href: "/privacy", label: "حریم خصوصی" },
-  { href: "/terms", label: "قوانین و مقررات" },
-  { href: "/about", label: "درباره مینی رویال" },
-];
-
-const helpLinks = [
-  { href: "/virtual-tryon", label: "پرو آنلاین لباس" },
-  { href: "/order/track", label: "پیگیری سفارش" },
-  { href: "/faq", label: "سوالات متداول" },
-  { href: "/contact", label: "تماس با ما" },
+const categories = [...mockCategories, ...kidsCategories];
+const services = [
+  ["/returns", "شرایط بازگشت کالا"],
+  ["/privacy", "حریم خصوصی"],
+  ["/terms", "قوانین و مقررات"],
+  ["/about", "درباره مینی رویال"],
+  ["/order/track", "پیگیری سفارش"],
+  ["/faq", "سؤالات متداول"],
+  ["/contact", "تماس با ما"],
 ];
 
 export default function Footer() {
   return (
-    <footer className="border-t border-stone-200 bg-stone-50">
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {/* برند */}
+    <footer className="border-t border-stone-800 bg-[#17131d] text-stone-300">
+      <div className="mx-auto max-w-7xl px-4 py-14">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr_1fr]">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-base">
-                👑
-              </span>
-              <span className="text-lg font-extrabold text-stone-900">مینی رویال</span>
-            </div>
-            <p className="mt-3 text-sm leading-7 text-stone-500">
-              فروشگاه تخصصی پوشاک کودک و نوجوان؛ لباس‌هایی که بچه‌ها دوست دارند و
-              والدین به آن اعتماد می‌کنند. قبل از خرید، لباس رو تنِ بچت ببین!
-            </p>
+            <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full border border-amber-400 bg-stone-950 text-xl text-amber-300">♛</span><span className="text-xl font-black text-white">مینی رویال</span></div>
+            <p className="mt-5 max-w-sm text-sm leading-8 text-stone-400">بوتیک آنلاین پوشاک کودک و نوجوان؛ انتخابی باکیفیت، خوش‌دوخت و متفاوت برای استایل روزمره و لحظه‌های خاص.</p>
+            <Link href="/virtual-tryon" className="mt-6 inline-flex rounded-full bg-amber-400 px-5 py-3 text-xs font-black text-stone-950 transition hover:bg-amber-300">پرو آنلاین لباس</Link>
           </div>
-
-          {/* دسته‌ها */}
           <div>
-            <h3 className="mb-3 text-sm font-bold text-stone-900">دسته‌بندی‌ها</h3>
-            <ul className="space-y-2 text-sm text-stone-500">
-              {categoryLinks.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="transition hover:text-violet-700">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <h3 className="mb-5 text-sm font-black text-amber-300">همه دسته‌بندی‌ها</h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">{categories.map((category) => <Link key={category.slug} href={`/category/${category.slug}`} className="text-xs font-semibold text-stone-400 transition hover:text-white">{category.icon} {category.name}</Link>)}</div>
           </div>
-
-          {/* خدمات */}
           <div>
-            <h3 className="mb-3 text-sm font-bold text-stone-900">خدمات مشتریان</h3>
-            <ul className="space-y-2 text-sm text-stone-500">
-              {serviceLinks.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="transition hover:text-violet-700">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* کمک */}
-          <div>
-            <h3 className="mb-3 text-sm font-bold text-stone-900">راهنما و پشتیبانی</h3>
-            <ul className="space-y-2 text-sm text-stone-500">
-              {helpLinks.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="transition hover:text-violet-700">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-5 flex gap-2">
-              {["اینستاگرام", "تلگرام", "واتساپ"].map((s) => (
-                <a
-                  key={s}
-                  href="#"
-                  className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:border-violet-300 hover:text-violet-700"
-                >
-                  {s}
-                </a>
-              ))}
-            </div>
+            <h3 className="mb-5 text-sm font-black text-amber-300">خدمات مشتریان</h3>
+            <div className="grid gap-3">{services.map(([href, label]) => <Link key={href} href={href} className="text-xs font-semibold text-stone-400 transition hover:text-white">{label}</Link>)}</div>
           </div>
         </div>
-
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-stone-200 pt-6 text-xs text-stone-400 sm:flex-row">
-          <p>© {new Date().getFullYear()} مینی رویال — همه حقوق محفوظ است.</p>
-          <p>
-            ارسال سریع به سراسر کشور | بازگشت ۷ روزه | پرداخت در محل | پارچه باکیفیت
-          </p>
-        </div>
+        <div className="mt-12 flex flex-col justify-between gap-3 border-t border-stone-800 pt-6 text-xs text-stone-500 sm:flex-row"><span>© {new Date().getFullYear()} مینی رویال — همه حقوق محفوظ است.</span><span>ارسال سریع سراسر کشور • بازگشت ۷ روزه • پرداخت امن</span></div>
       </div>
     </footer>
   );
