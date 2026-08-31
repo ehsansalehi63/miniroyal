@@ -11,7 +11,7 @@ jobs:
       - name: Notify Hostinger webhook
         env:
           WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-          WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+          WEBHOOK_SECRET: ${{ secrets.MINIROYAL_WEBHOOK_SECRET }}
         run: |
           if [ -z "$WEBHOOK_URL" ] || [ -z "$WEBHOOK_SECRET" ]; then
             echo "Webhook secrets are not configured; Hostinger Git remains the deploy path."
