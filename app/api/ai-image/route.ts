@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         error: "خطا در پردازش تصویر هوش مصنوعی.",
-        imageUrl: "/images/products/boy-hoodie.svg",
+        imageUrl: "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88",
       },
       { status: 500 }
     );

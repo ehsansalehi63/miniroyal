@@ -21,7 +21,7 @@ export default function RootLayout({
       <head>
         {/* استایل‌های بحرانی درون‌خطی Inline Critical CSS جهت جلوگیری ۱۰۰٪ از به هم ریختگی ظاهر در شبکه */}
         <style dangerouslySetInnerHTML={{ __html: `
-          body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #fffdfa; color: #1c1917; }
+          body { margin: 0; padding: 0; background-color: #fbf8f5; color: #211b25; }
           a { text-decoration: none; color: inherit; }
           * { box-sizing: border-box; }
         ` }} />

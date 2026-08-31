@@ -3,6 +3,7 @@ export type Gender = "boy" | "girl" | "unisex";
 export interface Category {
   id: number;
   parentId: number | null;
+  parentSlug?: string;
   name: string;
   slug: string;
   description?: string;
@@ -46,6 +47,12 @@ export interface SizeChartRow {
   chestCm: string;
   lengthCm: string;
   sleeveCm?: string;
+  waistCm?: string;
+  hipCm?: string;
+  shoulderCm?: string;
+  garmentChestCm?: string;
+  garmentLengthCm?: string;
+  easeCm?: string;
 }
 
 export interface ProductFAQ {
@@ -100,6 +107,24 @@ export interface Product {
   features?: string[];
   fabricMaterial?: string;
   washCare?: string;
+  fitProfile?: {
+    garmentType: "top" | "bottom" | "dress" | "outerwear" | "set" | "baby";
+    measurementMethod: "body" | "garment";
+    preferredBodyMeasurement: "height" | "chest" | "waist" | "hip";
+    easeCm: number;
+    stretch: "none" | "low" | "medium" | "high";
+    sizeSystem: "age" | "height" | "letter" | "custom";
+    tryOnAnchors: { shoulder: number; waist: number; length: number };
+  };
+  tryOnAsset?: {
+    url: string;
+    layerType: "top" | "bottom" | "full" | "accessory";
+    anchorPoints?: {
+      shoulder: number;
+      waist: number;
+      length: number;
+    };
+  };
 }
 
 export interface CatalogFilterParams {

@@ -1,72 +1,77 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const POLLINATIONS_EDIT_URL = "https://gen.pollinations.ai/v1/images/edits";
+const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
+const MAX_DATA_URI_LENGTH = 11_000_000;
 
 function dataUriToBlob(value: string, fallbackType: string) {
   const match = value.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) throw new Error("Invalid image data.");
-  return new Blob([Buffer.from(match[2], "base64")], {
-    type: match[1] || fallbackType,
-  });
+  if (value.length > MAX_DATA_URI_LENGTH) throw new Error("Image is too large.");
+  return new Blob([Buffer.from(match[2], "base64")], { type: match[1] || fallbackType });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   const apiKey = process.env.POLLINATIONS_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { success: false, error: "POLLINATIONS_API_KEY در هاست تنظیم نشده است." },
+      { success: false, error: "کلید POLLINATIONS_API_KEY روی هاست تنظیم نشده است." },
       { status: 503 }
     );
   }
 
   try {
-    const body = await req.json();
+    const body = await request.json();
     const personImage = typeof body.personImage === "string" ? body.personImage : "";
     const garmentImage = typeof body.garmentImage === "string" ? body.garmentImage : "";
+    const requestedSize = typeof body.requestedSize === "string" ? body.requestedSize : "";
+
     if (!personImage || !garmentImage) {
-      return NextResponse.json({ success: false, error: "هر دو تصویر فرد و لباس لازم است." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "تصویر کودک و تصویر لباس هر دو الزامی هستند." },
+        { status: 400 }
+      );
     }
 
     const form = new FormData();
     form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
-    form.append("image", dataUriToBlob(garmentImage, "image/svg+xml"), "garment.svg");
+    form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
     form.append(
       "prompt",
-      "Virtual try-on: place the exact garment from the second image naturally on the person in the first image. Preserve the person's face, hair, body, pose, hands, background, lighting and identity. Replace only the clothing area. Do not add text, logos, extra limbs, or change the garment color."
+      `Professional virtual try-on for a children's clothing store. Use the second image as the exact garment reference and replace only the visible clothing on the person in the first image. Preserve the child's face, hair, body proportions, pose, hands, background, lighting and identity. Keep the exact garment color, pattern, logo placement and construction. Make the fit natural for the child's body; do not invent accessories, text, logos, extra limbs or a different garment. Requested catalog size: ${requestedSize || "not specified"}.`
     );
-    form.append("model", "kontext");
+    form.append("model", process.env.TRYON_MODEL || "kontext");
     form.append("size", "1024x1024");
 
-    const response = await fetch(POLLINATIONS_EDIT_URL, {
+    const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
       cache: "no-store",
     });
     const result = await response.json().catch(() => null);
-    const image = result?.data?.[0]?.b64_json
+    const imageUrl = result?.data?.[0]?.b64_json
       ? `data:image/png;base64,${result.data[0].b64_json}`
       : result?.data?.[0]?.url;
 
-    if (!response.ok || !image) {
-      console.error("Pollinations try-on failed:", result);
-      const providerMessage = typeof result?.error === "string"
-        ? result.error
-        : typeof result?.error?.message === "string"
-          ? result.error.message
-          : "";
+    if (!response.ok || !imageUrl) {
+      const providerMessage =
+        typeof result?.error === "string"
+          ? result.error
+          : typeof result?.error?.message === "string"
+            ? result.error.message
+            : "";
       return NextResponse.json(
-        {
-          success: false,
-          error: providerMessage || `سرویس AI پاسخ ${response.status} برگرداند.`,
-        },
+        { success: false, error: providerMessage || `سرویس AI پاسخ ${response.status} برگرداند.` },
         { status: 502 }
       );
     }
 
-    return NextResponse.json({ success: true, imageUrl: image });
+    return NextResponse.json({ success: true, imageUrl });
   } catch (error) {
     console.error("AI try-on error:", error);
-    return NextResponse.json({ success: false, error: "خطا در سرویس پرو هوش مصنوعی." }, { status: 500 });
+    const message = error instanceof Error && error.message === "Image is too large."
+      ? "حجم هر تصویر برای پردازش باید کمتر از ۸ مگابایت باشد."
+      : "خطا در سرویس پرو آنلاین. لطفاً عکس دیگری با نور بهتر امتحان کنید.";
+    return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }
