@@ -3,6 +3,7 @@ export type Gender = "boy" | "girl" | "unisex";
 export interface Category {
   id: number;
   parentId: number | null;
+  parentSlug?: string;
   name: string;
   slug: string;
   description?: string;

@@ -1,13 +1,14 @@
 import { mockCategories, mockProducts } from "./data/mockProducts";
 import { CatalogFilterParams, Category, Product } from "./types/catalog";
+import { kidsCategories } from "./kidsCategories";
 
 export async function getCategories(): Promise<Category[]> {
   // If MySQL is configured, query categories table here
-  return mockCategories;
+  return [...mockCategories, ...kidsCategories];
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  const cat = mockCategories.find((c) => c.slug === slug);
+  const cat = [...mockCategories, ...kidsCategories].find((c) => c.slug === slug);
   return cat || null;
 }
 
@@ -25,6 +26,7 @@ export async function getProducts(params: CatalogFilterParams = {}): Promise<{
     list = list.filter(
       (p) =>
         p.categorySlug === params.categorySlug ||
+        ([...mockCategories, ...kidsCategories].find((c) => c.slug === params.categorySlug)?.parentSlug === p.categorySlug) ||
         params.categorySlug === "shop"
     );
   }
@@ -114,7 +116,7 @@ export async function getProducts(params: CatalogFilterParams = {}): Promise<{
   return {
     products: list,
     total: list.length,
-    categories: mockCategories,
+    categories: [...mockCategories, ...kidsCategories],
     availableSizes,
     availableColors,
   };
@@ -176,6 +178,7 @@ export async function searchAutocomplete(query: string): Promise<{
     }));
 
   const matchingCategories = mockCategories
+    .concat(kidsCategories)
     .filter((c) => c.name.toLowerCase().includes(q))
     .map((c) => ({ name: c.name, slug: c.slug }));
 

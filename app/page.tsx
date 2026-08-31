@@ -5,6 +5,7 @@ import { getFeaturedProducts } from "./lib/catalog";
 import { mockProducts } from "./lib/data/mockProducts";
 import { getSuggestedSets } from "./lib/sets";
 import SuggestedSets from "./components/SuggestedSets";
+import { kidsCategories } from "./lib/kidsCategories";
 import { Sparkles, ShieldCheck, Truck, RotateCcw, ArrowRight } from "lucide-react";
 
 export const metadata = {
@@ -35,6 +36,32 @@ export default async function HomePage() {
       <Hero3DSlideshow />
 
       <SuggestedSets sets={getSuggestedSets(featuredProducts)} />
+
+      <section className="mx-auto max-w-7xl px-4">
+        <div className="fashion-surface overflow-hidden rounded-[2rem] p-5 sm:p-8">
+          <div className="flex flex-col justify-between gap-3 border-b border-stone-200/70 pb-5 sm:flex-row sm:items-end">
+            <div>
+              <p className="fashion-kicker text-[10px] font-black">Kids fashion edit</p>
+              <h2 className="mt-2 text-2xl font-black text-stone-900">همه دسته‌بندی‌های کودک و نوجوان</h2>
+              <p className="mt-2 text-sm text-stone-500">از نوزادی تا نوجوانی؛ لباس، کفش و اکسسوری را سریع پیدا کنید.</p>
+            </div>
+            <Link href="/shop" className="text-xs font-black text-violet-700">مشاهده کاتالوگ کامل ←</Link>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {kidsCategories.map((category) => (
+              <Link key={category.slug} href={`/category/${category.slug}`} className="group overflow-hidden rounded-2xl border border-stone-200/70 bg-white transition hover:-translate-y-1 hover:border-violet-300 hover:shadow-lg">
+                <div className="aspect-[4/3] overflow-hidden bg-stone-100">
+                  <img src={category.imageUrl} alt={category.name} className="editorial-image size-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
+                </div>
+                <div className="p-3">
+                  <span className="text-lg">{category.icon}</span>
+                  <p className="mt-1 text-xs font-black leading-5 text-stone-800 group-hover:text-violet-700">{category.name}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* مزایای رقابتی و تضمین کیفیت */}
       <section className="mx-auto max-w-7xl px-4">
