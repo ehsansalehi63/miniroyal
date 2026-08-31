@@ -10,8 +10,11 @@ export default function Hero3DSlideshow() {
   const [slides] = useState<HomeSlide[]>(() => {
     if (typeof window === "undefined") return DEFAULT_HOME_SLIDES;
     try {
-      const saved = localStorage.getItem("miniroyal_home_slides");
-      return saved ? JSON.parse(saved) as HomeSlide[] : DEFAULT_HOME_SLIDES;
+      // Version the browser cache so an older admin preview cannot keep
+      // showing retired SVG slides after a storefront deployment.
+      const saved = localStorage.getItem("miniroyal_home_slides_v2");
+      const parsed = saved ? JSON.parse(saved) as HomeSlide[] : [];
+      return parsed.length > 0 ? parsed : DEFAULT_HOME_SLIDES;
     } catch {
       return DEFAULT_HOME_SLIDES;
     }
@@ -48,7 +51,7 @@ export default function Hero3DSlideshow() {
         </div>
         <div className="relative flex justify-center lg:col-span-5">
           <div className="relative size-72 overflow-hidden rounded-3xl border-2 border-white/20 bg-stone-950/40 shadow-2xl backdrop-blur-md sm:size-96">
-            <img src={slide.image} alt={slide.title} className="size-full object-cover transition-transform duration-700 hover:scale-105" />
+            <img src={slide.image} alt={slide.title} className="editorial-image size-full object-cover transition-transform duration-700 hover:scale-105" />
           </div>
         </div>
       </div>

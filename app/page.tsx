@@ -13,12 +13,12 @@ export const metadata = {
 };
 
 const categories = [
-  { slug: "pesaraneh", name: "پسرانه", icon: "🧢", image: "/images/products/boy-hoodie.svg" },
-  { slug: "dokhtaraneh", name: "دخترانه", icon: "🎀", image: "/images/products/girl-dress.svg" },
-  { slug: "nozad", name: "نوزاد", icon: "🍼", image: "/images/products/baby-suit.svg" },
-  { slug: "set", name: "ست‌ها", icon: "✨", image: "/images/products/boy-tshirt.svg" },
-  { slug: "madreseh", name: "مدرسه", icon: "🎒", image: "/images/products/boy-jacket.svg" },
-  { slug: "majlesi", name: "مجلسی", icon: "👗", image: "/images/products/girl-skirt.svg" },
+  { slug: "pesaraneh", name: "پسرانه", icon: "🧢", image: "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88" },
+  { slug: "dokhtaraneh", name: "دخترانه", icon: "🎀", image: "https://images.unsplash.com/photo-1503919545889-aef636e3d3d5?auto=format&fit=crop&w=1000&q=88" },
+  { slug: "nozad", name: "نوزاد", icon: "🍼", image: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=1000&q=88" },
+  { slug: "set", name: "ست‌ها", icon: "✨", image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=88" },
+  { slug: "madreseh", name: "مدرسه", icon: "🎒", image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=1000&q=88" },
+  { slug: "majlesi", name: "مجلسی", icon: "👗", image: "https://images.unsplash.com/photo-1503919545889-aef636e3d3d5?auto=format&fit=crop&w=1000&q=88" },
 ];
 
 export default async function HomePage() {
@@ -30,7 +30,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-10">
       {/* اسلاید شو ۳ بعدی هیرو */}
       <Hero3DSlideshow />
 
@@ -103,13 +103,13 @@ export default async function HomePage() {
             <Link
               key={c.slug}
               href={`/category/${c.slug}`}
-              className="group relative overflow-hidden rounded-3xl border border-stone-200 bg-white p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-violet-300"
+              className="fashion-surface group relative overflow-hidden rounded-3xl p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-violet-300 hover:shadow-xl"
             >
               <div className="mx-auto size-16 overflow-hidden rounded-2xl shadow-md">
                 <img
                   src={c.image}
                   alt={c.name}
-                  className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="editorial-image size-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
               </div>
               <span className="mt-3 block text-xs font-black text-stone-900 group-hover:text-violet-700">

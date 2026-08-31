@@ -1,17 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fffdfa;
-  --foreground: #1c1917;
+  --background: #fbf8f5;
+  --foreground: #211b25;
+  --brand: #6d28d9;
+  --brand-deep: #3b0764;
+  --ink-muted: #746b78;
 }
 
 body {
-  background-color: var(--background);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(233, 213, 255, 0.34), transparent 28rem),
+    radial-gradient(circle at 94% 18%, rgba(251, 207, 232, 0.27), transparent 24rem),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-vazirmatn), ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+}
+
+main {
+  position: relative;
+}
+
+main::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 22rem;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+img {
+  color: var(--ink-muted);
+}
+
+.fashion-surface {
+  border: 1px solid rgba(231, 229, 228, 0.8);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 50px rgba(76, 29, 149, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.fashion-kicker {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.editorial-image {
+  object-position: center;
+  filter: saturate(0.94) contrast(1.02);
 }
 
 ::selection {

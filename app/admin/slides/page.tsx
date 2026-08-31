@@ -7,17 +7,17 @@ export default function AdminSlidesPage() {
   const [slides, setSlides] = useState<HomeSlide[]>(() => {
     if (typeof window === "undefined") return DEFAULT_HOME_SLIDES;
     try {
-      const saved = localStorage.getItem("miniroyal_home_slides");
+      const saved = localStorage.getItem("miniroyal_home_slides_v2");
       return saved ? JSON.parse(saved) as HomeSlide[] : DEFAULT_HOME_SLIDES;
     } catch { return DEFAULT_HOME_SLIDES; }
   });
 
   const update = (id: number, key: keyof HomeSlide, value: string) =>
     setSlides((items) => items.map((item) => item.id === id ? { ...item, [key]: value } : item));
-  const save = () => localStorage.setItem("miniroyal_home_slides", JSON.stringify(slides));
+  const save = () => localStorage.setItem("miniroyal_home_slides_v2", JSON.stringify(slides));
   const reset = () => {
     setSlides(DEFAULT_HOME_SLIDES);
-    localStorage.removeItem("miniroyal_home_slides");
+    localStorage.removeItem("miniroyal_home_slides_v2");
   };
 
   return (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Product } from "../lib/types/catalog";
 import { calculateDiscountPercent, formatToman, toPersianDigits } from "../lib/utils";
+import { PRODUCT_FALLBACKS } from "../lib/imageCatalog";
 
 interface ProductCardProps {
   product: Product;
@@ -12,10 +13,12 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const fallbackImg =
     product.gender === "girl"
-      ? "/images/products/girl-dress.svg"
+      ? PRODUCT_FALLBACKS.girl
       : product.categorySlug === "nozad"
-      ? "/images/products/baby-suit.svg"
-      : "/images/products/boy-hoodie.svg";
+      ? PRODUCT_FALLBACKS.baby
+      : product.fitProfile?.garmentType === "outerwear"
+      ? PRODUCT_FALLBACKS.outerwear
+      : PRODUCT_FALLBACKS.boy;
 
   const [imgSrc, setImgSrc] = useState(product.images[0] || fallbackImg);
 
@@ -37,7 +40,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             src={imgSrc}
             alt={product.title}
             onError={() => setImgSrc(fallbackImg)}
-            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            className="editorial-image h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         </Link>
