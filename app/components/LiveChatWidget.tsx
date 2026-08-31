@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, X, Send, Bot, User, Sparkles, CheckCircle2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+
+const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/\D/g, "");
+const whatsappHref = whatsappNumber
+  ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("سلام، برای انتخاب لباس و سایز راهنمایی می‌خواهم.")}`
+  : "#";
 
 interface Message {
   id: string;
@@ -155,6 +160,9 @@ export default function LiveChatWidget() {
               <Send className="size-4 rotate-180" />
             </button>
           </form>
+          <a href={whatsappHref} target="_blank" rel="noreferrer" className={`m-3 flex items-center justify-center rounded-xl py-3 text-xs font-black text-white ${whatsappNumber ? "bg-emerald-600 hover:bg-emerald-700" : "cursor-not-allowed bg-stone-300"}`} aria-disabled={!whatsappNumber}>
+            انتقال مستقیم گفتگو به واتساپ
+          </a>
         </div>
       )}
     </div>

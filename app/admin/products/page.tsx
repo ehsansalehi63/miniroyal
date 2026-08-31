@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { mockProducts } from "../../lib/data/mockProducts";
-import { Product, SizeChartRow } from "../../lib/types/catalog";
+import { Product, SizeChartRow, Variant } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
 import DropzoneImageUploader from "../../components/DropzoneImageUploader";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
@@ -19,6 +19,9 @@ export default function AdminProductsPage() {
   const [basePrice, setBasePrice] = useState(380000);
   const [salePrice, setSalePrice] = useState(295000);
   const [sku, setSku] = useState("KID-BOY-NEW");
+  const [variants, setVariants] = useState<Variant[]>([
+    { id: 1, productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 },
+  ]);
   const [images, setImages] = useState<string[]>([
     "/images/products/boy-hoodie.svg",
   ]);
@@ -51,7 +54,7 @@ export default function AdminProductsPage() {
       setProducts(
         products.map((p) =>
           p.id === editingProduct.id
-          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, sizeChartJson: sizeChart, fitProfile }
+          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile }
             : p
         )
       );
@@ -83,7 +86,7 @@ export default function AdminProductsPage() {
         sizeChartJson: sizeChart,
         fitProfile,
         images: finalImages,
-        variants: [{ id: Date.now(), productId: Date.now(), sku: `${sku}-01`, size: "2-3 سال", color: "سفید", stock: 10, priceAdjustment: 0 }],
+        variants: variants.map((variant) => ({ ...variant, id: Date.now() + variant.id, productId: Date.now(), sku: variant.sku || `${sku}-${variant.id}` })),
         publishedAt: new Date().toISOString().split("T")[0],
       };
       setProducts([newProd, ...products]);
@@ -100,6 +103,7 @@ export default function AdminProductsPage() {
     setBasePrice(p.basePrice);
     setSalePrice(p.salePrice ?? p.basePrice);
     setSku(p.sku);
+    setVariants(p.variants?.length ? p.variants : [{ id: p.id * 1000, productId: p.id, sku: `${p.sku}-01`, size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
     setImages(p.images || []);
     setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : [{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
     setFitProfile(p.fitProfile ?? fitProfile);
@@ -127,6 +131,7 @@ export default function AdminProductsPage() {
             setEditingProduct(null);
             setTitle("");
             setImages(["/images/products/boy-hoodie.svg"]);
+            setVariants([{ id: Date.now(), productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
             setSizeChart([{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
             setFitProfile({ garmentType: "top", measurementMethod: "garment", preferredBodyMeasurement: "height", easeCm: 7, stretch: "low", sizeSystem: "age", tryOnAnchors: { shoulder: 50, waist: 52, length: 68 } });
             setShowFormModal(true);
@@ -235,6 +240,22 @@ export default function AdminProductsPage() {
 
               {/* آپلود Drag & Drop تصاویر */}
               <DropzoneImageUploader images={images} onChange={setImages} />
+
+              <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4" dir="rtl">
+                <div className="flex items-center justify-between gap-3">
+                  <div><h4 className="text-xs font-black text-sky-950">رنگ‌ها، سایزها و موجودی انبار</h4><p className="mt-1 text-[10px] text-sky-800">برای هر ترکیب رنگ/سایز یک کد کالا ثبت کنید.</p></div>
+                  <button type="button" onClick={() => setVariants([...variants, { id: Date.now(), productId: 0, sku: `${sku}-${variants.length + 1}`, size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }])} className="rounded-lg bg-sky-700 px-3 py-2 text-[10px] font-bold text-white">افزودن ترکیب</button>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {variants.map((variant, index) => (
+                    <div key={variant.id} className="grid gap-2 sm:grid-cols-6">
+                      {(["sku", "size", "color", "colorCode", "stock", "priceAdjustment"] as const).map((field) => (
+                        <input key={field} required={field !== "priceAdjustment"} type={field === "stock" || field === "priceAdjustment" ? "number" : field === "colorCode" ? "color" : "text"} placeholder={{ sku: "کد کالا", size: "سایز", color: "رنگ", colorCode: "رنگ", stock: "موجودی", priceAdjustment: "اختلاف قیمت" }[field]} value={variant[field]} onChange={(e) => setVariants(variants.map((item, i) => i === index ? { ...item, [field]: field === "stock" || field === "priceAdjustment" ? Number(e.target.value) : e.target.value } : item))} className="rounded-lg border border-sky-200 bg-white p-2 text-[10px] outline-none" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4" dir="rtl">
                 <div className="flex items-center justify-between gap-2">

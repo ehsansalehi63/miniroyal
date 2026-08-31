@@ -9,17 +9,17 @@ interface Props {
 }
 
 export default function VirtualTryonSelector({ products }: Props) {
-  const [selectedId, setSelectedId] = useState(products[0]?.id ?? 0);
-  const product = products.find((item) => item.id === selectedId) ?? products[0];
-  if (!product) return null;
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const product = selectedId === null ? undefined : products.find((item) => item.id === selectedId);
+  if (!products.length) return <p className="rounded-2xl bg-amber-50 p-4 text-center text-sm">فعلاً محصول قابل پرویی در کاتالوگ موجود نیست.</p>;
 
   return (
     <div dir="rtl" className="space-y-4">
       <label className="block rounded-2xl border border-violet-200 bg-white p-4 text-xs font-black text-stone-800 shadow-sm">
-        اول لباس موردنظر برای پرو را انتخاب کنید
+        مرحلهٔ اول: لباس موردنظر برای پرو را انتخاب کنید
         <select
-          value={selectedId}
-          onChange={(event) => setSelectedId(Number(event.target.value))}
+          value={selectedId ?? ""}
+          onChange={(event) => setSelectedId(event.target.value ? Number(event.target.value) : null)}
           className="mt-2 w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm outline-none focus:border-violet-500"
         >
           {products.map((item) => (
@@ -32,7 +32,13 @@ export default function VirtualTryonSelector({ products }: Props) {
           عکس لباس، جدول اندازه و پیشنهاد سایز همین محصول در پرو استفاده می‌شود.
         </span>
       </label>
-      <VirtualTryonBox key={product.id} product={product} />
+      {product ? (
+        <VirtualTryonBox key={product.id} product={product} />
+      ) : (
+        <div className="rounded-3xl border border-dashed border-violet-300 bg-violet-50 p-10 text-center text-sm font-bold text-violet-900">
+          برای فعال‌شدن آپلود عکس و پیشنهاد سایز، ابتدا یک محصول را انتخاب کنید.
+        </div>
+      )}
     </div>
   );
 }
