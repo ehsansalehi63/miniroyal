@@ -100,6 +100,15 @@ export interface Product {
   features?: string[];
   fabricMaterial?: string;
   washCare?: string;
+  tryOnAsset?: {
+    url: string;
+    layerType: "top" | "bottom" | "full" | "accessory";
+    anchorPoints?: {
+      shoulder: number;
+      waist: number;
+      length: number;
+    };
+  };
 }
 
 export interface CatalogFilterParams {

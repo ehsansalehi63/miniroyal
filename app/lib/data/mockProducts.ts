@@ -94,6 +94,10 @@ export const mockProducts: Product[] = [
     ratingCount: 34,
     status: "active",
     fitType: "normal",
+    sizeChartJson: [
+      { size: "۴ سال", ageRange: "۳ تا ۴ سال", heightCm: "۹۸ تا ۱۰۴", chestCm: "۵۴ تا ۵۶", lengthCm: "۴۲" },
+      { size: "۶ سال", ageRange: "۵ تا ۶ سال", heightCm: "۱۰۵ تا ۱۱۲", chestCm: "۵۷ تا ۶۰", lengthCm: "۴۶" },
+    ],
     images: ["/images/products/boy-hoodie.svg"],
     features: ["۱۰۰٪ پنبه ضد حساسیت", "داخل کرکی گرم", "قابلیت شستشو با ماشین لباسشویی"],
     variants: [
@@ -127,6 +131,10 @@ export const mockProducts: Product[] = [
     ratingCount: 42,
     status: "active",
     fitType: "normal",
+    sizeChartJson: [
+      { size: "۳ سال", ageRange: "۲ تا ۳ سال", heightCm: "۹۲ تا ۹۸", chestCm: "۵۲ تا ۵۴", lengthCm: "۵۰" },
+      { size: "۵ سال", ageRange: "۴ تا ۵ سال", heightCm: "۹۹ تا ۱۰۶", chestCm: "۵۴ تا ۵۷", lengthCm: "۵۵" },
+    ],
     images: ["/images/products/girl-dress.svg"],
     features: ["پارچه کرپ حریر درجه یک", "آستر ۱۰۰٪ پنبه ضد خارش", "زیپ مخفی پشت لباس"],
     variants: [
@@ -159,6 +167,10 @@ export const mockProducts: Product[] = [
     ratingCount: 19,
     status: "active",
     fitType: "normal",
+    sizeChartJson: [
+      { size: "۰ تا ۳ ماه", ageRange: "۰ تا ۳ ماه", heightCm: "۵۰ تا ۶۲", chestCm: "۳۸ تا ۴۲", lengthCm: "۳۴" },
+      { size: "۳ تا ۶ ماه", ageRange: "۳ تا ۶ ماه", heightCm: "۶۳ تا ۶۸", chestCm: "۴۳ تا ۴۵", lengthCm: "۳۸" },
+    ],
     images: ["/images/products/baby-suit.svg"],
     features: ["نخ پنبه ارگانیک ۱۰۰٪", "دکمه‌های آسان برای تعویض پوشک", "کلاه نخی محافظ سر نوزاد"],
     variants: [
@@ -191,6 +203,10 @@ export const mockProducts: Product[] = [
     ratingCount: 28,
     status: "active",
     fitType: "loose",
+    sizeChartJson: [
+      { size: "۸ سال", ageRange: "۷ تا ۸ سال", heightCm: "۱۱۸ تا ۱۲۸", chestCm: "۶۱ تا ۶۵", lengthCm: "۵۴" },
+      { size: "۱۰ سال", ageRange: "۹ تا ۱۰ سال", heightCm: "۱۲۹ تا ۱۳۸", chestCm: "۶۶ تا ۷۰", lengthCm: "۵۹" },
+    ],
     images: ["/images/products/boy-hoodie.svg"],
     features: ["رویه‌ ضدآب شمعی", "کلاه جداشونده", "سرآستین‌های کشباف بادگیر"],
     variants: [
