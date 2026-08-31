@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { mockProducts } from "../../lib/data/mockProducts";
-import { Product } from "../../lib/types/catalog";
+import { Product, SizeChartRow } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
 import DropzoneImageUploader from "../../components/DropzoneImageUploader";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
@@ -22,6 +22,9 @@ export default function AdminProductsPage() {
   const [images, setImages] = useState<string[]>([
     "/images/products/boy-hoodie.svg",
   ]);
+  const [sizeChart, setSizeChart] = useState<SizeChartRow[]>([
+    { size: "۴ سال", ageRange: "۳ تا ۴ سال", heightCm: "۹۸ تا ۱۰۴", chestCm: "۵۴ تا ۵۶", lengthCm: "۴۲" },
+  ]);
 
   const filtered = products.filter(
     (p) =>
@@ -39,7 +42,7 @@ export default function AdminProductsPage() {
       setProducts(
         products.map((p) =>
           p.id === editingProduct.id
-            ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages }
+          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, sizeChartJson: sizeChart }
             : p
         )
       );
@@ -68,6 +71,7 @@ export default function AdminProductsPage() {
         ratingCount: 1,
         status: "active",
         fitType: "normal",
+        sizeChartJson: sizeChart,
         images: finalImages,
         variants: [{ id: Date.now(), productId: Date.now(), sku: `${sku}-01`, size: "2-3 سال", color: "سفید", stock: 10, priceAdjustment: 0 }],
         publishedAt: new Date().toISOString().split("T")[0],
@@ -87,6 +91,7 @@ export default function AdminProductsPage() {
     setSalePrice(p.salePrice ?? p.basePrice);
     setSku(p.sku);
     setImages(p.images || []);
+    setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : [{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
     setShowFormModal(true);
   };
 
@@ -111,6 +116,7 @@ export default function AdminProductsPage() {
             setEditingProduct(null);
             setTitle("");
             setImages(["/images/products/boy-hoodie.svg"]);
+            setSizeChart([{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
             setShowFormModal(true);
           }}
           className="flex items-center gap-1.5 rounded-2xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
@@ -217,6 +223,25 @@ export default function AdminProductsPage() {
 
               {/* آپلود Drag & Drop تصاویر */}
               <DropzoneImageUploader images={images} onChange={setImages} />
+
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4" dir="rtl">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-black text-emerald-950">اندازه‌های واقعی لباس</h4>
+                    <p className="mt-1 text-[10px] text-emerald-800">این جدول مستقیماً برای پیشنهاد سایز و دقت پرو استفاده می‌شود.</p>
+                  </div>
+                  <button type="button" onClick={() => setSizeChart([...sizeChart, { size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }])} className="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-bold text-white">افزودن سایز</button>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {sizeChart.map((row, index) => (
+                    <div key={index} className="grid gap-2 sm:grid-cols-5">
+                      {(["size", "ageRange", "heightCm", "chestCm", "lengthCm"] as const).map((field) => (
+                        <input key={field} required placeholder={{ size: "سایز", ageRange: "بازه سنی", heightCm: "قد (cm)", chestCm: "سینه (cm)", lengthCm: "قد لباس (cm)" }[field]} value={row[field]} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, [field]: e.target.value } : item))} className="rounded-lg border border-emerald-200 bg-white p-2 text-[10px] outline-none" />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
