@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
-import { query } from "@/app/lib/mysql";
+import { inspectDatabase, query } from "@/app/lib/mysql";
 import { getFeaturedProducts } from "@/app/lib/catalog";
 
 export async function GET() {
   const timestamp = new Date().toISOString();
   const checks: Record<string, { status: "ok" | "warning" | "error"; detail: string }> = {};
+  const databaseInspection = await inspectDatabase();
+  checks["database_connection"] = {
+    status: databaseInspection.ok ? "ok" : "error",
+    detail: databaseInspection.ok
+      ? `Connected to ${databaseInspection.databaseName}; order tables are available.`
+      : `Database check failed${databaseInspection.errorCode ? ` (${databaseInspection.errorCode})` : ""}. Missing tables: ${databaseInspection.missingTables.join(", ")}.`,
+  };
 
   // ۱. تست دیتابیس MySQL
   try {
