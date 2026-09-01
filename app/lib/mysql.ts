@@ -32,11 +32,25 @@ export async function inspectDatabase() {
     const tables = tableRows.map((row) => row.tableName);
     const requiredTables = ["customers", "orders", "order_items"];
     const missingTables = requiredTables.filter((table) => !tables.includes(table));
+    let orderQueryError: string | undefined;
+    if (missingTables.length === 0) {
+      try {
+        await connection.query(
+          `SELECT order_number, recipient_name, phone, final_total, order_status,
+                  payment_method, shipping_provider, payment_status, created_at
+           FROM orders LIMIT 1`
+        );
+      } catch (error) {
+        const queryError = error as NodeJS.ErrnoException;
+        orderQueryError = queryError.code ?? "ORDER_QUERY_ERROR";
+      }
+    }
     return {
-      ok: missingTables.length === 0,
+      ok: missingTables.length === 0 && !orderQueryError,
       databaseName: databaseRows[0]?.databaseName ?? null,
       tables,
       missingTables,
+      orderQueryError,
     };
   } catch (error) {
     const dbError = error as NodeJS.ErrnoException;

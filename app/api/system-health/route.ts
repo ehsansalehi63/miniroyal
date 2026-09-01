@@ -10,7 +10,7 @@ export async function GET() {
     status: databaseInspection.ok ? "ok" : "error",
     detail: databaseInspection.ok
       ? `Connected to ${databaseInspection.databaseName}; order tables are available.`
-      : `Database check failed${databaseInspection.errorCode ? ` (${databaseInspection.errorCode})` : ""}. Missing tables: ${databaseInspection.missingTables.join(", ")}.`,
+      : `Database check failed${databaseInspection.errorCode ? ` (${databaseInspection.errorCode})` : ""}${databaseInspection.orderQueryError ? ` (${databaseInspection.orderQueryError})` : ""}. Missing tables: ${databaseInspection.missingTables.join(", ")}.`,
   };
 
   // ۱. تست دیتابیس MySQL
