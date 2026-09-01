@@ -22,8 +22,8 @@ export default function Error({
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center p-6 text-center font-sans dir-rtl">
-      <div className="grid size-20 place-items-center rounded-3xl bg-violet-100 text-3xl shadow-lg">
-        👑
+      <div className="grid size-20 overflow-hidden rounded-3xl bg-violet-100 shadow-lg">
+        <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
       </div>
       <h1 className="mt-6 text-2xl font-black text-stone-900 sm:text-3xl">
         در حال بارگذاری سریع فروشگاه مینی رویال...

@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="grid min-h-screen place-items-center bg-stone-900 text-white font-sans dir-rtl">
         <div className="text-center">
-          <span className="text-4xl">👑</span>
+          <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="mx-auto size-16 rounded-2xl object-cover" />
           <p className="mt-4 text-xs font-bold text-stone-400">در حال بارگذاری پنل مدیریت مینی رویال...</p>
         </div>
       </div>
@@ -92,9 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="grid min-h-screen place-items-center bg-stone-950 p-4 font-sans text-stone-900 dir-rtl">
         <div className="w-full max-w-md overflow-hidden rounded-3xl border border-stone-800 bg-stone-900 p-8 shadow-2xl">
           <div className="text-center">
-            <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-3xl shadow-lg">
-              👑
-            </span>
+            <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="mx-auto size-16 rounded-2xl object-cover shadow-lg" />
             <h1 className="mt-4 text-2xl font-black text-white">ورود مدیر سیستم</h1>
             <p className="mt-1 text-xs text-stone-400">
               جهت مدیریت کامل فروشگاه، محصولات، سفارشات و تنظیمات وارد شوید.
@@ -160,8 +158,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="sticky top-0 h-screen w-64 shrink-0 border-l border-stone-200 bg-stone-900 text-white flex flex-col p-4">
         <div className="flex items-center justify-between border-b border-stone-800 pb-4">
           <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-xl shadow-md">
-              👑
+            <span className="grid size-10 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-xl shadow-md">
+              <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
             </span>
             <div>
               <span className="block font-black text-sm text-white">مدیریت مینی رویال</span>

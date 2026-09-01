@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Product, Variant } from "../../lib/types/catalog";
 import { toPersianDigits } from "../../lib/utils";
+import { useCart } from "../../lib/cart";
 
 interface ProductVariantsClientProps {
   product: Product;
@@ -25,6 +26,7 @@ export default function ProductVariantsClient({ product }: ProductVariantsClient
   const [notifyPhone, setNotifyPhone] = useState<string>("");
   const [notifySuccess, setNotifySuccess] = useState<boolean>(false);
   const [addedToCart, setAddedToCart] = useState<boolean>(false);
+  const { addItem } = useCart();
 
   // Find matching variant
   const currentVariant: Variant | undefined = product.variants.find(
@@ -35,6 +37,7 @@ export default function ProductVariantsClient({ product }: ProductVariantsClient
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
+    addItem(product, currentVariant, quantity);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 3000);
   };

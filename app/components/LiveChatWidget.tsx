@@ -86,8 +86,8 @@ export default function LiveChatWidget() {
           {/* هدر چت */}
           <div className="flex items-center justify-between bg-gradient-to-r from-violet-700 via-fuchsia-600 to-violet-700 p-4 text-white">
             <div className="flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-2xl bg-white/20 text-xl shadow-inner">
-                👑
+              <span className="grid size-10 overflow-hidden rounded-2xl bg-white/20 shadow-inner">
+                <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
               </span>
               <div>
                 <span className="block text-sm font-black">پشتیبانی آنلاین مینی رویال</span>

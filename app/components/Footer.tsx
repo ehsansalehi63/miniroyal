@@ -19,7 +19,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-14">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr_1fr]">
           <div>
-            <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full border border-amber-400 bg-stone-950 text-xl text-amber-300">♛</span><span className="text-xl font-black text-white">مینی رویال</span></div>
+            <div className="flex items-center gap-3"><span className="grid size-12 overflow-hidden rounded-full border border-amber-400 bg-stone-950"><img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" /></span><span className="text-xl font-black text-white">مینی رویال</span></div>
             <p className="mt-5 max-w-sm text-sm leading-8 text-stone-400">بوتیک آنلاین پوشاک کودک و نوجوان؛ انتخابی باکیفیت، خوش‌دوخت و متفاوت برای استایل روزمره و لحظه‌های خاص.</p>
             <Link href="/virtual-tryon" className="mt-6 inline-flex rounded-full bg-amber-400 px-5 py-3 text-xs font-black text-stone-950 transition hover:bg-amber-300">پرو آنلاین لباس</Link>
           </div>
