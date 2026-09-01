@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
 const MAX_DATA_URI_LENGTH = 11_000_000;
 const DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const DEFAULT_DAHL_URL = "https://inference.dahl.global/v1/chat/completions";
 
 function dataUriToBlob(value: string, fallbackType: string) {
   const match = value.match(/^data:([^;]+);base64,(.+)$/);
@@ -47,6 +48,56 @@ async function improvePromptWithOpenRouter(personImage: string, garmentImage: st
   return typeof prompt === "string" && prompt.trim() ? prompt.trim().slice(0, 1800) : null;
 }
 
+async function improvePromptWithDahl(personImage: string, garmentImage: string, requestedSize: string) {
+  const apiKey = process.env.DAHL_API_KEY;
+  const model = process.env.DAHL_VISION_MODEL;
+  if (!apiKey || !model) return null;
+
+  const response = await fetch(process.env.DAHL_API_URL || DEFAULT_DAHL_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Analyze the first image as the child/person and the second image as the exact garment. Return only a concise English image-edit prompt for a children's virtual try-on. Preserve identity, face, hair, pose, hands, body proportions, background and lighting. Replace only visible clothing with the exact garment, including color, pattern, seams and logos. Do not invent accessories or text. Requested catalog size: ${requestedSize || "not specified"}.`,
+          },
+          { type: "image_url", image_url: { url: personImage } },
+          { type: "image_url", image_url: { url: garmentImage } },
+        ],
+      }],
+      temperature: 0.2,
+      max_tokens: 350,
+    }),
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+  const result = await response.json().catch(() => null);
+  const prompt = result?.choices?.[0]?.message?.content;
+  return typeof prompt === "string" && prompt.trim() ? prompt.trim().slice(0, 1800) : null;
+}
+
+async function improvePrompt(personImage: string, garmentImage: string, requestedSize: string) {
+  try {
+    const dahlPrompt = await improvePromptWithDahl(personImage, garmentImage, requestedSize);
+    if (dahlPrompt) return dahlPrompt;
+  } catch (error) {
+    console.warn("Dahl vision analysis unavailable:", error);
+  }
+  try {
+    return await improvePromptWithOpenRouter(personImage, garmentImage, requestedSize);
+  } catch (error) {
+    console.warn("OpenRouter vision analysis unavailable:", error);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const apiKey = process.env.POLLINATIONS_API_KEY;
   if (!apiKey) {
@@ -74,11 +125,7 @@ export async function POST(request: NextRequest) {
     form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
     const fallbackPrompt = `Professional virtual try-on for a children's clothing store. Use the second image as the exact garment reference and replace only the visible clothing on the person in the first image. Preserve the child's face, hair, body proportions, pose, hands, background, lighting and identity. Keep the exact garment color, pattern, logo placement and construction. Make the fit natural for the child's body; do not invent accessories, text, logos, extra limbs or a different garment. Requested catalog size: ${requestedSize || "not specified"}.`;
     let prompt = fallbackPrompt;
-    try {
-      prompt = (await improvePromptWithOpenRouter(personImage, garmentImage, requestedSize)) || fallbackPrompt;
-    } catch (analysisError) {
-      console.warn("OpenRouter vision analysis unavailable; using fallback prompt:", analysisError);
-    }
+    prompt = (await improvePrompt(personImage, garmentImage, requestedSize)) || fallbackPrompt;
     form.append("prompt", prompt);
     form.append("model", process.env.TRYON_MODEL || "kontext");
     form.append("size", "1024x1024");
