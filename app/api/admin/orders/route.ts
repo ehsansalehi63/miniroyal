@@ -6,6 +6,8 @@ export async function GET() {
     return NextResponse.json({ success: true, orders: await listOrders() });
   } catch (error) {
     console.error("Admin orders failed:", error);
+    const code = error instanceof Error && "code" in error ? String(error.code) : "ORDER_QUERY_ERROR";
+    console.error("Admin orders error code:", code);
     return NextResponse.json({ success: false, error: "دریافت سفارش‌ها از دیتابیس ممکن نیست." }, { status: 503 });
   }
 }
