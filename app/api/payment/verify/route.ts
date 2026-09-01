@@ -5,6 +5,7 @@ import {
   toRial,
   ZARINPAL_LIVE_API,
 } from "@/app/lib/payment";
+import { findOrder, updatePayment } from "@/app/lib/orders";
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
@@ -18,10 +19,15 @@ export async function GET(req: NextRequest) {
     return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
   }
   if (params.get("Status") !== "OK") {
+    await updatePayment(orderNumber, { paymentStatus: "cancelled" }).catch(() => undefined);
     return redirectTo(`/payment/verify?status=cancelled&orderNumber=${encodeURIComponent(orderNumber)}`);
   }
 
   try {
+    const order = await findOrder(orderNumber);
+    if (!order || Number(order.final_total) !== amount) {
+      return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
+    }
     const response = await fetch(`${ZARINPAL_LIVE_API}/verify.json`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -37,8 +43,10 @@ export async function GET(req: NextRequest) {
 
     if (!response.ok || ![100, 101].includes(Number(result?.data?.code)) || !refId) {
       console.error("ZarinPal verify failed:", result);
+      await updatePayment(orderNumber, { paymentStatus: "failed" }).catch(() => undefined);
       return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
     }
+    await updatePayment(orderNumber, { paymentStatus: "paid", refId: String(refId) });
 
     return redirectTo(
       `/order/success/${encodeURIComponent(orderNumber)}?status=paid&refId=${encodeURIComponent(String(refId))}`

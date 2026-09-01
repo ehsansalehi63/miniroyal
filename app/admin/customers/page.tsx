@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatToman, toPersianDigits } from "../../lib/utils";
 import { Users, Shield, Award } from "lucide-react";
 
@@ -40,6 +40,22 @@ export default function AdminCustomersPage() {
       totalSpent: 18500000,
     },
   ]);
+
+  useEffect(() => {
+    fetch("/api/admin/customers")
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success && Array.isArray(result.customers)) {
+          setCustomers((current) => result.customers.map((customer: typeof current[number]) => ({
+            ...customer,
+            role: customer.role || "customer",
+            clubTier: customer.clubTier || "silver",
+            points: customer.points || 0,
+          })));
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   const handleRoleChange = (id: number, newRole: string) => {
     setCustomers(customers.map((c) => (c.id === id ? { ...c, role: newRole } : c)));

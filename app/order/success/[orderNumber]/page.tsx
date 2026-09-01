@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { formatToman } from "../../../lib/utils";
@@ -25,7 +25,15 @@ export default function OrderSuccessPage() {
   const params = useParams();
   const orderNumber = params.orderNumber as string;
 
-  const [order] = useState<OrderData>(() => {
+  const [order, setOrder] = useState<OrderData | null>(null);
+  useEffect(() => {
+    fetch(`/api/orders?identifier=${encodeURIComponent(orderNumber)}`)
+      .then((response) => response.json())
+      .then((result) => setOrder(result.success ? result.order : null))
+      .catch(() => setOrder(null));
+  }, [orderNumber]);
+  /*
+  const [legacyOrder] = useState<OrderData>(() => {
     if (typeof window !== "undefined") {
       const orders = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
       const found = orders.find((o: OrderData) => o.orderNumber === orderNumber);
@@ -46,6 +54,7 @@ export default function OrderSuccessPage() {
       createdAt: new Date().toISOString(),
     };
   });
+  */
 
   if (!order) return null;
 

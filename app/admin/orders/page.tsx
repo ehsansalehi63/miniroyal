@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatToman } from "../../lib/utils";
 
 interface OrderRecord {
@@ -44,6 +44,15 @@ export default function AdminOrdersPage() {
     ];
   });
 
+  useEffect(() => {
+    fetch("/api/admin/orders")
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success && Array.isArray(result.orders)) setOrders(result.orders);
+      })
+      .catch(() => undefined);
+  }, []);
+
   const [filterStatus, setFilterStatus] = useState("all");
 
   const handleStatusChange = (orderNumber: string, newStatus: string) => {
@@ -51,6 +60,11 @@ export default function AdminOrdersPage() {
       o.orderNumber === orderNumber ? { ...o, status: newStatus } : o
     );
     setOrders(updated);
+    fetch("/api/admin/orders", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderNumber, status: newStatus }),
+    }).catch(() => undefined);
     if (typeof window !== "undefined") {
       localStorage.setItem("miniroyal_orders", JSON.stringify(updated));
     }

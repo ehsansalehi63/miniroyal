@@ -1,0 +1,40 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createOrder, findOrder } from "@/app/lib/orders";
+import { mockProducts } from "@/app/lib/data/mockProducts";
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    if (!body.recipientName || !body.phone || !body.address || !body.postalCode ||
+        !Array.isArray(body.items) || body.items.length === 0) {
+      return NextResponse.json({ success: false, error: "اطلاعات سفارش کامل نیست." }, { status: 400 });
+    }
+    const items = body.items.map((item: unknown) => {
+      const raw = item as { product?: { id?: unknown }; variant?: { id?: unknown }; quantity?: unknown };
+      const product = mockProducts.find((candidate) => candidate.id === Number(raw.product?.id));
+      const variant = product?.variants.find((candidate) => candidate.id === Number(raw.variant?.id));
+      const quantity = Number(raw.quantity);
+      if (!product || !variant || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+        throw new Error("کالا یا تنوع سفارش معتبر نیست.");
+      }
+      return { product, variant, quantity };
+    });
+    const result = await createOrder({ ...body, items });
+    return NextResponse.json({ success: true, ...result });
+  } catch (error) {
+    console.error("Create order failed:", error);
+    return NextResponse.json({ success: false, error: "ثبت سفارش در دیتابیس انجام نشد." }, { status: 503 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const identifier = request.nextUrl.searchParams.get("identifier")?.trim();
+  if (!identifier) return NextResponse.json({ success: false, error: "شماره سفارش یا موبایل الزامی است." }, { status: 400 });
+  try {
+    const order = await findOrder(identifier);
+    return NextResponse.json({ success: true, order: order ?? null });
+  } catch (error) {
+    console.error("Find order failed:", error);
+    return NextResponse.json({ success: false, error: "دسترسی به سفارش‌ها ممکن نیست." }, { status: 503 });
+  }
+}

@@ -6,6 +6,7 @@ import {
   ZARINPAL_LIVE_API,
   ZARINPAL_LIVE_START,
 } from "@/app/lib/payment";
+import { findOrder, updatePayment } from "@/app/lib/orders";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +24,10 @@ export async function POST(req: NextRequest) {
 
     if (!orderNumber || !Number.isSafeInteger(amount) || amount < 1000) {
       return NextResponse.json({ success: false, error: "اطلاعات سفارش یا مبلغ معتبر نیست." }, { status: 400 });
+    }
+    const order = await findOrder(orderNumber);
+    if (!order || Number(order.final_total) !== amount || order.payment_status === "paid") {
+      return NextResponse.json({ success: false, error: "سفارش معتبر یا قابل پرداخت نیست." }, { status: 400 });
     }
 
     const state = createPaymentState(orderNumber, amount);
@@ -49,6 +54,7 @@ export async function POST(req: NextRequest) {
       console.error("ZarinPal request failed:", result);
       return NextResponse.json({ success: false, error: "دریافت مجوز پرداخت از زرین‌پال انجام نشد." }, { status: 502 });
     }
+    await updatePayment(orderNumber, { authority: String(result.data.authority) });
 
     return NextResponse.json({
       success: true,

@@ -49,7 +49,7 @@ export default function CheckoutPage() {
   const shippingCost = subtotal >= 500000 ? 0 : 45000;
   const finalTotal = getFinalTotal() + shippingCost;
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recipientName || !phone || !address || !postalCode) {
       alert("لطفاً تمام اطلاعات آدرس و گیرنده را تکمیل کنید.");
@@ -58,33 +58,27 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
 
-    const orderNumber = `MR-${Date.now().toString().slice(-6)}`;
-
-    // Store order into localStorage order registry
-    const newOrder = {
-      orderNumber,
-      items,
-      recipientName,
-      phone,
-      province,
-      city,
-      address,
-      postalCode,
-      shippingProvider,
-      paymentMethod,
-      finalTotal,
-      status: "processing",
-      createdAt: new Date().toISOString(),
-    };
-
-    const existingOrders = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
-    localStorage.setItem("miniroyal_orders", JSON.stringify([newOrder, ...existingOrders]));
-
-    clearCart();
-    if (paymentMethod === "zarinpal") {
-      router.push(`/payment/gateway?orderNumber=${orderNumber}&amount=${finalTotal}`);
-    } else {
-      router.push(`/order/success/${orderNumber}`);
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientName, phone, province, city, address, postalCode,
+          shippingProvider, paymentMethod, subtotal, discount, shippingCost, finalTotal,
+          items,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || "ثبت سفارش ناموفق بود.");
+      clearCart();
+      if (paymentMethod === "zarinpal") {
+        router.push(`/payment/gateway?orderNumber=${result.orderNumber}&amount=${finalTotal}`);
+      } else {
+        router.push(`/order/success/${result.orderNumber}?status=pending`);
+      }
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "خطا در ثبت سفارش.");
+      setIsSubmitting(false);
     }
   };
 

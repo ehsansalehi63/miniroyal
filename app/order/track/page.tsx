@@ -24,15 +24,10 @@ export default function OrderTrackPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearched(true);
-    if (typeof window !== "undefined") {
-      const orders: TrackedOrder[] = JSON.parse(localStorage.getItem("miniroyal_orders") || "[]");
-      const found = orders.find(
-        (o) =>
-          o.orderNumber?.toLowerCase() === query.trim().toLowerCase() ||
-          o.phone === query.trim()
-      );
-      setFoundOrder(found || null);
-    }
+    fetch(`/api/orders?identifier=${encodeURIComponent(query.trim())}`)
+      .then((response) => response.json())
+      .then((result) => setFoundOrder(result.success ? result.order : null))
+      .catch(() => setFoundOrder(null));
   };
 
   return (
