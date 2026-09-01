@@ -36,8 +36,9 @@ export async function inspectDatabase() {
     if (missingTables.length === 0) {
       try {
         await connection.query(
-          `SELECT order_number, recipient_name, phone, final_total, order_status,
-                  payment_method, shipping_provider, payment_status, created_at
+          `SELECT order_number, customer_id, status, total_amount, discount_amount,
+                  shipping_amount, final_amount, payment_status, payment_method,
+                  shipping_address_json, shipping_provider, created_at
            FROM orders LIMIT 1`
         );
       } catch (error) {
