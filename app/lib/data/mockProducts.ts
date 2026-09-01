@@ -1,5 +1,5 @@
 import { Category, Product } from "../types/catalog";
-import { PRODUCT_FALLBACKS } from "../imageCatalog";
+import { PRODUCT_FALLBACKS, PRODUCT_REAL_IMAGES } from "../imageCatalog";
 
 export const mockCategories: Category[] = [
   {
@@ -100,7 +100,7 @@ export const mockProducts: Product[] = [
       { size: "۴ سال", ageRange: "۳ تا ۴ سال", heightCm: "۹۸ تا ۱۰۴", chestCm: "۵۴ تا ۵۶", lengthCm: "۴۲" },
       { size: "۶ سال", ageRange: "۵ تا ۶ سال", heightCm: "۱۰۵ تا ۱۱۲", chestCm: "۵۷ تا ۶۰", lengthCm: "۴۶" },
     ],
-    images: [PRODUCT_FALLBACKS.boy],
+    images: [PRODUCT_REAL_IMAGES.boyHoodie],
     features: ["۱۰۰٪ پنبه ضد حساسیت", "داخل کرکی گرم", "قابلیت شستشو با ماشین لباسشویی"],
     variants: [
       { id: 101, productId: 1, sku: "HOOD-BEAR-BLU-4", color: "آبی نفتی", colorCode: "#1e3a8a", size: "۴ سال", stock: 12, priceAdjustment: 0 },
@@ -138,7 +138,7 @@ export const mockProducts: Product[] = [
       { size: "۳ سال", ageRange: "۲ تا ۳ سال", heightCm: "۹۲ تا ۹۸", chestCm: "۵۲ تا ۵۴", lengthCm: "۵۰" },
       { size: "۵ سال", ageRange: "۴ تا ۵ سال", heightCm: "۹۹ تا ۱۰۶", chestCm: "۵۴ تا ۵۷", lengthCm: "۵۵" },
     ],
-    images: [PRODUCT_FALLBACKS.girl],
+    images: [PRODUCT_REAL_IMAGES.girlDress],
     features: ["پارچه کرپ حریر درجه یک", "آستر ۱۰۰٪ پنبه ضد خارش", "زیپ مخفی پشت لباس"],
     variants: [
       { id: 201, productId: 2, sku: "DRESS-FLOR-PNK-3", color: "صورتی ملایم", colorCode: "#f472b6", size: "۳ سال", stock: 10, priceAdjustment: 0 },
@@ -175,7 +175,7 @@ export const mockProducts: Product[] = [
       { size: "۰ تا ۳ ماه", ageRange: "۰ تا ۳ ماه", heightCm: "۵۰ تا ۶۲", chestCm: "۳۸ تا ۴۲", lengthCm: "۳۴" },
       { size: "۳ تا ۶ ماه", ageRange: "۳ تا ۶ ماه", heightCm: "۶۳ تا ۶۸", chestCm: "۴۳ تا ۴۵", lengthCm: "۳۸" },
     ],
-    images: [PRODUCT_FALLBACKS.baby],
+    images: [PRODUCT_REAL_IMAGES.babySuit],
     features: ["نخ پنبه ارگانیک ۱۰۰٪", "دکمه‌های آسان برای تعویض پوشک", "کلاه نخی محافظ سر نوزاد"],
     variants: [
       { id: 301, productId: 3, sku: "SUIT-BABY-CRE-03", color: "کرم روشن", colorCode: "#fef3c7", size: "۰ تا ۳ ماه", stock: 15, priceAdjustment: 0 },
@@ -212,7 +212,7 @@ export const mockProducts: Product[] = [
       { size: "۸ سال", ageRange: "۷ تا ۸ سال", heightCm: "۱۱۸ تا ۱۲۸", chestCm: "۶۱ تا ۶۵", lengthCm: "۵۴" },
       { size: "۱۰ سال", ageRange: "۹ تا ۱۰ سال", heightCm: "۱۲۹ تا ۱۳۸", chestCm: "۶۶ تا ۷۰", lengthCm: "۵۹" },
     ],
-    images: [PRODUCT_FALLBACKS.outerwear],
+    images: [PRODUCT_REAL_IMAGES.boyJacket],
     features: ["رویه‌ ضدآب شمعی", "کلاه جداشونده", "سرآستین‌های کشباف بادگیر"],
     variants: [
       { id: 401, productId: 4, sku: "JCKT-BOY-RED-8", color: "قرمز اسپرت", colorCode: "#dc2626", size: "۸ سال", stock: 7, priceAdjustment: 0 },

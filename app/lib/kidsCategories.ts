@@ -1,5 +1,5 @@
 import { Category } from "./types/catalog";
-import { REAL_IMAGES } from "./imageCatalog";
+import { CATEGORY_REAL_IMAGES, REAL_IMAGES } from "./imageCatalog";
 
 /**
  * A practical child/teen fashion taxonomy based on the department structure
@@ -34,14 +34,14 @@ export const kidsCategories: Category[] = [
   ["عینک آفتابی کودک", "eynak-aftabi-koodak", "set", "🕶️", REAL_IMAGES.editorial],
   ["زیورآلات و اکسسوری فانتزی", "zivar-aksessori-fantasy", "set", "⭐", REAL_IMAGES.editorial],
   ["اکسسوری نوزاد", "aksessori-nozad", "nozad", "🧸", REAL_IMAGES.babySet],
-].map(([name, slug, parentSlug, icon, imageUrl], index) => ({
+].map(([name, slug, parentSlug, icon], index) => ({
   id: 100 + index,
   parentId: null,
   parentSlug,
   name,
   slug,
   icon,
-  imageUrl,
+  imageUrl: CATEGORY_REAL_IMAGES[index + 1],
   description: `انتخابی از ${name} برای کودک و نوجوان`,
   sortOrder: 10 + index,
   productCount: 0,

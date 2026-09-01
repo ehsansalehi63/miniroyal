@@ -39,10 +39,11 @@ export default function Hero3DSlideshow() {
       const rect = event.currentTarget.getBoundingClientRect();
       rawX.set((event.clientX - rect.left) / rect.width - 0.5);
       rawY.set((event.clientY - rect.top) / rect.height - 0.5);
-    }} className="relative mx-auto min-h-[540px] max-w-7xl overflow-hidden bg-[#f2e9df] shadow-sm sm:min-h-[620px]">
+    }} className="relative mx-auto min-h-[540px] max-w-7xl overflow-hidden bg-[#f2e9df] shadow-sm [perspective:1800px] sm:min-h-[620px]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(255,255,255,.8),transparent_28%),linear-gradient(120deg,#f1e5d8,#f8f4ef_55%,#e7d9d0)]" />
-      <div className="absolute -left-24 -top-24 size-72 rounded-full border border-stone-900/10" />
-      <div className="absolute -bottom-36 right-1/3 size-96 rounded-full border border-stone-900/10" />
+      <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(45,35,30,.07)_1px,transparent_1px),linear-gradient(90deg,rgba(45,35,30,.07)_1px,transparent_1px)] [background-size:48px_48px]" />
+      <div className="absolute -left-24 -top-24 size-72 rounded-full border border-stone-900/10 [transform:translateZ(-80px)]" />
+      <div className="absolute -bottom-36 right-1/3 size-96 rounded-full border border-stone-900/10 [transform:translateZ(-140px)]" />
       <div className="relative z-10 grid min-h-[540px] items-center gap-8 px-6 py-14 sm:min-h-[620px] sm:px-14 lg:grid-cols-2 lg:px-20">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div key={slide.id} custom={direction} initial={{ opacity: 0, x: direction * -35 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: direction * 35 }} transition={{ duration: .45 }} className="max-w-xl">
@@ -54,9 +55,15 @@ export default function Hero3DSlideshow() {
           </motion.div>
         </AnimatePresence>
         <motion.div style={{ rotateY: rotate }} className="relative mx-auto w-full max-w-md [transform-style:preserve-3d]">
-          <div className="absolute -inset-5 rounded-[50%] bg-white/50 blur-2xl" />
-          <div className="relative aspect-[4/5] overflow-hidden bg-stone-200 shadow-2xl"><motion.img style={{ x: imageX, y: imageY, scale: 1.06 }} src={slide.image} alt={slide.title} className="editorial-image size-full object-cover" /></div>
-          <span className="absolute -bottom-4 -right-4 bg-amber-300 px-5 py-3 text-[10px] font-black text-stone-950 shadow-xl">COLLECTION {String(slide.id).padStart(2, "0")}</span>
+          <div className="absolute -inset-12 rounded-[50%] bg-violet-300/30 blur-3xl [transform:translateZ(-120px)]" />
+          <div className="absolute -inset-6 translate-x-5 translate-y-5 rotate-3 border border-white/70 bg-white/20 shadow-xl [transform:translateZ(-70px)]" />
+          <div className="absolute -inset-3 -translate-x-3 translate-y-3 -rotate-2 border border-stone-900/10 bg-stone-950/5 shadow-xl [transform:translateZ(-35px)]" />
+          <div className="relative aspect-[4/5] overflow-hidden border-8 border-white/70 bg-stone-200 shadow-[24px_30px_0_rgba(54,41,35,.12),0_30px_70px_rgba(54,41,35,.25)] [transform:translateZ(35px)]">
+            <motion.img style={{ x: imageX, y: imageY, scale: 1.08 }} src={slide.image} alt={slide.title} className="editorial-image size-full object-cover" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-stone-950/15 via-transparent to-white/40" />
+          </div>
+          <span className="absolute -bottom-4 -right-4 bg-amber-300 px-5 py-3 text-[10px] font-black text-stone-950 shadow-xl [transform:translateZ(75px)]">COLLECTION {String(slide.id).padStart(2, "0")}</span>
+          <span className="absolute -left-7 top-10 rounded-full border border-white/80 bg-white/65 px-4 py-2 text-[9px] font-black tracking-[.2em] text-stone-800 shadow-lg [transform:translateZ(90px)]">MINI ROYAL 3D</span>
         </motion.div>
       </div>
       <div className="absolute bottom-6 left-6 z-20 flex items-center gap-2 sm:left-14"><button onClick={() => changeSlide(-1)} aria-label="اسلاید قبلی" className="grid size-9 place-items-center border border-stone-900/20 bg-white/50"><ChevronRight className="size-4" /></button>{slides.map((item, index) => <button key={item.id} onClick={() => { setDirection(index > current ? 1 : -1); setCurrent(index); }} aria-label={`اسلاید ${index + 1}`} className={`h-1.5 transition-all ${current === index ? "w-10 bg-stone-950" : "w-5 bg-stone-400"}`} />)}<button onClick={() => changeSlide(1)} aria-label="اسلاید بعدی" className="grid size-9 place-items-center border border-stone-900/20 bg-white/50"><ChevronLeft className="size-4" /></button></div>
