@@ -1,24 +1,19 @@
 /**
- * Real editorial photography used by the storefront.
- * Product owners can replace any product image from the admin panel.
+ * Fully self-hosted storefront artwork (SVG illustrations).
+ * Zero external CDNs — the site loads identically with or without a VPN,
+ * on slow Iranian mobile networks, and offline during deploys.
+ * Product owners can still replace any product image from the admin panel.
  */
 export const REAL_IMAGES = {
-  heroWinter:
-    "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=1600&q=88",
-  heroParty:
-    "https://images.unsplash.com/photo-1503919545889-aef636e3d3d5?auto=format&fit=crop&w=1600&q=88",
-  heroBaby:
-    "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=1600&q=88",
-  boyHoodie:
-    "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88",
-  girlDress:
-    "https://images.unsplash.com/photo-1503919545889-aef636e3d3d5?auto=format&fit=crop&w=1000&q=88",
-  babySet:
-    "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=1000&q=88",
-  jacket:
-    "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=1000&q=88",
-  editorial:
-    "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1400&q=88",
+  heroWinter: "/images/models/hero-boy.svg",
+  heroParty: "/images/models/hero-girl.svg",
+  heroBaby: "/images/models/hero-baby.svg",
+  boyHoodie: "/images/products/boy-hoodie.svg",
+  girlDress: "/images/products/girl-dress.svg",
+  babySet: "/images/products/baby-suit.svg",
+  jacket: "/images/products/boy-jacket.svg",
+  editorial: "/images/products/blog-1.svg",
+  heroSlide1: "/images/products/hero-slide1.svg",
 } as const;
 
 export const PRODUCT_FALLBACKS = {

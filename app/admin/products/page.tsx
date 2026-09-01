@@ -23,7 +23,7 @@ export default function AdminProductsPage() {
     { id: 1, productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 },
   ]);
   const [images, setImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88",
+    "/images/products/boy-hoodie.svg",
   ]);
   const [sizeChart, setSizeChart] = useState<SizeChartRow[]>([
     { size: "۴ سال", ageRange: "۳ تا ۴ سال", heightCm: "۹۸ تا ۱۰۴", chestCm: "۵۴ تا ۵۶", lengthCm: "۴۲" },
@@ -47,7 +47,7 @@ export default function AdminProductsPage() {
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalImages = images.length > 0 ? images : ["https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88"];
+    const finalImages = images.length > 0 ? images : ["/images/products/boy-hoodie.svg"];
 
     if (editingProduct) {
       // Update existing
@@ -130,7 +130,7 @@ export default function AdminProductsPage() {
           onClick={() => {
             setEditingProduct(null);
             setTitle("");
-            setImages(["https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88"]);
+            setImages(["/images/products/boy-hoodie.svg"]);
             setVariants([{ id: Date.now(), productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
             setSizeChart([{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
             setFitProfile({ garmentType: "top", measurementMethod: "garment", preferredBodyMeasurement: "height", easeCm: 7, stretch: "low", sizeSystem: "age", tryOnAnchors: { shoulder: 50, waist: 52, length: 68 } });

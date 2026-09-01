@@ -6,6 +6,7 @@ import { mockProducts } from "./lib/data/mockProducts";
 import { getSuggestedSets } from "./lib/sets";
 import SuggestedSets from "./components/SuggestedSets";
 import { kidsCategories } from "./lib/kidsCategories";
+import { REAL_IMAGES } from "./lib/imageCatalog";
 import { Sparkles, ShieldCheck, Truck, RotateCcw, ArrowRight } from "lucide-react";
 
 export const metadata = {
@@ -14,12 +15,12 @@ export const metadata = {
 };
 
 const categories = [
-  { slug: "pesaraneh", name: "پسرانه", icon: "🧢", image: "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88" },
-  { slug: "dokhtaraneh", name: "دخترانه", icon: "🎀", image: "https://images.unsplash.com/photo-1503919545889-aef636e3d3d5?auto=format&fit=crop&w=1000&q=88" },
-  { slug: "nozad", name: "نوزاد", icon: "🍼", image: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=1000&q=88" },
-  { slug: "set", name: "ست‌ها", icon: "✨", image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1000&q=88" },
-  { slug: "madreseh", name: "مدرسه", icon: "🎒", image: "https://images.unsplash.com/photo-1518831959646-742c3a14ebf7?auto=format&fit=crop&w=1000&q=88" },
-  { slug: "majlesi", name: "مجلسی", icon: "👗", image: "https://images.unsplash.com/photo-1503919545889-aef636e3d3d5?auto=format&fit=crop&w=1000&q=88" },
+  { slug: "pesaraneh", name: "پسرانه", icon: "🧢", image: REAL_IMAGES.boyHoodie },
+  { slug: "dokhtaraneh", name: "دخترانه", icon: "🎀", image: REAL_IMAGES.girlDress },
+  { slug: "nozad", name: "نوزاد", icon: "🍼", image: REAL_IMAGES.babySet },
+  { slug: "set", name: "ست‌ها", icon: "✨", image: REAL_IMAGES.editorial },
+  { slug: "madreseh", name: "مدرسه", icon: "🎒", image: REAL_IMAGES.jacket },
+  { slug: "majlesi", name: "مجلسی", icon: "👗", image: REAL_IMAGES.girlDress },
 ];
 
 export default async function HomePage() {

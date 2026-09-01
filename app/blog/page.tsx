@@ -15,7 +15,7 @@ const articles = [
     date: "۱ شهریور ۱۴۰۵",
     author: "تیم هوش مصنوعی مینی رویال",
     readTime: "۴ دقیقه",
-    image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1400&q=88",
+    image: "/images/models/hero-girl.svg",
   },
   {
     id: 2,
@@ -26,7 +26,7 @@ const articles = [
     date: "۲۵ مرداد ۱۴۰۵",
     author: "کارشناس نساجی مینی رویال",
     readTime: "۵ دقیقه",
-    image: "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=1000&q=88",
+    image: "/images/models/hero-baby.svg",
   },
   {
     id: 3,
@@ -37,7 +37,7 @@ const articles = [
     date: "۲۰ مرداد ۱۴۰۵",
     author: "تیم استایل مینی رویال",
     readTime: "۳ دقیقه",
-    image: "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1000&q=88",
+    image: "/images/models/hero-boy.svg",
   },
   {
     id: 4,
@@ -48,7 +48,7 @@ const articles = [
     date: "۱۵ مرداد ۱۴۰۵",
     author: "تیم کیفیت مینی رویال",
     readTime: "۴ دقیقه",
-    image: "https://images.unsplash.com/photo-1503919545889-aef636e3d3d5?auto=format&fit=crop&w=1000&q=88",
+    image: "/images/models/hero-girl.svg",
   },
 ];
 

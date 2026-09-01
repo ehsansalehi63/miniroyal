@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1060" width="100%" height="100%">
+  <defs>
+    <linearGradient id="onesieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7" />
+      <stop offset="45%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="onesieLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.15" />
+    </linearGradient>
+    <linearGradient id="skinB" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fbd8b8" />
+      <stop offset="100%" stop-color="#f2bf97" />
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <radialGradient id="cheekB" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fb7185" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#fb7185" stop-opacity="0" />
+    </radialGradient>
+    <filter id="softShadowB" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#065f46" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- ================= BABY MODEL — mint onesie + royal crown ================= -->
+  <g filter="url(#softShadowB)">
+
+    <!-- ===== chunky legs ===== -->
+    <path d="M 300 700 Q 292 760 296 828 Q 298 862 322 864 Q 344 864 346 830 Q 350 760 348 700 Z" fill="url(#skinB)" />
+    <path d="M 352 700 Q 350 760 354 830 Q 356 864 378 864 Q 402 862 404 828 Q 408 760 400 700 Z" fill="url(#skinB)" />
+    <!-- chubby knee dots -->
+    <circle cx="318" cy="780" r="9" fill="#f2bf97" opacity="0.6" />
+    <circle cx="382" cy="780" r="9" fill="#f2bf97" opacity="0.6" />
+
+    <!-- ===== tiny boots ===== -->
+    <path d="M 288 852 Q 284 838 302 838 L 336 838 Q 350 838 350 852 L 350 872 Q 348 884 334 884 L 284 884 Q 272 884 274 872 Q 276 860 288 852 Z" fill="#fef3c7" />
+    <rect x="272" y="876" width="84" height="12" rx="6" fill="#f59e0b" />
+    <path d="M 350 852 Q 346 838 364 838 L 398 838 Q 412 838 412 852 L 412 872 Q 410 884 396 884 L 346 884 Q 334 884 336 872 Q 338 860 350 852 Z" fill="#fef3c7" />
+    <rect x="336" y="876" width="84" height="12" rx="6" fill="#f59e0b" />
+
+    <!-- ===== onesie body ===== -->
+    <path d="M 292 348 Q 298 318 332 312 L 368 312 Q 402 318 408 348 L 420 560 Q 424 640 410 706 Q 402 742 350 744 Q 298 742 290 706 Q 276 640 280 560 Z" fill="url(#onesieGrad)" />
+    <path d="M 292 348 Q 298 318 332 312 L 368 312 Q 402 318 408 348 L 420 560 Q 424 640 410 706 Q 402 742 350 744 Q 298 742 290 706 Q 276 640 280 560 Z" fill="url(#onesieLight)" />
+    <!-- snap buttons -->
+    <circle cx="350" cy="700" r="7" fill="#fef3c7" />
+    <circle cx="350" cy="672" r="7" fill="#fef3c7" />
+    <!-- white collar -->
+    <path d="M 318 316 Q 350 344 382 316 Q 388 330 384 340 Q 350 364 316 340 Q 312 330 318 316 Z" fill="#ffffff" />
+    <!-- star print on chest -->
+    <path d="M 350 430 L 359 452 L 383 455 L 365 471 L 370 495 L 350 483 L 330 495 L 335 471 L 317 455 L 341 452 Z" fill="#fef9c3" opacity="0.9" />
+    <path d="M 316 540 L 321 551 L 333 553 L 324 561 L 326 573 L 316 567 L 306 573 L 308 561 L 299 553 L 311 551 Z" fill="#fef9c3" opacity="0.7" />
+    <path d="M 384 540 L 389 551 L 401 553 L 392 561 L 394 573 L 384 567 L 374 573 L 376 561 L 367 553 L 379 551 Z" fill="#fef9c3" opacity="0.7" />
+
+    <!-- ===== arms out (happy open pose) ===== -->
+    <path d="M 292 356 Q 252 366 222 396 Q 200 418 208 438" stroke="#34d399" stroke-width="46" fill="none" stroke-linecap="round" />
+    <path d="M 408 356 Q 448 366 478 396 Q 500 418 492 438" stroke="#34d399" stroke-width="46" fill="none" stroke-linecap="round" />
+    <!-- sleeve cuffs -->
+    <circle cx="222" cy="404" r="26" fill="#059669" opacity="0.35" />
+    <circle cx="478" cy="404" r="26" fill="#059669" opacity="0.35" />
+    <!-- hands -->
+    <ellipse cx="206" cy="452" rx="24" ry="22" fill="url(#skinB)" transform="rotate(-20 206 452)" />
+    <ellipse cx="494" cy="452" rx="24" ry="22" fill="url(#skinB)" transform="rotate(20 494 452)" />
+
+    <!-- ===== neck & head (big & round) ===== -->
+    <rect x="330" y="286" width="40" height="34" rx="12" fill="#eeb98c" />
+    <!-- ears -->
+    <circle cx="266" cy="222" r="18" fill="#f2bf97" />
+    <circle cx="434" cy="222" r="18" fill="#f2bf97" />
+    <circle cx="266" cy="222" r="8" fill="#f2bf97" />
+    <circle cx="434" cy="222" r="8" fill="#f2bf97" />
+    <!-- face -->
+    <ellipse cx="350" cy="212" rx="92" ry="90" fill="url(#skinB)" />
+    <!-- single hair curl -->
+    <path d="M 350 122 Q 346 100 362 96 Q 378 94 376 110 Q 374 122 360 124" fill="none" stroke="#7c4a26" stroke-width="10" stroke-linecap="round" />
+    <!-- royal crown -->
+    <path d="M 306 112 L 296 66 L 326 90 L 350 52 L 374 90 L 404 66 L 394 112 Q 350 128 306 112 Z" fill="url(#crownGrad)" />
+    <circle cx="296" cy="64" r="7" fill="#f472b6" />
+    <circle cx="350" cy="50" r="8" fill="#ec4899" />
+    <circle cx="404" cy="64" r="7" fill="#f472b6" />
+    <rect x="306" y="108" width="88" height="14" rx="7" fill="#f59e0b" />
+    <!-- eyebrows -->
+    <path d="M 306 196 Q 322 188 338 196" stroke="#7c4a26" stroke-width="6" fill="none" stroke-linecap="round" />
+    <path d="M 362 196 Q 378 188 394 196" stroke="#7c4a26" stroke-width="6" fill="none" stroke-linecap="round" />
+    <!-- big shiny eyes -->
+    <ellipse cx="318" cy="224" rx="13" ry="16" fill="#1c1917" />
+    <ellipse cx="382" cy="224" rx="13" ry="16" fill="#1c1917" />
+    <circle cx="313" cy="218" r="5" fill="#ffffff" />
+    <circle cx="377" cy="218" r="5" fill="#ffffff" />
+    <circle cx="322" cy="230" r="2.5" fill="#ffffff" opacity="0.8" />
+    <circle cx="386" cy="230" r="2.5" fill="#ffffff" opacity="0.8" />
+    <!-- super chubby cheeks -->
+    <circle cx="292" cy="250" r="22" fill="url(#cheekB)" />
+    <circle cx="408" cy="250" r="22" fill="url(#cheekB)" />
+    <!-- nose -->
+    <circle cx="350" cy="242" r="6" fill="#f0b183" />
+    <!-- giggling open mouth -->
+    <path d="M 332 262 Q 350 286 368 262 Q 350 272 332 262 Z" fill="#be123c" />
+    <path d="M 340 272 Q 350 278 360 272" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" />
+  </g>
+</svg>

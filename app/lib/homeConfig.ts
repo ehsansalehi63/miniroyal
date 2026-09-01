@@ -8,7 +8,12 @@ export interface HomeSlide {
   ctaLink: string;
   badge: string;
   image: string;
+  /** Tailwind gradient classes for the slide backdrop */
   color: string;
+  /** Radial glow accent used behind the 3D model */
+  glow: string;
+  /** Palette for floating particles: [from, to] hex colors */
+  particles: [string, string];
 }
 
 export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
@@ -21,16 +26,20 @@ export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
     badge: "جدیدترین‌ها",
     image: REAL_IMAGES.heroWinter,
     color: "from-violet-950 via-indigo-950 to-slate-950",
+    glow: "#8b5cf6",
+    particles: ["#c4b5fd", "#fbbf24"],
   },
   {
     id: 2,
     title: "مهمانی کوچک، استایل بزرگ",
     subtitle: "لباس‌های مجلسی با تن‌خور راحت و جزئیات دوست‌داشتنی",
     ctaText: "خرید لباس مجلسی",
-    ctaLink: "/category/dokhtaraneh",
+    ctaLink: "/category/majlesi",
     badge: "پیشنهاد استایلیست",
     image: REAL_IMAGES.heroParty,
     color: "from-rose-950 via-pink-950 to-stone-950",
+    glow: "#f472b6",
+    particles: ["#f9a8d4", "#fda4af"],
   },
   {
     id: 3,
@@ -41,5 +50,7 @@ export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
     badge: "انتخاب مادرها",
     image: REAL_IMAGES.heroBaby,
     color: "from-amber-950 via-stone-900 to-emerald-950",
+    glow: "#34d399",
+    particles: ["#a7f3d0", "#fcd34d"],
   },
 ];

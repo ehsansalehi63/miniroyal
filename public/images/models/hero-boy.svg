@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1060" width="100%" height="100%">
+  <defs>
+    <linearGradient id="hoodieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="45%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#5b21b6" />
+    </linearGradient>
+    <linearGradient id="hoodieLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28" />
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.18" />
+    </linearGradient>
+    <linearGradient id="jeansGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#475569" />
+      <stop offset="40%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f9d3b0" />
+      <stop offset="100%" stop-color="#efb98e" />
+    </linearGradient>
+    <linearGradient id="hairGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5a3a28" />
+      <stop offset="100%" stop-color="#332014" />
+    </linearGradient>
+    <radialGradient id="cheekGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fb7185" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#fb7185" stop-opacity="0" />
+    </radialGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#3b0764" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- ================= BOY MODEL — violet hoodie, jeans, sneakers ================= -->
+  <g filter="url(#softShadow)">
+
+    <!-- ===== back hood bunched behind neck ===== -->
+    <path d="M 258 300 Q 350 245 442 300 Q 448 340 350 352 Q 252 340 258 300 Z" fill="#5b21b6" />
+    <path d="M 272 306 Q 350 262 428 306 Q 430 330 350 340 Q 270 330 272 306 Z" fill="#6d28d9" />
+
+    <!-- ===== legs (jeans) ===== -->
+    <!-- left leg -->
+    <path d="M 292 560 L 285 620 Q 280 760 288 880 L 340 880 Q 348 760 344 620 L 342 560 Z" fill="url(#jeansGrad)" />
+    <!-- right leg -->
+    <path d="M 358 560 L 356 620 Q 352 760 360 880 L 412 880 Q 420 760 415 620 L 408 560 Z" fill="url(#jeansGrad)" />
+    <!-- waistband -->
+    <rect x="286" y="552" width="128" height="34" rx="12" fill="#1e293b" />
+    <!-- knee stitch highlights -->
+    <path d="M 293 720 Q 313 728 336 720" stroke="#64748b" stroke-width="5" fill="none" opacity="0.6" />
+    <path d="M 364 720 Q 387 728 407 720" stroke="#64748b" stroke-width="5" fill="none" opacity="0.6" />
+    <!-- cuff hems -->
+    <rect x="284" y="862" width="60" height="22" rx="10" fill="#0f172a" />
+    <rect x="356" y="862" width="60" height="22" rx="10" fill="#0f172a" />
+
+    <!-- ===== sneakers ===== -->
+    <!-- left shoe -->
+    <path d="M 270 900 Q 268 878 292 880 L 340 880 Q 352 880 352 896 L 352 916 Q 350 930 330 930 L 262 930 Q 246 930 248 914 Q 250 900 270 900 Z" fill="#fafaf9" />
+    <path d="M 248 916 Q 250 902 270 900 Q 286 898 296 906 L 300 916 Z" fill="#fbbf24" />
+    <rect x="246" y="920" width="108" height="12" rx="6" fill="#7c3aed" />
+    <path d="M 300 890 L 316 906 M 316 890 L 300 906" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round" />
+    <!-- right shoe -->
+    <path d="M 348 900 Q 348 878 372 880 L 420 880 Q 432 880 432 896 L 432 916 Q 430 930 410 930 L 342 930 Q 326 930 328 914 Q 330 900 348 900 Z" fill="#fafaf9" />
+    <path d="M 328 916 Q 330 902 348 900 Q 364 898 374 906 L 378 916 Z" fill="#fbbf24" />
+    <rect x="326" y="920" width="108" height="12" rx="6" fill="#7c3aed" />
+    <path d="M 384 890 L 400 906 M 400 890 L 384 906" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round" />
+
+    <!-- ===== torso hoodie ===== -->
+    <path d="M 262 322 Q 268 292 298 286 L 402 286 Q 432 292 438 322 L 448 520 Q 448 566 400 570 L 300 570 Q 252 566 252 520 Z" fill="url(#hoodieGrad)" />
+    <path d="M 262 322 Q 268 292 298 286 L 402 286 Q 432 292 438 322 L 448 520 Q 448 566 400 570 L 300 570 Q 252 566 252 520 Z" fill="url(#hoodieLight)" />
+    <!-- side folds -->
+    <path d="M 266 360 Q 258 430 266 500" stroke="#4c1d95" stroke-width="7" fill="none" opacity="0.55" />
+    <path d="M 434 360 Q 442 430 434 500" stroke="#4c1d95" stroke-width="7" fill="none" opacity="0.55" />
+
+    <!-- kangaroo pocket -->
+    <path d="M 292 470 L 408 470 Q 416 472 414 486 L 408 548 Q 406 560 392 560 L 308 560 Q 294 560 292 548 L 286 486 Q 284 472 292 470 Z" fill="#6d28d9" />
+    <path d="M 292 470 L 408 470 Q 416 472 414 486 L 412 500 L 288 500 L 286 486 Q 284 472 292 470 Z" fill="#5b21b6" opacity="0.5" />
+
+    <!-- drawstrings -->
+    <path d="M 322 316 Q 318 352 322 382" stroke="#fde68a" stroke-width="7" fill="none" stroke-linecap="round" />
+    <path d="M 378 316 Q 382 352 378 382" stroke="#fde68a" stroke-width="7" fill="none" stroke-linecap="round" />
+    <circle cx="322" cy="388" r="8" fill="#fbbf24" />
+    <circle cx="378" cy="388" r="8" fill="#fbbf24" />
+
+    <!-- ===== arms ===== -->
+    <!-- left arm -->
+    <path d="M 262 322 Q 234 330 224 366 L 196 500 Q 192 526 212 532 L 244 540 Q 262 542 266 520 L 292 400 Q 296 352 286 320 Z" fill="url(#hoodieGrad)" />
+    <path d="M 262 322 Q 234 330 224 366 L 196 500 Q 192 526 212 532 L 244 540 Q 262 542 266 520 L 292 400 Q 296 352 286 320 Z" fill="url(#hoodieLight)" />
+    <rect x="204" y="516" width="56" height="34" rx="14" fill="#5b21b6" transform="rotate(8 232 533)" />
+    <!-- left hand -->
+    <ellipse cx="238" cy="572" rx="24" ry="27" fill="url(#skinGrad)" />
+    <!-- right arm -->
+    <path d="M 438 322 Q 466 330 476 366 L 504 500 Q 508 526 488 532 L 456 540 Q 438 542 434 520 L 408 400 Q 404 352 414 320 Z" fill="url(#hoodieGrad)" />
+    <path d="M 438 322 Q 466 330 476 366 L 504 500 Q 508 526 488 532 L 456 540 Q 438 542 434 520 L 408 400 Q 404 352 414 320 Z" fill="url(#hoodieLight)" />
+    <rect x="440" y="516" width="56" height="34" rx="14" fill="#5b21b6" transform="rotate(-8 468 533)" />
+    <!-- right hand -->
+    <ellipse cx="462" cy="572" rx="24" ry="27" fill="url(#skinGrad)" />
+
+    <!-- ===== neck ===== -->
+    <rect x="326" y="252" width="48" height="44" rx="16" fill="#eeb98c" />
+
+    <!-- ===== head ===== -->
+    <!-- ears -->
+    <circle cx="272" cy="200" r="17" fill="#efb98e" />
+    <circle cx="428" cy="200" r="17" fill="#efb98e" />
+    <!-- face -->
+    <ellipse cx="350" cy="192" rx="80" ry="84" fill="url(#skinGrad)" />
+    <!-- hair -->
+    <path d="M 266 178 Q 262 96 350 90 Q 438 96 434 178 Q 424 138 396 132 Q 372 128 358 142 Q 340 120 310 128 Q 280 136 266 178 Z" fill="url(#hairGrad)" />
+    <!-- fringe accent -->
+    <path d="M 292 128 Q 330 108 372 124 Q 396 132 402 152 Q 380 136 352 138 Q 318 138 292 128 Z" fill="#4a3122" />
+    <!-- eyebrows -->
+    <path d="M 306 172 Q 322 164 338 172" stroke="#3f2a20" stroke-width="6" fill="none" stroke-linecap="round" />
+    <path d="M 362 172 Q 378 164 394 172" stroke="#3f2a20" stroke-width="6" fill="none" stroke-linecap="round" />
+    <!-- happy closed eyes -->
+    <path d="M 308 200 Q 320 212 332 200" stroke="#1c1917" stroke-width="7" fill="none" stroke-linecap="round" />
+    <path d="M 368 200 Q 380 212 392 200" stroke="#1c1917" stroke-width="7" fill="none" stroke-linecap="round" />
+    <!-- cheeks -->
+    <circle cx="302" cy="222" r="17" fill="url(#cheekGlow)" />
+    <circle cx="398" cy="222" r="17" fill="url(#cheekGlow)" />
+    <!-- nose -->
+    <path d="M 346 214 Q 350 222 354 214" stroke="#d9a06b" stroke-width="5" fill="none" stroke-linecap="round" />
+    <!-- smile -->
+    <path d="M 328 236 Q 350 254 372 236" stroke="#7c2d12" stroke-width="7" fill="none" stroke-linecap="round" />
+  </g>
+</svg>

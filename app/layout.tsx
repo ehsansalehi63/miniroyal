@@ -20,6 +20,12 @@ export default function RootLayout({
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
       <head>
         {/* استایل‌های بحرانی درون‌خطی Inline Critical CSS جهت جلوگیری ۱۰۰٪ از به هم ریختگی ظاهر در شبکه */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <style dangerouslySetInnerHTML={{ __html: `
           body { margin: 0; padding: 0; background-color: #fbf8f5; color: #211b25; }
           a { text-decoration: none; color: inherit; }
