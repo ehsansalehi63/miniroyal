@@ -42,6 +42,7 @@ export default function VirtualTryonBox({ product }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const garmentSource = product.tryOnAsset?.url ?? product.images[0];
 
   const fit = useMemo(
     () => recommendSize(product, { heightCm, weightKg, ageMonths, gender, buyForGrowth, chestCm, waistCm }),
@@ -174,13 +175,34 @@ export default function VirtualTryonBox({ product }: Props) {
       ) : (
         <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-3xl border border-dashed border-violet-300/50 bg-white/5 p-6">
+            <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="mb-2 text-xs font-black text-amber-300">لباس انتخاب‌شده برای پرو</p>
+              <div className="flex items-center gap-3">
+                <img src={garmentSource} alt={`لباس ${product.title}`} className="size-24 rounded-xl bg-white object-cover" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-white">{product.title}</p>
+                  <p className="mt-1 text-[11px] text-violet-200">این تصویر مرجع دقیق لباس برای موتور پرو است.</p>
+                </div>
+              </div>
+            </div>
             <label onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={onDrop} className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border p-8 text-center transition ${isDragging ? "border-amber-300 bg-amber-300/20" : "border-white/10 hover:bg-white/10"}`}>
               <Camera className="size-10 text-violet-300" />
               <span className="mt-3 text-sm font-black">عکس تمام‌قد کودک را انتخاب کن</span>
               <span className="mt-2 text-xs text-violet-200">JPG یا PNG، حداکثر ۸ مگابایت</span>
               <input type="file" accept="image/jpeg,image/png,image/webp" capture="user" className="hidden" onChange={onUpload} />
             </label>
-            {personImage && <img src={resultImage ?? personImage} alt="پیش‌نمایش پرو آنلاین" className="mt-5 max-h-[420px] w-full rounded-2xl object-contain" />}
+            {personImage && (
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <div>
+                  <p className="mb-1 text-[10px] font-bold text-violet-200">عکس شما</p>
+                  <img src={personImage} alt="پیش‌نمایش عکس کاربر" className="aspect-square w-full rounded-2xl bg-black/20 object-cover" />
+                </div>
+                <div>
+                  <p className="mb-1 text-[10px] font-bold text-emerald-200">{resultImage ? "نتیجه پرو" : "مرجع لباس"}</p>
+                  <img src={resultImage ?? garmentSource} alt={resultImage ? "نتیجه پرو آنلاین" : `مرجع لباس ${product.title}`} className="aspect-square w-full rounded-2xl bg-white object-cover" />
+                </div>
+              </div>
+            )}
             {error && <p className="mt-4 rounded-xl bg-rose-950/60 p-3 text-xs font-bold text-rose-200">{error}</p>}
             <div className="mt-5 flex gap-2">
               <button onClick={runTryOn} disabled={!personImage || busy} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-violet-600 py-3 text-xs font-black disabled:opacity-50">

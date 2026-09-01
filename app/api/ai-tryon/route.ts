@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.POLLINATIONS_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { success: false, error: "کلید POLLINATIONS_API_KEY روی هاست تنظیم نشده است." },
+      { success: false, code: "MISSING_PROVIDER_KEY", error: "کلید POLLINATIONS_API_KEY روی هاست تنظیم نشده است. تحلیل عکس انجام می‌شود، اما تولید تصویر نهایی بدون موتور تصویر ممکن نیست." },
       { status: 503 }
     );
   }
@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
       cache: "no-store",
+      signal: AbortSignal.timeout(Number(process.env.TRYON_TIMEOUT_MS) || 120000),
     });
     const result = await response.json().catch(() => null);
     const imageUrl = result?.data?.[0]?.b64_json
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
             ? result.error.message
             : "";
       return NextResponse.json(
-        { success: false, error: providerMessage || `سرویس AI پاسخ ${response.status} برگرداند.` },
+        { success: false, code: "IMAGE_PROVIDER_ERROR", error: providerMessage || `سرویس AI پاسخ ${response.status} برگرداند.` },
         { status: 502 }
       );
     }
@@ -157,7 +158,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, imageUrl });
   } catch (error) {
     console.error("AI try-on error:", error);
-    const message = error instanceof Error && error.message === "Image is too large."
+    const message = error instanceof Error && error.name === "TimeoutError"
+      ? "زمان پاسخ سرویس تولید تصویر تمام شد. لطفاً دوباره با عکس کوچک‌تر امتحان کنید."
+      : error instanceof Error && error.message === "Image is too large."
       ? "حجم هر تصویر برای پردازش باید کمتر از ۸ مگابایت باشد."
       : "خطا در سرویس پرو آنلاین. لطفاً عکس دیگری با نور بهتر امتحان کنید.";
     return NextResponse.json({ success: false, error: message }, { status: 400 });

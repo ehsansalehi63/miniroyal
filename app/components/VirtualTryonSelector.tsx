@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function VirtualTryonSelector({ products }: Props) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(products[0]?.id ?? null);
   const product = selectedId === null ? undefined : products.find((item) => item.id === selectedId);
   if (!products.length) return <p className="rounded-2xl bg-amber-50 p-4 text-center text-sm">فعلاً محصول قابل پرویی در کاتالوگ موجود نیست.</p>;
 
