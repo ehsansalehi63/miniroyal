@@ -1,4 +1,8 @@
 # 👑 MiniRoyal Store — Project Structure & Master Handoff Document
+
+> مرجع به‌روز و امن متغیرهای Hostinger: `docs/HOSTINGER-ENVIRONMENT-MATRIX.md`
+>
+> مرجع معماری و وضعیت قابلیت‌ها: `docs/MINIROYAL-CONTEXT.md`
 **Official Domain:** `https://miniroyal.shop`  
 **GitHub Repository:** `https://github.com/ehsansalehi63/miniroyal`  
 **Git Working Branch:** `arena/01a04d03-miniroyal` (Synchronized with `main`)  

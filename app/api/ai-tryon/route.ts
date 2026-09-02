@@ -176,7 +176,12 @@ export async function POST(request: NextRequest) {
     form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
     form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
     form.append("prompt", prompt);
-    form.append("model", process.env.TRYON_MODEL || "kontext");
+    // This flow sends two references (person + garment). Pollinations documents
+    // multi-reference support for seedream/nanobanana/klein; kontext can ignore
+    // the second image, so protect older Hostinger env values automatically.
+    const configuredModel = process.env.TRYON_MODEL?.trim().toLowerCase();
+    const tryOnModel = configuredModel && configuredModel !== "kontext" ? configuredModel : "seedream";
+    form.append("model", tryOnModel);
     form.append("size", "1024x1024");
 
     if (!pollinationsKey) {
