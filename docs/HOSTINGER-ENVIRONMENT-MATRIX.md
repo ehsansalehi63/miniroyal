@@ -26,6 +26,12 @@
 | `DAHL_API_KEY` | کلید تحلیل Vision | پرو آنلاین |
 | `DAHL_API_URL` | endpoint سازگار OpenAI | پرو آنلاین |
 | `DAHL_VISION_MODEL` | مدل Vision دال | پرو آنلاین |
+| `SMS_PROVIDER` | سرویس ارسال OTP؛ `kavenegar` یا `smsir` | احراز هویت مشتری |
+| `SMS_API_KEY` | کلید سرویس پیامک | احراز هویت مشتری |
+| `SMS_LINE_NUMBER` | شماره خط SMS.ir | در صورت استفاده از SMS.ir |
+| `TRYON_FREE_LIMIT` | تعداد پرو رایگان در بازه | پیش‌فرض ۵ |
+| `TRYON_LIMIT_WINDOW_DAYS` | طول بازه سهمیه | پیش‌فرض ۳۰ روز |
+| `TRYON_ADMIN_PHONES` | شماره‌های ادمین بدون سهمیه، جداشده با comma | bypass سهمیه |
 | `AGENTROUTER_API_KEY` | کلید تحلیل Vision جایگزین | پرو آنلاین |
 | `AGENTROUTER_API_URL` | endpoint سازگار OpenAI | پرو آنلاین |
 | `AGENTROUTER_VISION_MODEL` | مدل Vision ایجنت‌روتر | پرو آنلاین |

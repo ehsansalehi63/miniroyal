@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeTryon } from "@/app/lib/tryon-usage";
 
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
 const MAX_DATA_URI_LENGTH = 11_000_000;
@@ -258,6 +259,7 @@ export async function POST(request: NextRequest) {
     const personImage = typeof body.personImage === "string" ? body.personImage : "";
     const garmentImage = typeof body.garmentImage === "string" ? body.garmentImage : "";
     const requestedSize = typeof body.requestedSize === "string" ? body.requestedSize : "";
+    const productId = Number.isSafeInteger(Number(body.productId)) ? Number(body.productId) : undefined;
 
     if (!personImage || !garmentImage) {
       return NextResponse.json(
@@ -274,6 +276,10 @@ export async function POST(request: NextRequest) {
     // required person/garment instructions.
     if (process.env.TRYON_USE_VISION_PROMPT === "true") {
       prompt = (await improvePrompt(personImage, garmentImage, requestedSize)) || fallbackPrompt;
+    }
+    const access = await authorizeTryon(productId);
+    if (!access.ok) {
+      return NextResponse.json({ success: false, code: access.status === 401 ? "AUTH_REQUIRED" : "TRYON_QUOTA_EXCEEDED", error: access.error, remaining: access.remaining }, { status: access.status });
     }
 
     const aihubmixImage = await callAihubmix(personImage, garmentImage, prompt);
@@ -326,7 +332,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, imageUrl });
+    return NextResponse.json({ success: true, imageUrl, remaining: access.remaining, unlimited: access.unlimited });
   } catch (error) {
     console.error("AI try-on error:", error);
     const message = error instanceof Error && error.name === "TimeoutError"

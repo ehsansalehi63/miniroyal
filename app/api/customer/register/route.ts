@@ -14,7 +14,11 @@ export async function POST(request: NextRequest) {
     const customer = await registerCustomer({ fullName, phone, email, password });
     return NextResponse.json({ success: true, customer }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error && error.message.includes("Duplicate") ? "این شماره موبایل یا ایمیل قبلاً ثبت شده است." : "ثبت‌نام انجام نشد.";
+    const message = error instanceof Error && error.message === "PHONE_NOT_VERIFIED"
+      ? "ابتدا شماره موبایل خود را با کد پیامکی تایید کنید."
+      : error instanceof Error && error.message.includes("Duplicate")
+        ? "این شماره موبایل یا ایمیل قبلاً ثبت شده است."
+        : "ثبت‌نام انجام نشد.";
     return NextResponse.json({ success: false, error: message }, { status: 400 });
   }
 }

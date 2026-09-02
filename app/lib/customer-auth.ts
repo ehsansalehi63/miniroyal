@@ -6,6 +6,7 @@ import pool from "./mysql";
 const scrypt = promisify(nodeScrypt);
 const COOKIE_NAME = "miniroyal_customer_session";
 const SESSION_DAYS = 30;
+const OTP_MINUTES = 10;
 
 async function ensureCustomerSchema() {
   await pool.execute(`
@@ -24,6 +25,85 @@ async function ensureCustomerSchema() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  try {
+    await pool.execute("ALTER TABLE customers ADD COLUMN phone_verified_at TIMESTAMP NULL");
+  } catch {}
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS customer_otps (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      phone VARCHAR(20) NOT NULL,
+      code_hash CHAR(64) NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      verified_at TIMESTAMP NULL,
+      attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_customer_otps_phone (phone),
+      INDEX idx_customer_otps_expiry (expires_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+}
+
+async function sendOtp(phone: string, code: string) {
+  const provider = (process.env.SMS_PROVIDER || "console").toLowerCase();
+  const key = process.env.SMS_API_KEY;
+  if (provider === "console") {
+    if (process.env.NODE_ENV === "production") throw new Error("SMS_PROVIDER is not configured.");
+    console.info(`[MiniRoyal OTP] ${phone}: ${code}`);
+    return;
+  }
+  if (!key) throw new Error("SMS_API_KEY is not configured.");
+  const text = `کد تایید مینی رویال: ${code}`;
+  if (provider === "kavenegar") {
+    const url = `https://api.kavenegar.com/v1/${encodeURIComponent(key)}/sms/send.json`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ receptor: phone, message: text }),
+    });
+    if (!response.ok) throw new Error("SMS provider failed.");
+    return;
+  }
+  if (provider === "smsir") {
+    const response = await fetch("https://api.sms.ir/v1/send/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": key },
+      body: JSON.stringify({ lineNumber: process.env.SMS_LINE_NUMBER, messageText: text, mobiles: [phone] }),
+    });
+    if (!response.ok) throw new Error("SMS provider failed.");
+    return;
+  }
+  throw new Error("Unsupported SMS_PROVIDER.");
+}
+
+function otpHash(phone: string, code: string) {
+  return createHmac("sha256", sessionSecret() || "otp-fallback").update(`${phone}:${code}`).digest("hex");
+}
+
+export async function requestCustomerOtp(phone: string) {
+  if (!/^\d{10,15}$/.test(phone)) throw new Error("شماره موبایل معتبر نیست.");
+  await ensureCustomerSchema();
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  await pool.execute(
+    "INSERT INTO customer_otps (phone, code_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))",
+    [phone, otpHash(phone, code), OTP_MINUTES]
+  );
+  await sendOtp(phone, code);
+}
+
+export async function verifyCustomerOtp(phone: string, code: string) {
+  await ensureCustomerSchema();
+  const [rows] = await pool.execute(
+    "SELECT id, code_hash, expires_at, attempts FROM customer_otps WHERE phone = ? AND verified_at IS NULL ORDER BY id DESC LIMIT 1",
+    [phone]
+  ) as unknown as [Array<{ id: number; code_hash: string; expires_at: Date; attempts: number }>];
+  const otp = rows[0];
+  if (!otp || new Date(otp.expires_at).getTime() < Date.now() || otp.attempts >= 5 || otpHash(phone, code) !== otp.code_hash) {
+    if (otp) await pool.execute("UPDATE customer_otps SET attempts = attempts + 1 WHERE id = ?", [otp.id]);
+    return false;
+  }
+  await pool.execute("UPDATE customer_otps SET verified_at = NOW() WHERE id = ?", [otp.id]);
+  await pool.execute("UPDATE customers SET phone_verified_at = NOW() WHERE phone = ?", [phone]);
+  return true;
 }
 
 async function hashPassword(password: string) {
@@ -62,6 +142,11 @@ function readSession(value: string | undefined) {
 export async function registerCustomer(input: { fullName: string; phone: string; email?: string; password: string }) {
   if (!sessionSecret()) throw new Error("AUTH_SESSION_SECRET is not configured.");
   await ensureCustomerSchema();
+  const [verifiedRows] = await pool.execute(
+    "SELECT id FROM customer_otps WHERE phone = ? AND verified_at IS NOT NULL ORDER BY id DESC LIMIT 1",
+    [input.phone]
+  ) as unknown as [Array<{ id: number }>];
+  if (!verifiedRows[0]) throw new Error("PHONE_NOT_VERIFIED");
   const passwordHash = await hashPassword(input.password);
   const [result] = await pool.execute(
     "INSERT INTO customers (full_name, phone, email, password_hash) VALUES (?, ?, ?, ?)",
@@ -75,7 +160,7 @@ export async function loginCustomer(phone: string, password: string) {
   if (!sessionSecret()) throw new Error("AUTH_SESSION_SECRET is not configured.");
   await ensureCustomerSchema();
   const [rows] = await pool.execute(
-    "SELECT id, full_name, phone, email, password_hash, is_active FROM customers WHERE phone = ? LIMIT 1",
+    "SELECT id, full_name, phone, email, password_hash, is_active, phone_verified_at FROM customers WHERE phone = ? LIMIT 1",
     [phone]
   ) as unknown as [Array<{ id: number; full_name: string; phone: string; email: string | null; password_hash: string | null; is_active: number }>];
   const customer = rows[0];

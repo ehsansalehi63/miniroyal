@@ -20,6 +20,9 @@ export default function AccountPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +40,7 @@ export default function AccountPage() {
     setError("");
     setSubmitting(true);
     try {
+      if (mode === "register" && !phoneVerified) throw new Error("ابتدا شماره موبایل را تایید کنید.");
       const response = await fetch(`/api/customer/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,6 +55,28 @@ export default function AccountPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function requestOtp() {
+    setError("");
+    const response = await fetch("/api/customer/request-otp", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || "ارسال کد انجام نشد.");
+    setOtpSent(true);
+  }
+
+  async function verifyOtp() {
+    setError("");
+    const response = await fetch("/api/customer/verify-otp", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, code: otp }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.error || "کد تایید نادرست است.");
+    setPhoneVerified(true);
   }
 
   async function logout() {
@@ -91,7 +117,11 @@ export default function AccountPage() {
         <p className="mt-2 text-sm text-stone-500">حساب شما برای پیگیری سفارش‌ها و پرداخت‌های آینده دائمی می‌ماند.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">
           {mode === "register" && <input required value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="نام و نام خانوادگی" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />}
-          <input required value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="شماره موبایل" inputMode="tel" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />
+          <div className="flex gap-2">
+            <input required value={phone} onChange={(event) => { setPhone(event.target.value); setPhoneVerified(false); }} placeholder="شماره موبایل" inputMode="tel" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />
+            {mode === "register" && <button type="button" onClick={() => void requestOtp().catch((e) => setError(e.message))} className="rounded-xl bg-amber-400 px-3 text-xs font-black text-stone-950">{otpSent ? "ارسال مجدد" : "ارسال کد"}</button>}
+          </div>
+          {mode === "register" && otpSent && <div className="flex gap-2"><input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="کد ۶ رقمی" inputMode="numeric" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" /><button type="button" onClick={() => void verifyOtp().catch((e) => setError(e.message))} className="rounded-xl bg-emerald-600 px-4 text-xs font-black text-white">{phoneVerified ? "تایید شد" : "تایید شماره"}</button></div>}
           {mode === "register" && <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ایمیل (اختیاری)" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />}
           <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="رمز عبور (حداقل ۸ کاراکتر)" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />
           {error && <p className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</p>}

@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { getProducts } from "../lib/catalog";
 import VirtualTryonSelector from "../components/VirtualTryonSelector";
+import { currentCustomer } from "../lib/customer-auth";
+import Link from "next/link";
 
 export const metadata = {
   title: "پرو آنلاین و پیشنهاد سایز | مینی رویال",
@@ -8,6 +9,16 @@ export const metadata = {
 };
 
 export default async function VirtualTryonPage() {
+  const customer = await currentCustomer();
+  if (!customer) {
+    return (
+      <main dir="rtl" className="mx-auto max-w-lg px-4 py-24 text-center">
+        <h1 className="text-3xl font-black text-stone-950">ورود به پرو آنلاین</h1>
+        <p className="mt-4 text-sm leading-7 text-stone-600">برای حفظ حریم خصوصی تصاویر و مدیریت سهمیه، ابتدا در حساب مشتری عضو شوید و وارد شوید.</p>
+        <Link href="/account?next=%2Fvirtual-tryon" className="mt-7 inline-flex rounded-full bg-violet-700 px-7 py-3 font-black text-white">ورود یا ثبت‌نام</Link>
+      </main>
+    );
+  }
   const { products } = await getProducts({ sort: "recommended" });
   const tryOnProducts = products.filter(
     (product) =>
