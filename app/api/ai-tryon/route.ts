@@ -4,6 +4,7 @@ const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
 const MAX_DATA_URI_LENGTH = 11_000_000;
 const DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_DAHL_URL = "https://inference.dahl.global/v1/chat/completions";
+const DEFAULT_AIHUBMIX_URL = "https://aihubmix.com/v1/images/edits";
 
 function dataUriToBlob(value: string, fallbackType: string) {
   const match = value.match(/^data:([^;]+);base64,(.+)$/);
@@ -98,9 +99,51 @@ async function improvePrompt(personImage: string, garmentImage: string, requeste
   }
 }
 
+async function callAihubmix(personImage: string, garmentImage: string, prompt: string) {
+  const apiKey = process.env.AIHUBMIX_API_KEY;
+  if (!apiKey) return null;
+  const models = (process.env.AIHUBMIX_IMAGE_MODELS ||
+    "gemini-3.1-flash-image-preview-free,gpt-image-2-free")
+    .split(",").map((model) => model.trim()).filter(Boolean);
+  for (const model of models) {
+    const form = new FormData();
+    form.append("model", model);
+    form.append("prompt", prompt);
+    form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
+    form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
+    form.append("n", "1");
+    form.append("size", process.env.AIHUBMIX_IMAGE_SIZE || "1024x1024");
+    form.append("quality", process.env.AIHUBMIX_IMAGE_QUALITY || "auto");
+    form.append("output_format", "png");
+    try {
+      const response = await fetch(process.env.AIHUBMIX_IMAGE_URL || DEFAULT_AIHUBMIX_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+        cache: "no-store",
+        signal: AbortSignal.timeout(Number(process.env.AIHUBMIX_TIMEOUT_MS) || 120000),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        console.warn("AIHubMix image provider failed:", model, response.status, result?.error);
+        continue;
+      }
+      const output = result?.data?.[0];
+      const imageUrl = output?.b64_json
+        ? `data:image/png;base64,${output.b64_json}`
+        : typeof output?.url === "string" ? output.url : null;
+      if (imageUrl) return imageUrl;
+    } catch (error) {
+      console.warn("AIHubMix image provider exception:", model, error);
+    }
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.POLLINATIONS_API_KEY;
-  if (!apiKey) {
+  const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+  const aihubmixKey = process.env.AIHUBMIX_API_KEY;
+  if (!pollinationsKey && !aihubmixKey) {
     return NextResponse.json(
       { success: false, code: "MISSING_PROVIDER_KEY", error: "کلید POLLINATIONS_API_KEY روی هاست تنظیم نشده است. تحلیل عکس انجام می‌شود، اما تولید تصویر نهایی بدون موتور تصویر ممکن نیست." },
       { status: 503 }
@@ -120,19 +163,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const form = new FormData();
-    form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
-    form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
     const fallbackPrompt = `Professional virtual try-on for a children's clothing store. Use the second image as the exact garment reference and replace only the visible clothing on the person in the first image. Preserve the child's face, hair, body proportions, pose, hands, background, lighting and identity. Keep the exact garment color, pattern, logo placement and construction. Make the fit natural for the child's body; do not invent accessories, text, logos, extra limbs or a different garment. Requested catalog size: ${requestedSize || "not specified"}.`;
     let prompt = fallbackPrompt;
     prompt = (await improvePrompt(personImage, garmentImage, requestedSize)) || fallbackPrompt;
+
+    const aihubmixImage = await callAihubmix(personImage, garmentImage, prompt);
+    if (aihubmixImage) {
+      return NextResponse.json({ success: true, imageUrl: aihubmixImage, provider: "aihubmix" });
+    }
+
+    const form = new FormData();
+    form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
+    form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
     form.append("prompt", prompt);
     form.append("model", process.env.TRYON_MODEL || "kontext");
     form.append("size", "1024x1024");
 
+    if (!pollinationsKey) {
+      return NextResponse.json(
+        { success: false, code: "IMAGE_PROVIDER_ERROR", error: "AIHubMix پاسخ تصویر قابل استفاده برنگرداند." },
+        { status: 502 }
+      );
+    }
     const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: { Authorization: `Bearer ${pollinationsKey}` },
       body: form,
       cache: "no-store",
       signal: AbortSignal.timeout(Number(process.env.TRYON_TIMEOUT_MS) || 120000),
