@@ -19,6 +19,27 @@ function fileToDataUrl(file: Blob) {
   });
 }
 
+function compressImage(source: string, maxSide = 1600, quality = 0.82) {
+  return new Promise<string>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) {
+        reject(new Error("Image preparation failed."));
+        return;
+      }
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    image.onerror = () => reject(new Error("Could not read the image."));
+    image.src = source;
+  });
+}
+
 async function sourceToDataUrl(source: string) {
   if (source.startsWith("data:")) return source;
   const response = await fetch(source);
@@ -61,7 +82,8 @@ export default function VirtualTryonBox({ product }: Props) {
     }
     setError("");
     setResultImage(undefined);
-    setPersonImage(await fileToDataUrl(file));
+    const uploadedImage = await fileToDataUrl(file);
+    setPersonImage(await compressImage(uploadedImage));
   };
 
   const onUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -85,12 +107,21 @@ export default function VirtualTryonBox({ product }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           personImage,
-          garmentImage: await sourceToDataUrl(product.tryOnAsset?.url ?? product.images[0]),
+          garmentImage: await compressImage(await sourceToDataUrl(product.tryOnAsset?.url ?? product.images[0])),
           productId: product.id,
           requestedSize: fit.size,
         }),
       });
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: { success?: boolean; imageUrl?: string; error?: string } = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        if (responseText.trimStart().startsWith("<")) {
+          throw new Error("سرور پاسخ HTML برگرداند؛ احتمالاً حجم عکس زیاد است یا API هنوز دیپلوی نشده است.");
+        }
+        throw new Error("پاسخ نامعتبر از سرویس پرو آنلاین دریافت شد.");
+      }
       if (!response.ok || !data.success || !data.imageUrl) {
         throw new Error(data.error || "تولید تصویر پرو انجام نشد.");
       }
