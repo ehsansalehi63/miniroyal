@@ -19,7 +19,7 @@ function fileToDataUrl(file: Blob) {
   });
 }
 
-function compressImage(source: string, maxSide = 1600, quality = 0.82) {
+function compressImage(source: string, maxSide = 1024, quality = 0.72) {
   return new Promise<string>((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
@@ -33,7 +33,15 @@ function compressImage(source: string, maxSide = 1600, quality = 0.82) {
         return;
       }
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", quality));
+      // Keep the complete JSON request comfortably below common Hostinger /
+      // reverse-proxy request limits. Retry with lower quality for unusually
+      // detailed photos.
+      let encoded = canvas.toDataURL("image/jpeg", quality);
+      for (const nextQuality of [0.62, 0.52, 0.42]) {
+        if (encoded.length <= 2_800_000) break;
+        encoded = canvas.toDataURL("image/jpeg", nextQuality);
+      }
+      resolve(encoded);
     };
     image.onerror = () => reject(new Error("Could not read the image."));
     image.src = source;
@@ -118,7 +126,7 @@ export default function VirtualTryonBox({ product }: Props) {
         data = JSON.parse(responseText);
       } catch {
         if (responseText.trimStart().startsWith("<")) {
-          throw new Error("سرور پاسخ HTML برگرداند؛ احتمالاً حجم عکس زیاد است یا API هنوز دیپلوی نشده است.");
+          throw new Error(`سرور پاسخ HTML برگرداند (HTTP ${response.status})؛ احتمالاً نسخه جدید هنوز دیپلوی نشده یا درخواست توسط محدودیت هاستینگ رد شده است.`);
         }
         throw new Error("پاسخ نامعتبر از سرویس پرو آنلاین دریافت شد.");
       }
