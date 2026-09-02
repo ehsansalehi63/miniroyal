@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+import { toPersianDigits } from "../lib/utils";
 
 type Customer = {
   id: number;
@@ -15,7 +16,11 @@ type Customer = {
 
 export default function AccountPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("mode") === "register"
+      ? "register"
+      : "login"
+  );
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -23,6 +28,7 @@ export default function AccountPage() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -34,6 +40,11 @@ export default function AccountPage() {
       .catch(() => setCustomer(null))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(() => {
+    if (resendSeconds <= 0) return;
+    const timer = window.setInterval(() => setResendSeconds((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearInterval(timer);
+  }, [resendSeconds]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,6 +70,7 @@ export default function AccountPage() {
 
   async function requestOtp() {
     setError("");
+    if (resendSeconds > 0) return;
     const response = await fetch("/api/customer/request-otp", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone }),
@@ -66,6 +78,7 @@ export default function AccountPage() {
     const data = await response.json();
     if (!response.ok || !data.success) throw new Error(data.error || "ارسال کد انجام نشد.");
     setOtpSent(true);
+    setResendSeconds(30);
   }
 
   async function verifyOtp() {
@@ -119,7 +132,7 @@ export default function AccountPage() {
           {mode === "register" && <input required value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="نام و نام خانوادگی" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />}
           <div className="flex gap-2">
             <input required value={phone} onChange={(event) => { setPhone(event.target.value); setPhoneVerified(false); }} placeholder="شماره موبایل" inputMode="tel" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />
-            {mode === "register" && <button type="button" onClick={() => void requestOtp().catch((e) => setError(e.message))} className="rounded-xl bg-amber-400 px-3 text-xs font-black text-stone-950">{otpSent ? "ارسال مجدد" : "ارسال کد"}</button>}
+            {mode === "register" && <button type="button" disabled={resendSeconds > 0} onClick={() => void requestOtp().catch((e) => setError(e.message))} className="rounded-xl bg-amber-400 px-3 text-xs font-black text-stone-950 disabled:cursor-not-allowed disabled:opacity-50">{resendSeconds > 0 ? `ارسال مجدد ${toPersianDigits(resendSeconds)} ثانیه` : otpSent ? "ارسال مجدد کد" : "ارسال کد تایید"}</button>}
           </div>
           {mode === "register" && otpSent && <div className="flex gap-2"><input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="کد ۶ رقمی" inputMode="numeric" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" /><button type="button" onClick={() => void verifyOtp().catch((e) => setError(e.message))} className="rounded-xl bg-emerald-600 px-4 text-xs font-black text-white">{phoneVerified ? "تایید شد" : "تایید شماره"}</button></div>}
           {mode === "register" && <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ایمیل (اختیاری)" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />}
