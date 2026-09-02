@@ -48,7 +48,7 @@ async function sourceToDataUrl(source: string) {
 }
 
 export default function VirtualTryonBox({ product }: Props) {
-  const [tab, setTab] = useState<"fit" | "photo">("fit");
+  const [tab, setTab] = useState<"fit" | "photo">("photo");
   const [heightCm, setHeightCm] = useState(104);
   const [weightKg, setWeightKg] = useState(17);
   const [chestCm, setChestCm] = useState(56);
@@ -248,6 +248,18 @@ export default function VirtualTryonBox({ product }: Props) {
             <p className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4 text-xs text-amber-100">این تصویر برای نمایش تقریبی تن‌خور است؛ اندازهٔ نهایی خرید را بر اساس پیشنهاد سایز و جدول اندازه بررسی کن.</p>
             {resultImage && <a href={resultImage} download={`miniroyal-tryon-${product.slug}.png`} className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-xs font-black text-white"><Download className="size-4" /> دانلود نتیجه</a>}
           </div>
+          {resultImage && (
+            <div className="lg:col-span-2 rounded-3xl border border-emerald-300/40 bg-emerald-950/30 p-4 sm:p-6">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black text-emerald-300">نتیجهٔ تأییدشدهٔ پرو آنلاین</p>
+                  <p className="mt-1 text-[11px] text-emerald-100/80">لباس انتخاب‌شده روی عکس شما پردازش و آمادهٔ مشاهده شده است.</p>
+                </div>
+                <span className="rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-black text-stone-950">آماده نمایش</span>
+              </div>
+              <img src={resultImage} alt={`نتیجه پرو آنلاین لباس ${product.title}`} className="mx-auto max-h-[900px] w-full rounded-2xl bg-stone-100 object-contain shadow-2xl" />
+            </div>
+          )}
         </div>
       )}
     </section>
