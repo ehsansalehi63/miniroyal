@@ -4,6 +4,7 @@ const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
 const MAX_DATA_URI_LENGTH = 11_000_000;
 const DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_DAHL_URL = "https://inference.dahl.global/v1/chat/completions";
+const DEFAULT_AGENTROUTER_URL = "https://agentrouter.org/v1/chat/completions";
 const DEFAULT_AIHUBMIX_URL = "https://aihubmix.com/v1/images/edits";
 const DEFAULT_AIHUBMIX_TRYON_URL =
   "https://aihubmix.com/v1/models/doubao/doubao-seedream-4-5/predictions";
@@ -88,6 +89,42 @@ async function improvePromptWithDahl(personImage: string, garmentImage: string, 
   return typeof prompt === "string" && prompt.trim() ? prompt.trim().slice(0, 1800) : null;
 }
 
+async function improvePromptWithAgentRouter(personImage: string, garmentImage: string, requestedSize: string) {
+  const apiKey = process.env.AGENTROUTER_API_KEY;
+  const model = process.env.AGENTROUTER_VISION_MODEL;
+  if (!apiKey || !model) return null;
+
+  const response = await fetch(process.env.AGENTROUTER_API_URL || DEFAULT_AGENTROUTER_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Analyze the first image as the child/person and the second image as the exact garment. Return only a concise English virtual try-on edit prompt. Preserve identity, face, hair, pose, hands, body proportions, background and lighting. Replace only the visible clothing with the exact garment. Requested catalog size: ${requestedSize || "not specified"}.`,
+          },
+          { type: "image_url", image_url: { url: personImage } },
+          { type: "image_url", image_url: { url: garmentImage } },
+        ],
+      }],
+      temperature: 0.2,
+      max_tokens: 350,
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) return null;
+  const result = await response.json().catch(() => null);
+  const prompt = result?.choices?.[0]?.message?.content;
+  return typeof prompt === "string" && prompt.trim() ? prompt.trim().slice(0, 1800) : null;
+}
+
 async function improvePrompt(personImage: string, garmentImage: string, requestedSize: string) {
   try {
     const dahlPrompt = await improvePromptWithDahl(personImage, garmentImage, requestedSize);
@@ -99,6 +136,11 @@ async function improvePrompt(personImage: string, garmentImage: string, requeste
     return await improvePromptWithOpenRouter(personImage, garmentImage, requestedSize);
   } catch (error) {
     console.warn("OpenRouter vision analysis unavailable:", error);
+  }
+  try {
+    return await improvePromptWithAgentRouter(personImage, garmentImage, requestedSize);
+  } catch (error) {
+    console.warn("AgentRouter vision analysis unavailable:", error);
     return null;
   }
 }
@@ -262,7 +304,9 @@ export async function POST(request: NextRequest) {
       headers: { Authorization: `Bearer ${pollinationsKey}` },
       body: form,
       cache: "no-store",
-      signal: AbortSignal.timeout(Number(process.env.TRYON_TIMEOUT_MS) || 120000),
+      signal: AbortSignal.timeout(
+        Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, 8_000)
+      ),
     });
     const result = await response.json().catch(() => null);
     const imageUrl = result?.data?.[0]?.b64_json

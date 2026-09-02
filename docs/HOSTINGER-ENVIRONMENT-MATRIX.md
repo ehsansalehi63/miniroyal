@@ -26,6 +26,9 @@
 | `DAHL_API_KEY` | کلید تحلیل Vision | پرو آنلاین |
 | `DAHL_API_URL` | endpoint سازگار OpenAI | پرو آنلاین |
 | `DAHL_VISION_MODEL` | مدل Vision دال | پرو آنلاین |
+| `AGENTROUTER_API_KEY` | کلید تحلیل Vision جایگزین | پرو آنلاین |
+| `AGENTROUTER_API_URL` | endpoint سازگار OpenAI | پرو آنلاین |
+| `AGENTROUTER_VISION_MODEL` | مدل Vision ایجنت‌روتر | پرو آنلاین |
 | `OPENROUTER_API_KEY` | کلید تحلیل Vision جایگزین | پرو آنلاین |
 | `OPENROUTER_API_URL` | endpoint OpenRouter | پرو آنلاین |
 | `OPENROUTER_VISION_MODEL` | مدل Vision؛ پیش‌فرض `openrouter/free` | پرو آنلاین |
