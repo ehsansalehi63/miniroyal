@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { DEFAULT_HOME_SLIDES, HomeSlide } from "../lib/homeConfig";
+import InteractiveChildModel from "./InteractiveChildModel";
 
 export default function Hero3DSlideshow() {
   const [current, setCurrent] = useState(0);
@@ -58,9 +59,8 @@ export default function Hero3DSlideshow() {
           <div className="absolute -inset-12 rounded-[50%] bg-violet-300/30 blur-3xl [transform:translateZ(-120px)]" />
           <div className="absolute -inset-6 translate-x-5 translate-y-5 rotate-3 border border-white/70 bg-white/20 shadow-xl [transform:translateZ(-70px)]" />
           <div className="absolute -inset-3 -translate-x-3 translate-y-3 -rotate-2 border border-stone-900/10 bg-stone-950/5 shadow-xl [transform:translateZ(-35px)]" />
-          <div className="relative aspect-[4/5] overflow-hidden border-8 border-white/70 bg-stone-200 shadow-[24px_30px_0_rgba(54,41,35,.12),0_30px_70px_rgba(54,41,35,.25)] [transform:translateZ(35px)]">
-            <motion.img style={{ x: imageX, y: imageY, scale: 1.08 }} src={slide.image} alt={slide.title} className="editorial-image size-full object-cover" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-stone-950/15 via-transparent to-white/40" />
+          <div className="relative border-8 border-white/70 bg-stone-200 shadow-[24px_30px_0_rgba(54,41,35,.12),0_30px_70px_rgba(54,41,35,.25)] [transform:translateZ(35px)]">
+            <InteractiveChildModel />
           </div>
           <span className="absolute -bottom-4 -right-4 bg-amber-300 px-5 py-3 text-[10px] font-black text-stone-950 shadow-xl [transform:translateZ(75px)]">COLLECTION {String(slide.id).padStart(2, "0")}</span>
           <span className="absolute -left-7 top-10 rounded-full border border-white/80 bg-white/65 px-4 py-2 text-[9px] font-black tracking-[.2em] text-stone-800 shadow-lg [transform:translateZ(90px)]">MINI ROYAL 3D</span>
