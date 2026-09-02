@@ -32,6 +32,8 @@
 | `AIHUBMIX_API_KEY` | کلید تولید/ویرایش تصویر | پرو آنلاین و ویرایش تصویر |
 | `AIHUBMIX_IMAGE_URL` | endpoint ویرایش تصویر | AIHubMix |
 | `AIHUBMIX_IMAGE_MODELS` | فهرست مدل‌های fallback با comma | AIHubMix |
+| `AIHUBMIX_TRYON_URL` | endpoint Native چندتصویری پروآنلاین | AIHubMix؛ پیش‌فرض Seedream 4.5 |
+| `AIHUBMIX_TRYON_MODEL` | مدل Native چندتصویری پروآنلاین | پیش‌فرض `doubao-seedream-4-5` |
 | `AIHUBMIX_IMAGE_SIZE` | اندازهٔ خروجی | AIHubMix |
 | `AIHUBMIX_IMAGE_QUALITY` | کیفیت خروجی | AIHubMix |
 | `AIHUBMIX_TIMEOUT_MS` | timeout درخواست تصویر | AIHubMix |

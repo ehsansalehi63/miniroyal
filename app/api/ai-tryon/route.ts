@@ -5,6 +5,9 @@ const MAX_DATA_URI_LENGTH = 11_000_000;
 const DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_DAHL_URL = "https://inference.dahl.global/v1/chat/completions";
 const DEFAULT_AIHUBMIX_URL = "https://aihubmix.com/v1/images/edits";
+const DEFAULT_AIHUBMIX_TRYON_URL =
+  "https://aihubmix.com/v1/models/doubao/doubao-seedream-4-5/predictions";
+const DEFAULT_AIHUBMIX_TRYON_MODEL = "doubao-seedream-4-5";
 
 function dataUriToBlob(value: string, fallbackType: string) {
   const match = value.match(/^data:([^;]+);base64,(.+)$/);
@@ -102,6 +105,56 @@ async function improvePrompt(personImage: string, garmentImage: string, requeste
 async function callAihubmix(personImage: string, garmentImage: string, prompt: string) {
   const apiKey = process.env.AIHUBMIX_API_KEY;
   if (!apiKey) return null;
+
+  // The native AIHubMix image-generation protocol accepts an image array.
+  // This is essential for try-on: image[0] is the person and image[1] is the
+  // exact garment reference. The legacy /v1/images/edits protocol only
+  // documents a single `image` field and can silently ignore the second one.
+  const nativeModel =
+    process.env.AIHUBMIX_TRYON_MODEL?.trim() || DEFAULT_AIHUBMIX_TRYON_MODEL;
+  const nativeUrl =
+    process.env.AIHUBMIX_TRYON_URL?.trim() || DEFAULT_AIHUBMIX_TRYON_URL;
+  try {
+    const response = await fetch(nativeUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: {
+          model: nativeModel,
+          prompt,
+          image: [personImage, garmentImage],
+          size: process.env.AIHUBMIX_IMAGE_SIZE || "1024x1024",
+          n: 1,
+          sequential_image_generation: "disabled",
+          response_format: "base64_json",
+          watermark: false,
+        },
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(Number(process.env.AIHUBMIX_TIMEOUT_MS) || 120000),
+    });
+    const result = await response.json().catch(() => null);
+    const output = result?.output?.[0] || result?.data?.[0] || result?.output;
+    const imageUrl =
+      typeof output === "string"
+        ? output
+        : output?.b64_json
+          ? `data:image/png;base64,${output.b64_json}`
+          : output?.base64
+            ? `data:image/png;base64,${output.base64}`
+            : output?.url || output?.image_url || output?.image;
+    if (response.ok && typeof imageUrl === "string" && imageUrl.length > 100) {
+      return imageUrl;
+    }
+    console.warn("AIHubMix native try-on failed:", response.status, result?.error || result);
+  } catch (error) {
+    console.warn("AIHubMix native try-on exception:", error);
+  }
+
+  // Keep compatibility with existing Hostinger values and older providers.
   const models = (process.env.AIHUBMIX_IMAGE_MODELS ||
     "gemini-3.1-flash-image-preview-free,gpt-image-2-free")
     .split(",").map((model) => model.trim()).filter(Boolean);
@@ -132,7 +185,9 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
       const imageUrl = output?.b64_json
         ? `data:image/png;base64,${output.b64_json}`
         : typeof output?.url === "string" ? output.url : null;
-      if (imageUrl) return imageUrl;
+      // Never report a byte-for-byte copy of the customer photo as a
+      // successful try-on result.
+      if (imageUrl && imageUrl !== personImage) return imageUrl;
     } catch (error) {
       console.warn("AIHubMix image provider exception:", model, error);
     }
