@@ -72,6 +72,32 @@ async function sendOtp(phone: string, code: string) {
     if (!response.ok) throw new Error("SMS provider failed.");
     return;
   }
+  if (provider === "iranpayamak") {
+    const lineNumber = process.env.SMS_LINE_NUMBER;
+    if (!lineNumber) throw new Error("SMS_LINE_NUMBER is not configured.");
+    const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/simple", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Api-Key": key,
+      },
+      body: JSON.stringify({
+        text,
+        line_number: lineNumber,
+        recipients: [phone],
+        number_format: "english",
+        schedule: null,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.status !== "success") {
+      console.warn("IranPayamak OTP failed:", response.status, result);
+      throw new Error("ارسال پیامک از ایران‌پیامک انجام نشد.");
+    }
+    return;
+  }
   throw new Error("Unsupported SMS_PROVIDER.");
 }
 

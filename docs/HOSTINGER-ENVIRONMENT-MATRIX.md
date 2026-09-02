@@ -26,7 +26,7 @@
 | `DAHL_API_KEY` | کلید تحلیل Vision | پرو آنلاین |
 | `DAHL_API_URL` | endpoint سازگار OpenAI | پرو آنلاین |
 | `DAHL_VISION_MODEL` | مدل Vision دال | پرو آنلاین |
-| `SMS_PROVIDER` | سرویس ارسال OTP؛ `kavenegar` یا `smsir` | احراز هویت مشتری |
+| `SMS_PROVIDER` | سرویس ارسال OTP؛ `iranpayamak`، `kavenegar` یا `smsir` | احراز هویت مشتری |
 | `SMS_API_KEY` | کلید سرویس پیامک | احراز هویت مشتری |
 | `SMS_LINE_NUMBER` | شماره خط SMS.ir | در صورت استفاده از SMS.ir |
 | `TRYON_FREE_LIMIT` | تعداد پرو رایگان در بازه | پیش‌فرض ۵ |
