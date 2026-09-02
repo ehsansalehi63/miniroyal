@@ -8,6 +8,7 @@ const DEFAULT_AIHUBMIX_URL = "https://aihubmix.com/v1/images/edits";
 const DEFAULT_AIHUBMIX_TRYON_URL =
   "https://aihubmix.com/v1/models/doubao/doubao-seedream-4-5/predictions";
 const DEFAULT_AIHUBMIX_TRYON_MODEL = "doubao-seedream-4-5";
+const TRYON_REQUEST_TIMEOUT_MS = 48_000;
 
 function dataUriToBlob(value: string, fallbackType: string) {
   const match = value.match(/^data:([^;]+);base64,(.+)$/);
@@ -126,15 +127,18 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
           model: nativeModel,
           prompt,
           image: [personImage, garmentImage],
-          size: process.env.AIHUBMIX_IMAGE_SIZE || "1024x1024",
+          size: "2K",
           n: 1,
           sequential_image_generation: "disabled",
-          response_format: "base64_json",
+          stream: false,
+          response_format: "url",
           watermark: false,
         },
       }),
       cache: "no-store",
-      signal: AbortSignal.timeout(Number(process.env.AIHUBMIX_TIMEOUT_MS) || 120000),
+      signal: AbortSignal.timeout(
+        Math.min(Number(process.env.AIHUBMIX_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
+      ),
     });
     const result = await response.json().catch(() => null);
     const output = result?.output?.[0] || result?.data?.[0] || result?.output;
@@ -174,7 +178,9 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
         headers: { Authorization: `Bearer ${apiKey}` },
         body: form,
         cache: "no-store",
-        signal: AbortSignal.timeout(Number(process.env.AIHUBMIX_TIMEOUT_MS) || 120000),
+        signal: AbortSignal.timeout(
+          Math.min(Number(process.env.AIHUBMIX_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
+        ),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) {
@@ -220,7 +226,13 @@ export async function POST(request: NextRequest) {
 
     const fallbackPrompt = `Professional virtual try-on for a children's clothing store. Use the second image as the exact garment reference and replace only the visible clothing on the person in the first image. Preserve the child's face, hair, body proportions, pose, hands, background, lighting and identity. Keep the exact garment color, pattern, logo placement and construction. Make the fit natural for the child's body; do not invent accessories, text, logos, extra limbs or a different garment. Requested catalog size: ${requestedSize || "not specified"}.`;
     let prompt = fallbackPrompt;
-    prompt = (await improvePrompt(personImage, garmentImage, requestedSize)) || fallbackPrompt;
+    // Vision analysis is intentionally opt-in. Running Dahl/OpenRouter before
+    // image generation adds another network round trip and commonly exceeds
+    // Hostinger's gateway timeout. The edit prompt already contains the
+    // required person/garment instructions.
+    if (process.env.TRYON_USE_VISION_PROMPT === "true") {
+      prompt = (await improvePrompt(personImage, garmentImage, requestedSize)) || fallbackPrompt;
+    }
 
     const aihubmixImage = await callAihubmix(personImage, garmentImage, prompt);
     if (aihubmixImage) {
