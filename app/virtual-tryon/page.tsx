@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getFeaturedProducts } from "../lib/catalog";
+import { getProducts } from "../lib/catalog";
 import VirtualTryonSelector from "../components/VirtualTryonSelector";
 
 export const metadata = {
@@ -8,7 +8,13 @@ export const metadata = {
 };
 
 export default async function VirtualTryonPage() {
-  const products = await getFeaturedProducts(8);
+  const { products } = await getProducts({ sort: "recommended" });
+  const tryOnProducts = products.filter(
+    (product) =>
+      product.status === "active" &&
+      product.images.length > 0 &&
+      product.variants.some((variant) => variant.stock > 0)
+  );
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -25,7 +31,7 @@ export default async function VirtualTryonPage() {
       </div>
 
       <div className="mt-10">
-        <VirtualTryonSelector products={products} />
+        <VirtualTryonSelector products={tryOnProducts} />
       </div>
 
       <div dir="rtl" className="mt-12 rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm">

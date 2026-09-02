@@ -178,7 +178,7 @@ export default function VirtualTryonBox({ product }: Props) {
             <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 p-3">
               <p className="mb-2 text-xs font-black text-amber-300">لباس انتخاب‌شده برای پرو</p>
               <div className="flex items-center gap-3">
-                <img src={garmentSource} alt={`لباس ${product.title}`} className="size-24 rounded-xl bg-white object-cover" />
+                <img src={garmentSource} alt={`لباس ${product.title}`} className="size-24 rounded-xl bg-stone-100 object-contain p-1" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-black text-white">{product.title}</p>
                   <p className="mt-1 text-[11px] text-violet-200">این تصویر مرجع دقیق لباس برای موتور پرو است.</p>
@@ -195,11 +195,11 @@ export default function VirtualTryonBox({ product }: Props) {
               <div className="mt-5 grid grid-cols-2 gap-2">
                 <div>
                   <p className="mb-1 text-[10px] font-bold text-violet-200">عکس شما</p>
-                  <img src={personImage} alt="پیش‌نمایش عکس کاربر" className="aspect-square w-full rounded-2xl bg-black/20 object-cover" />
+                  <img src={personImage} alt="پیش‌نمایش عکس کاربر" className="aspect-square w-full rounded-2xl bg-black/20 object-contain" />
                 </div>
                 <div>
                   <p className="mb-1 text-[10px] font-bold text-emerald-200">{resultImage ? "نتیجه پرو" : "مرجع لباس"}</p>
-                  <img src={resultImage ?? garmentSource} alt={resultImage ? "نتیجه پرو آنلاین" : `مرجع لباس ${product.title}`} className="aspect-square w-full rounded-2xl bg-white object-cover" />
+                  <img src={resultImage ?? garmentSource} alt={resultImage ? "نتیجه پرو آنلاین" : `مرجع لباس ${product.title}`} className="aspect-square w-full rounded-2xl bg-stone-100 object-contain p-2" />
                 </div>
               </div>
             )}
