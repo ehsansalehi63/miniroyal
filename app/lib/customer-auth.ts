@@ -53,6 +53,34 @@ async function sendOtp(phone: string, code: string) {
   }
   if (!key) throw new Error("SMS_API_KEY is not configured.");
   const text = `کد تایید مینی رویال: ${code}`;
+  const lineNumber = process.env.SMS_LINE_NUMBER;
+  const patternCode = process.env.SMS_PATTERN_CODE;
+  if (provider === "iranpayamak" && patternCode) {
+    if (!lineNumber) throw new Error("SMS_LINE_NUMBER is not configured.");
+    const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/pattern", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Api-Key": key,
+      },
+      body: JSON.stringify({
+        code: patternCode,
+        attributes: { var1: code },
+        recipient: phone,
+        line_number: lineNumber,
+        number_format: "english",
+        schedule: null,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || result?.status !== "success") {
+      console.warn("IranPayamak pattern OTP failed:", response.status, result);
+      throw new Error("ارسال کد تایید از الگوی ایران‌پیامک انجام نشد.");
+    }
+    return;
+  }
   if (provider === "kavenegar") {
     const url = `https://api.kavenegar.com/v1/${encodeURIComponent(key)}/sms/send.json`;
     const response = await fetch(url, {
@@ -73,7 +101,6 @@ async function sendOtp(phone: string, code: string) {
     return;
   }
   if (provider === "iranpayamak") {
-    const lineNumber = process.env.SMS_LINE_NUMBER;
     if (!lineNumber) throw new Error("SMS_LINE_NUMBER is not configured.");
     const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/simple", {
       method: "POST",
@@ -109,10 +136,8 @@ export async function requestCustomerOtp(phone: string) {
   if (!/^\d{10,15}$/.test(phone)) throw new Error("شماره موبایل معتبر نیست.");
   await ensureCustomerSchema();
   const code = String(Math.floor(100000 + Math.random() * 900000));
-  await pool.execute(
-    "INSERT INTO customer_otps (phone, code_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))",
-    [phone, otpHash(phone, code), OTP_MINUTES]
-  );
+  const expiresAt = new Date(Date.now() + OTP_MINUTES * 60_000);
+  await pool.execute("INSERT INTO customer_otps (phone, code_hash, expires_at) VALUES (?, ?, ?)", [phone, otpHash(phone, code), expiresAt]);
   await sendOtp(phone, code);
 }
 

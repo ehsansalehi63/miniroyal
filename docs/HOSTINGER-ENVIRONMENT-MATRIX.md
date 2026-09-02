@@ -29,6 +29,7 @@
 | `SMS_PROVIDER` | سرویس ارسال OTP؛ `iranpayamak`، `kavenegar` یا `smsir` | احراز هویت مشتری |
 | `SMS_API_KEY` | کلید سرویس پیامک | احراز هویت مشتری |
 | `SMS_LINE_NUMBER` | شماره خط SMS.ir | در صورت استفاده از SMS.ir |
+| `SMS_PATTERN_CODE` | کد الگوی OTP ایران‌پیامک | اختیاری؛ با `%var1%` در متن الگو |
 | `TRYON_FREE_LIMIT` | تعداد پرو رایگان در بازه | پیش‌فرض ۵ |
 | `TRYON_LIMIT_WINDOW_DAYS` | طول بازه سهمیه | پیش‌فرض ۳۰ روز |
 | `TRYON_ADMIN_PHONES` | شماره‌های ادمین بدون سهمیه، جداشده با comma | bypass سهمیه |
