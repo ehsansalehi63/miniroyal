@@ -7,6 +7,9 @@ const scrypt = promisify(nodeScrypt);
 const COOKIE_NAME = "miniroyal_customer_session";
 const SESSION_DAYS = 30;
 const OTP_MINUTES = 10;
+function envValue(value: string | undefined) {
+  return (value || "").trim().replace(/^['"]|['"]$/g, "");
+}
 
 async function ensureCustomerSchema() {
   await pool.execute(`
@@ -44,8 +47,8 @@ async function ensureCustomerSchema() {
 }
 
 async function sendOtp(phone: string, code: string) {
-  const provider = (process.env.SMS_PROVIDER || "console").toLowerCase();
-  const key = process.env.SMS_API_KEY;
+  const provider = envValue(process.env.SMS_PROVIDER || "console").toLowerCase();
+  const key = envValue(process.env.SMS_API_KEY);
   if (provider === "console") {
     if (process.env.NODE_ENV === "production") throw new Error("SMS_PROVIDER is not configured.");
     console.info(`[MiniRoyal OTP] ${phone}: ${code}`);
@@ -53,8 +56,8 @@ async function sendOtp(phone: string, code: string) {
   }
   if (!key) throw new Error("SMS_API_KEY is not configured.");
   const text = `کد تایید مینی رویال: ${code}`;
-  const lineNumber = process.env.SMS_LINE_NUMBER;
-  const patternCode = process.env.SMS_PATTERN_CODE;
+  const lineNumber = envValue(process.env.SMS_LINE_NUMBER);
+  const patternCode = envValue(process.env.SMS_PATTERN_CODE);
   if (provider === "iranpayamak" && patternCode) {
     if (!lineNumber) throw new Error("SMS_LINE_NUMBER is not configured.");
     const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/pattern", {
