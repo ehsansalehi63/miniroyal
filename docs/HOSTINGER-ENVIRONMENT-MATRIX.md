@@ -26,10 +26,12 @@
 | `DAHL_API_KEY` | کلید تحلیل Vision | پرو آنلاین |
 | `DAHL_API_URL` | endpoint سازگار OpenAI | پرو آنلاین |
 | `DAHL_VISION_MODEL` | مدل Vision دال | پرو آنلاین |
-| `SMS_PROVIDER` | سرویس ارسال OTP؛ `iranpayamak`، `kavenegar` یا `smsir` | احراز هویت مشتری |
-| `SMS_API_KEY` | کلید سرویس پیامک | احراز هویت مشتری |
-| `SMS_LINE_NUMBER` | شماره خط SMS.ir | در صورت استفاده از SMS.ir |
-| `SMS_PATTERN_CODE` | کد الگوی OTP ایران‌پیامک | اختیاری؛ با `%var1%` در متن الگو |
+| `SMS_PROVIDER` | سرویس ارسال OTP؛ `iranpayamak` (=`farazsms`)، `kavenegar`، `smsir` یا `console` | احراز هویت مشتری |
+| `SMS_API_KEY` | کلید سرویس پیامک | برای هر سرویس غیر از `console` اجباری |
+| `SMS_LINE_NUMBER` | شماره خط اختصاصی پنل | برای ایران‌پیامک اجباری؛ برای SMS.ir در نبود `SMSIR_TEMPLATE_ID` |
+| `SMS_PATTERN_CODE` | کد الگوی OTP ایران‌پیامک | اختیاری؛ الگو باید `%var1%` داشته باشد |
+| `SMSIR_TEMPLATE_ID` | شناسهٔ قالب «ارسال سریع» SMS.ir با پارامتر `CODE` | توصیه‌شده برای OTP |
+| `SMS_CONSOLE_FALLBACK` | `true` یعنی کد OTP به‌جای ارسال، در لاگ چاپ شود | فقط توسعه/دیباگ |
 | `TRYON_FREE_LIMIT` | تعداد پرو رایگان در بازه | پیش‌فرض ۵ |
 | `TRYON_LIMIT_WINDOW_DAYS` | طول بازه سهمیه | پیش‌فرض ۳۰ روز |
 | `TRYON_ADMIN_PHONES` | شماره‌های ادمین بدون سهمیه، جداشده با comma | bypass سهمیه |
