@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { mockCategories } from "../lib/data/mockProducts";
 import { kidsCategories } from "../lib/kidsCategories";
+import { getCategories } from "../lib/catalog";
 
-const categories = [...mockCategories, ...kidsCategories];
 const services = [
   ["/returns", "شرایط بازگشت کالا"],
   ["/privacy", "حریم خصوصی"],
@@ -13,7 +13,9 @@ const services = [
   ["/contact", "تماس با ما"],
 ];
 
-export default function Footer() {
+export default async function Footer() {
+  let categories = [...mockCategories, ...kidsCategories];
+  try { const databaseCategories = await getCategories(); if (databaseCategories.length) categories = databaseCategories; } catch { /* keep footer navigation available during a database outage */ }
   return (
     <footer className="border-t border-stone-800 bg-[#17131d] text-stone-300">
       <div className="mx-auto max-w-7xl px-4 py-14">

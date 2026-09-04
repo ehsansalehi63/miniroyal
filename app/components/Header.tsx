@@ -9,8 +9,7 @@ import { kidsCategories } from "../lib/kidsCategories";
 import { formatToman, toPersianDigits } from "../lib/utils";
 import { useCart } from "../lib/cart";
 
-const allCategories = [...mockCategories, ...kidsCategories];
-const parentCategories = mockCategories;
+const initialCategories = [...mockCategories, ...kidsCategories];
 type CurrentCustomer = { fullName: string; phone: string };
 
 function useIsMounted() {
@@ -29,6 +28,8 @@ export default function Header() {
     typeof window === "undefined" || localStorage.getItem("miniroyal_tryon_notice_closed") !== "1"
   );
   const [customer, setCustomer] = useState<CurrentCustomer | null>(null);
+  const [allCategories, setAllCategories] = useState(initialCategories);
+  const parentCategories = allCategories.filter((category) => !category.parentId);
   const [searchResults, setSearchResults] = useState<{ products: { id: number; title: string; slug: string; image: string; price: number }[]; categories: { name: string; slug: string }[] }>({ products: [], categories: [] });
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +43,12 @@ export default function Header() {
     }, 180);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+  useEffect(() => {
+    fetch("/api/catalog/categories", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Categories unavailable")))
+      .then((data: { categories?: typeof initialCategories }) => { if (Array.isArray(data.categories) && data.categories.length) setAllCategories(data.categories); })
+      .catch(() => undefined);
+  }, []);
   useEffect(() => {
     const close = (event: MouseEvent) => { if (searchRef.current && !searchRef.current.contains(event.target as Node)) setShowSearch(false); };
     document.addEventListener("mousedown", close);

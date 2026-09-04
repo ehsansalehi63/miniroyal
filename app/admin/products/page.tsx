@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Product, SizeChartRow, Variant } from "../../lib/types/catalog";
+import { Category, Product, SizeChartRow, Variant } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
 import DropzoneImageUploader from "../../components/DropzoneImageUploader";
 import ProductAngleMediaManager from "../../components/ProductAngleMediaManager";
@@ -15,6 +15,8 @@ export default function AdminProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [apiMessage, setApiMessage] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryId, setCategoryId] = useState(0);
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -53,6 +55,12 @@ export default function AdminProductsPage() {
       .finally(() => setLoadingProducts(false));
   }, []);
 
+  useEffect(() => {
+    fetch("/api/admin/categories", { cache: "no-store" })
+      .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "دریافت دسته‌بندی‌ها انجام نشد."); setCategories(data.categories || []); })
+      .catch((error: unknown) => setApiMessage(error instanceof Error ? error.message : "دریافت دسته‌بندی‌ها انجام نشد."));
+  }, []);
+
   const filtered = products.filter(
     (p) =>
       p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,7 +73,7 @@ export default function AdminProductsPage() {
     setApiMessage("");
     const finalImages = images.length > 0 ? images : ["/images/products/boy-hoodie.svg"];
     const payload = {
-      title, sku, categoryId: editingProduct?.categoryId || 1, categoryName, basePrice, salePrice,
+      title, sku, categoryId: categoryId || editingProduct?.categoryId || categories[0]?.id || 0, categoryName, basePrice, salePrice,
       shortDesc: editingProduct?.shortDesc || "محصول جدید افزوده شده توسط مدیر سیستم",
       description: editingProduct?.description || "توضیحات کامل محصول در پنل مدیریت ثبت شده است.",
       gender: editingProduct?.gender || "boy", ageMinMonth: editingProduct?.ageMinMonth || 24, ageMaxMonth: editingProduct?.ageMaxMonth || 96,
@@ -85,6 +93,7 @@ export default function AdminProductsPage() {
     setEditingProduct(p);
     setTitle(p.title);
     setCategoryName(p.categoryName);
+    setCategoryId(p.categoryId);
     setBasePrice(p.basePrice);
     setSalePrice(p.salePrice ?? p.basePrice);
     setSku(p.sku);
@@ -300,16 +309,16 @@ export default function AdminProductsPage() {
                 <div>
                   <label className="block font-bold text-stone-700">دسته‌بندی *</label>
                   <select
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
+                    value={categoryId || editingProduct?.categoryId || ""}
+                    onChange={(e) => { const id = Number(e.target.value); setCategoryId(id); setCategoryName(categories.find((category) => category.id === id)?.name || ""); }}
                     className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                    required
                   >
-                    <option value="پسرانه">پسرانه</option>
-                    <option value="دخترانه">دخترانه</option>
-                    <option value="نوزاد">نوزاد</option>
-                    <option value="لباس مدرسه">لباس مدرسه</option>
-                    <option value="لباس مجلسی">لباس مجلسی</option>
-                    <option value="ست‌ها و باکس‌ها">ست‌ها و باکس‌ها</option>
+                    <option value="">انتخاب دسته‌بندی</option>
+                    {categories.filter((category) => !category.parentId).map((parent) => <optgroup key={parent.id} label={`${parent.icon || ""} ${parent.name}`}>
+                      <option value={parent.id}>{parent.name}</option>
+                      {categories.filter((category) => category.parentId === parent.id).map((child) => <option key={child.id} value={child.id}>↳ {child.name}</option>)}
+                    </optgroup>)}
                   </select>
                 </div>
               </div>
