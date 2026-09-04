@@ -61,4 +61,15 @@ export const blogPosts: BlogPost[] = [
     readTime: "۴ دقیقه",
     image: "/images/models/hero-girl.svg",
   },
+  {
+    id: 5,
+    title: "استایل امضادار برای هر روز؛ انتخابی با عشق برای کوچولوی شما",
+    slug: "kids-style-signature-everyday",
+    category: "استایل کودک",
+    summary: "راهنمای انتخاب لباس کودک و نوجوان از نوزادی تا ۱۴ سال، همراه با پرو آنلاین سایز و دسته‌بندی‌های دقیق مینی رویال.",
+    date: "۱۳ شهریور ۱۴۰۵",
+    author: "تیم استایل مینی رویال",
+    readTime: "۴ دقیقه",
+    image: "/images/hero-poster.webp",
+  },
 ];
