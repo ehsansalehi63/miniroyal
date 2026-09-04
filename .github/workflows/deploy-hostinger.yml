@@ -1,0 +1,144 @@
+name: Deploy to Hostinger (SSH)
+
+# چرا این ورک‌فلو؟
+# محیط توسعهٔ Arena فقط به GitHub و npm دسترسی شبکه دارد؛ نه SSH به هاستینگر
+# و نه حتی HTTPS به دامنهٔ سایت. بنابراین تنها مسیری که می‌تواند واقعاً به
+# سرور برسد، رانر خودِ GitHub Actions است. این ورک‌فلو همان کاری را می‌کند که
+# scripts/deploy-hostinger.sh انجام می‌دهد، ولی از رانر اجرا می‌شود.
+#
+# Secrets لازم (در GitHub → Settings → Secrets and variables → Actions):
+#   HOSTINGER_SSH_HOST   مثال: 82.198.227.172
+#   HOSTINGER_SSH_PORT   مثال: 65002
+#   HOSTINGER_SSH_USER   مثال: u699154314
+#   HOSTINGER_SSH_KEY    کلید خصوصی (محتوای کامل فایل، با BEGIN/END)
+#   HOSTINGER_APP_DIR    مسیر نصب برنامه روی سرور
+#
+# اگر هر کدام نبود، ورک‌فلو با پیام روشن رد می‌شود و چیزی را خراب نمی‌کند.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: بررسی وجود Secrets
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          DIR: ${{ secrets.HOSTINGER_APP_DIR }}
+        run: |
+          missing=""
+          [ -z "$HOST" ] && missing="$missing HOSTINGER_SSH_HOST"
+          [ -z "$PORT" ] && missing="$missing HOSTINGER_SSH_PORT"
+          [ -z "$USER" ] && missing="$missing HOSTINGER_SSH_USER"
+          [ -z "$KEY" ]  && missing="$missing HOSTINGER_SSH_KEY"
+          [ -z "$DIR" ]  && missing="$missing HOSTINGER_APP_DIR"
+          if [ -n "$missing" ]; then
+            echo "::error::این Secrets تعریف نشده‌اند:$missing"
+            exit 1
+          fi
+          echo "همهٔ Secrets موجود است."
+
+      - name: آماده‌سازی کلید SSH
+        env:
+          KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+
+      - name: افزودن host key
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+        run: |
+          ssh-keyscan -p "$PORT" -T 20 "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          if ! grep -q . ~/.ssh/known_hosts; then
+            echo "::error::ssh-keyscan نتوانست به $HOST:$PORT وصل شود"
+            exit 1
+          fi
+
+      - name: دیپلوی روی سرور
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          USER: ${{ secrets.HOSTINGER_SSH_USER }}
+          APP_DIR: ${{ secrets.HOSTINGER_APP_DIR }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=25 -o ServerAliveInterval=15 \
+              "$USER@$HOST" "bash -s" <<REMOTE
+          set -euo pipefail
+
+          # APP_DIR روی رانر باز می‌شود و به‌صورت literal به سرور می‌رسد؛
+          # سپس ~ سمت سرور باز می‌شود (چون ~ داخل "" باز نمی‌شود).
+          APP_DIR_ON_SERVER='$APP_DIR'
+          case "\$APP_DIR_ON_SERVER" in
+            "~")   TARGET="\$HOME" ;;
+            "~/"*) TARGET="\$HOME/\${APP_DIR_ON_SERVER#\\~/}" ;;
+            *)     TARGET="\$APP_DIR_ON_SERVER" ;;
+          esac
+          if [ ! -d "\$TARGET/.git" ]; then
+            echo "::error::مسیر \$TARGET یک مخزن گیت نیست. HOSTINGER_APP_DIR را بررسی کن."
+            exit 1
+          fi
+          cd "\$TARGET"
+
+          echo "── کد ──"
+          # اگر مخزن خصوصی باشد و روی سرور credential ذخیره نشده باشد، همین‌جا
+          # می‌شکند؛ پیام روشن می‌دهیم تا با «دیپلوی نشد» اشتباه گرفته نشود.
+          if ! git fetch origin main; then
+            echo "::error::git fetch شکست — احتمالاً مخزن خصوصی است و روی سرور credential نیست."
+            echo "       راه‌حل: در hPanel → Git، مخزن را یک‌بار دستی pull کن تا credential ذخیره شود."
+            exit 1
+          fi
+          git checkout main
+          git pull --ff-only origin main
+          echo "کامیت: \$(git log --oneline -1)"
+
+          echo "── وابستگی‌ها ──"
+          # --include=dev: با NODE_ENV=production، npm وابستگی‌های dev را نصب
+          # نمی‌کند و بیلد با «Cannot find module '@tailwindcss/postcss'» می‌شکند.
+          npm ci --include=dev
+
+          echo "── بیلد ──"
+          # کش Turbopack شکست قبلی را نگه می‌دارد؛ فقط کش پاک می‌شود تا
+          # .nextِ در حال سرویس‌دهی دست‌نخورده بماند.
+          rm -rf .next/cache
+          npm run build
+
+          if [ ! -f .next/BUILD_ID ]; then
+            echo "BUILD_ID تولید نشد؛ سرویس ری‌استارت نمی‌شود."
+            exit 1
+          fi
+          echo "BUILD_ID: \$(cat .next/BUILD_ID)"
+
+          echo "── ری‌استارت ──"
+          # --update-env لازم است تا .env تازه (شامل SMS_*) خوانده شود
+          pm2 restart miniroyal --update-env || pm2 start npm --name miniroyal -- start
+          REMOTE
+
+      - name: بررسی پس از دیپلوی
+        env:
+          HOST: ${{ secrets.HOSTINGER_SSH_HOST }}
+          PORT: ${{ secrets.HOSTINGER_SSH_PORT }}
+          USER: ${{ secrets.HOSTINGER_SSH_USER }}
+        run: |
+          sleep 8
+          ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=yes \
+              "$USER@$HOST" \
+              'curl -s -m 15 http://127.0.0.1:3000/api/system-status || echo "پاسخی از سرور محلی گرفته نشد"'
+
+      - name: پاک‌سازی کلید
+        if: always()
+        run: rm -f ~/.ssh/id_deploy
