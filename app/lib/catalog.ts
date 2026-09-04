@@ -1,6 +1,10 @@
 import type { RowDataPacket } from "mysql2";
 import pool from "./mysql";
 import { CatalogFilterParams, Category, Product, Variant } from "./types/catalog";
+import { mockCategories } from "./data/mockProducts";
+import { kidsCategories } from "./kidsCategories";
+
+const staticCategories = [...mockCategories, ...kidsCategories];
 
 type CategoryRow = RowDataPacket & {
   id: number; parent_id: number | null; name: string; slug: string; description: string | null;
@@ -71,8 +75,9 @@ async function loadProducts(where = "p.status = 'active'", params: (string | num
 export async function getCategories(): Promise<Category[]> { return loadCategories(); }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  const categories = await loadCategories();
-  return categories.find((category) => category.slug === slug) || null;
+  let categories: Category[] = [];
+  try { categories = await loadCategories(); } catch { /* static taxonomy keeps existing links usable until seeding */ }
+  return categories.find((category) => category.slug === slug) || staticCategories.find((category) => category.slug === slug) || null;
 }
 
 export async function getProducts(params: CatalogFilterParams = {}) {
