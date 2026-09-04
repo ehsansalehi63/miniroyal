@@ -6,10 +6,12 @@ import VirtualTryonBox from "./VirtualTryonBox";
 
 interface Props {
   products: Product[];
+  initialProductSlug?: string;
 }
 
-export default function VirtualTryonSelector({ products }: Props) {
-  const [selectedId, setSelectedId] = useState<number | null>(products[0]?.id ?? null);
+export default function VirtualTryonSelector({ products, initialProductSlug }: Props) {
+  const initialProduct = products.find((item) => item.slug === initialProductSlug);
+  const [selectedId, setSelectedId] = useState<number | null>(initialProduct?.id ?? products[0]?.id ?? null);
   const product = selectedId === null ? undefined : products.find((item) => item.id === selectedId);
   if (!products.length) return <p className="rounded-2xl bg-amber-50 p-4 text-center text-sm">فعلاً محصول قابل پرویی در کاتالوگ موجود نیست.</p>;
 

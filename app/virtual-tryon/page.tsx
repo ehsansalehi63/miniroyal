@@ -8,14 +8,19 @@ export const metadata = {
   description: "محصول را انتخاب کنید، اندازه‌های کودک را وارد کنید و پرو آنلاین لباس را امتحان کنید.",
 };
 
-export default async function VirtualTryonPage() {
+interface VirtualTryonPageProps {
+  searchParams: Promise<{ product?: string }>;
+}
+
+export default async function VirtualTryonPage({ searchParams }: VirtualTryonPageProps) {
   const customer = await currentCustomer();
+  const { product: initialProductSlug } = await searchParams;
   if (!customer) {
     return (
       <main dir="rtl" className="mx-auto max-w-lg px-4 py-24 text-center">
         <h1 className="text-3xl font-black text-stone-950">ورود به پرو آنلاین</h1>
         <p className="mt-4 text-sm leading-7 text-stone-600">برای حفظ حریم خصوصی تصاویر و مدیریت سهمیه، ابتدا در حساب مشتری عضو شوید و وارد شوید.</p>
-        <Link href="/account?next=%2Fvirtual-tryon" className="mt-7 inline-flex rounded-full bg-violet-700 px-7 py-3 font-black text-white">ورود یا ثبت‌نام</Link>
+        <Link href={`/account?next=${encodeURIComponent(`/virtual-tryon${initialProductSlug ? `?product=${initialProductSlug}` : ""}`)}`} className="mt-7 inline-flex rounded-full bg-violet-700 px-7 py-3 font-black text-white">ورود یا ثبت‌نام</Link>
       </main>
     );
   }
@@ -42,7 +47,7 @@ export default async function VirtualTryonPage() {
       </div>
 
       <div className="mt-10">
-        <VirtualTryonSelector products={tryOnProducts} />
+        <VirtualTryonSelector products={tryOnProducts} initialProductSlug={initialProductSlug} />
       </div>
 
       <div dir="rtl" className="mt-12 rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm">

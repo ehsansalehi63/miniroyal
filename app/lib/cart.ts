@@ -46,17 +46,21 @@ export const useCart = create<CartState>()(
       appliedCoupon: null,
 
       addItem: (product, variant, quantity = 1) => {
+        if (quantity <= 0 || variant.stock <= 0) return;
         const itemId = `${product.id}-${variant.id}`;
         const existingItems = get().items;
         const existingIndex = existingItems.findIndex((i) => i.id === itemId);
+        const currentQuantity = existingIndex > -1 ? existingItems[existingIndex].quantity : 0;
+        const nextQuantity = Math.min(variant.stock, currentQuantity + quantity);
+        if (nextQuantity <= currentQuantity) return;
 
         if (existingIndex > -1) {
           const updated = [...existingItems];
-          updated[existingIndex].quantity += quantity;
+          updated[existingIndex] = { ...updated[existingIndex], quantity: nextQuantity };
           set({ items: updated });
         } else {
           set({
-            items: [...existingItems, { id: itemId, product, variant, quantity }],
+            items: [...existingItems, { id: itemId, product, variant, quantity: nextQuantity }],
           });
         }
       },
@@ -66,12 +70,13 @@ export const useCart = create<CartState>()(
       },
 
       updateQuantity: (itemId, quantity) => {
-        if (quantity <= 0) {
+        const item = get().items.find((entry) => entry.id === itemId);
+        if (!item || quantity <= 0) {
           get().removeItem(itemId);
           return;
         }
         set({
-          items: get().items.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
+          items: get().items.map((i) => (i.id === itemId ? { ...i, quantity: Math.min(quantity, i.variant.stock) } : i)),
         });
       },
 
