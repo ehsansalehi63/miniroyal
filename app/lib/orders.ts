@@ -77,6 +77,23 @@ export async function createOrder(input: CreateOrderInput) {
       postalCode: input.postalCode.trim(),
     });
 
+    // Lock and decrement each variant inside the same transaction. This prevents
+    // two simultaneous checkouts from selling more than the available stock.
+    for (const item of input.items) {
+      const [variantRows] = await connection.execute<RowDataPacket[]>(
+        "SELECT id, stock FROM product_variants WHERE id = ? FOR UPDATE",
+        [item.variant.id]
+      );
+      const variant = variantRows[0];
+      if (!variant || Number(variant.stock) < item.quantity) {
+        throw new Error(`موجودی «${item.product.title}» برای این ترکیب کافی نیست.`);
+      }
+      await connection.execute(
+        "UPDATE product_variants SET stock = stock - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        [item.quantity, item.variant.id]
+      );
+    }
+
     const [orderResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO orders
        (order_number, customer_id, status, total_amount, discount_amount, shipping_amount,
