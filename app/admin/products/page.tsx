@@ -5,6 +5,8 @@ import { mockProducts } from "../../lib/data/mockProducts";
 import { Product, SizeChartRow, Variant } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
 import DropzoneImageUploader from "../../components/DropzoneImageUploader";
+import ProductAngleMediaManager from "../../components/ProductAngleMediaManager";
+import type { ProductMediaAngle, ProductAngleMedia } from "../../lib/types/catalog";
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
 
 export default function AdminProductsPage() {
@@ -25,6 +27,7 @@ export default function AdminProductsPage() {
   const [images, setImages] = useState<string[]>([
     "/images/products/boy-hoodie.svg",
   ]);
+  const [mediaAngles, setMediaAngles] = useState<Partial<Record<ProductMediaAngle, ProductAngleMedia>>>({});
   const [sizeChart, setSizeChart] = useState<SizeChartRow[]>([
     { size: "۴ سال", ageRange: "۳ تا ۴ سال", heightCm: "۹۸ تا ۱۰۴", chestCm: "۵۴ تا ۵۶", lengthCm: "۴۲" },
   ]);
@@ -54,7 +57,7 @@ export default function AdminProductsPage() {
       setProducts(
         products.map((p) =>
           p.id === editingProduct.id
-          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile }
+          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile, mediaAngles }
             : p
         )
       );
@@ -86,6 +89,7 @@ export default function AdminProductsPage() {
         sizeChartJson: sizeChart,
         fitProfile,
         images: finalImages,
+        mediaAngles,
         variants: variants.map((variant) => ({ ...variant, id: Date.now() + variant.id, productId: Date.now(), sku: variant.sku || `${sku}-${variant.id}` })),
         publishedAt: new Date().toISOString().split("T")[0],
       };
@@ -104,7 +108,8 @@ export default function AdminProductsPage() {
     setSalePrice(p.salePrice ?? p.basePrice);
     setSku(p.sku);
     setVariants(p.variants?.length ? p.variants : [{ id: p.id * 1000, productId: p.id, sku: `${p.sku}-01`, size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
-    setImages(p.images || []);
+            setImages(p.images || []);
+    setMediaAngles(p.mediaAngles || {});
     setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : [{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
     setFitProfile(p.fitProfile ?? fitProfile);
     setShowFormModal(true);
@@ -131,6 +136,7 @@ export default function AdminProductsPage() {
             setEditingProduct(null);
             setTitle("");
             setImages(["/images/products/boy-hoodie.svg"]);
+            setMediaAngles({});
             setVariants([{ id: Date.now(), productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
             setSizeChart([{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
             setFitProfile({ garmentType: "top", measurementMethod: "garment", preferredBodyMeasurement: "height", easeCm: 7, stretch: "low", sizeSystem: "age", tryOnAnchors: { shoulder: 50, waist: 52, length: 68 } });
@@ -240,6 +246,7 @@ export default function AdminProductsPage() {
 
               {/* آپلود Drag & Drop تصاویر */}
               <DropzoneImageUploader images={images} onChange={setImages} />
+              <ProductAngleMediaManager value={mediaAngles} onChange={setMediaAngles} />
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4" dir="rtl">
                 <div className="flex items-center justify-between gap-3">

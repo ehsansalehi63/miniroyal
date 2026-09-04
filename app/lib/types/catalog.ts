@@ -72,6 +72,16 @@ export interface ProductReview {
   adminReply?: string;
 }
 
+export type ProductMediaAngle = "front" | "back" | "left" | "right" | "detail" | "on_model" | "size_label" | "packaging";
+
+export interface ProductAngleMedia {
+  url: string;
+  angle: ProductMediaAngle;
+  alt?: string;
+  isAiOptimized?: boolean;
+  isTryOnReady?: boolean;
+}
+
 export interface Product {
   id: number;
   title: string;
@@ -116,6 +126,7 @@ export interface Product {
     sizeSystem: "age" | "height" | "letter" | "custom";
     tryOnAnchors: { shoulder: number; waist: number; length: number };
   };
+  mediaAngles?: Partial<Record<ProductMediaAngle, ProductAngleMedia>>;
   tryOnAsset?: {
     url: string;
     layerType: "top" | "bottom" | "full" | "accessory";
