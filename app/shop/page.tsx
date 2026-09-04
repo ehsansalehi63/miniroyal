@@ -5,6 +5,8 @@ import Link from "next/link";
 import { CatalogFilterParams, Gender } from "../lib/types/catalog";
 import { toPersianDigits } from "../lib/utils";
 
+export const dynamic = "force-dynamic";
+
 interface ShopPageProps {
   searchParams: Promise<{
     gender?: string;

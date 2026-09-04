@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { mockProducts } from "../lib/data/mockProducts";
+import { getProducts } from "../lib/catalog";
+import { listOrders } from "../lib/orders";
 import { formatToman, toPersianDigits } from "../lib/utils";
 import {
   TrendingUp,
@@ -10,11 +11,17 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export default function AdminDashboardPage() {
-  const totalProducts = mockProducts.length;
-  const lowStockProducts = mockProducts.filter((p) =>
+export const dynamic = "force-dynamic";
+
+export default async function AdminDashboardPage() {
+  const [{ products }, orders] = await Promise.all([getProducts({ limit: 10000 }), listOrders()]);
+  const totalProducts = products.length;
+  const lowStockProducts = products.filter((p) =>
     p.variants.some((v) => v.stock <= 3)
   );
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthOrders = orders.filter((order) => String(order.createdAt).slice(0, 7) === currentMonth);
+  const monthSales = monthOrders.reduce((sum, order) => sum + Number(order.finalTotal || 0), 0);
 
   return (
     <div className="space-y-8">
@@ -44,7 +51,7 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <div className="mt-3 text-2xl font-black text-stone-900">
-            {formatToman(48500000)}
+            {formatToman(monthSales)}
           </div>
           <span className="mt-1 block text-[11px] font-bold text-emerald-600">
             ▲ ۱۸٪ رشد نسبت به ماه قبل
@@ -59,10 +66,10 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <div className="mt-3 text-2xl font-black text-stone-900">
-            {toPersianDigits(142)} سفارش
+            {toPersianDigits(monthOrders.length)} سفارش
           </div>
           <span className="mt-1 block text-[11px] font-bold text-violet-600">
-            ۱۲ سفارش نیازمند پردازش انبار
+            {toPersianDigits(monthOrders.filter((order) => order.status === "processing").length)} سفارش نیازمند پردازش انبار
           </span>
         </div>
 
@@ -77,7 +84,7 @@ export default function AdminDashboardPage() {
             {toPersianDigits(totalProducts)} تنوع محصول
           </div>
           <span className="mt-1 block text-[11px] font-bold text-stone-500">
-            شامل ۳۰ محصول فعال با عکس
+            محصولات فعال ثبت‌شده در دیتابیس
           </span>
         </div>
 

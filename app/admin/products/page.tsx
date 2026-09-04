@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { mockProducts } from "../../lib/data/mockProducts";
 import { Product, SizeChartRow, Variant } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
 import DropzoneImageUploader from "../../components/DropzoneImageUploader";
@@ -10,7 +9,7 @@ import type { ProductMediaAngle, ProductAngleMedia } from "../../lib/types/catal
 import { Search, Plus, Edit, Trash2 } from "lucide-react";
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowFormModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);

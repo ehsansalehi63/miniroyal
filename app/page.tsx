@@ -4,7 +4,6 @@ import Link from "next/link";
 import ProductCard from "./components/ProductCard";
 import CinematicHero from "./components/CinematicHero";
 import { getFeaturedProducts } from "./lib/catalog";
-import { mockProducts } from "./lib/data/mockProducts";
 import { getSuggestedSets } from "./lib/sets";
 import SuggestedSets from "./components/SuggestedSets";
 import { kidsCategories } from "./lib/kidsCategories";
@@ -12,6 +11,8 @@ import { THUMB_IMAGES } from "./lib/imageCatalog";
 import { DEFAULT_HOME_SLIDES } from "./lib/homeConfig";
 import { blogPosts } from "./lib/blogPosts";
 import { ShieldCheck, Truck, RotateCcw, Headset, ArrowLeft, Star } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "مینی رویال | فروشگاه پوشاک کودک و نوجوان با پرو آنلاین لباس",
@@ -57,12 +58,7 @@ const REVIEWS = [
 ];
 
 export default async function HomePage() {
-  let featuredProducts = [];
-  try {
-    featuredProducts = await getFeaturedProducts(8);
-  } catch {
-    featuredProducts = mockProducts.filter((p) => p.isFeatured).slice(0, 8);
-  }
+  const featuredProducts = await getFeaturedProducts(8);
 
   // ویدیوی سینمایی هیرو: اگر فایل لوکال موجود باشد، همان پخش می‌شود.
   // چون صفحهٔ اصلی استاتیک prerender می‌شود، این بررسی هنگام build انجام می‌شود؛

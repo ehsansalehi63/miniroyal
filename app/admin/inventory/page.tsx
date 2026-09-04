@@ -1,16 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, ArrowDownToLine, Boxes, PackageSearch, RefreshCw } from "lucide-react";
-import { mockProducts } from "../../lib/data/mockProducts";
 import { formatToman } from "../../lib/utils";
+import type { Product } from "../../lib/types/catalog";
 
 const formatNumber = (value: number) => new Intl.NumberFormat("fa-IR").format(value);
 
 export default function AdminInventoryPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    fetch("/api/admin/products?limit=100", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "دریافت موجودی انجام نشد.");
+        setProducts(data.products || []);
+      })
+      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "دریافت موجودی انجام نشد."));
+  }, []);
   const rows = useMemo(
     () =>
-      mockProducts.flatMap((product) =>
+      products.flatMap((product) =>
         (product.variants ?? []).map((variant) => ({
           ...variant,
           productTitle: product.title,
@@ -18,7 +29,7 @@ export default function AdminInventoryPage() {
           value: variant.stock * (product.salePrice ?? product.basePrice),
         }))
       ),
-    []
+    [products],
   );
 
   const totalUnits = rows.reduce((sum, row) => sum + row.stock, 0);
@@ -38,6 +49,7 @@ export default function AdminInventoryPage() {
           <ArrowDownToLine className="size-4" /> ثبت ورود کالا
         </button>
       </div>
+      {error && <p className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-bold text-rose-700">{error}</p>}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[

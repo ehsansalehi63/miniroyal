@@ -11,6 +11,8 @@ import { getProductBySlug, getRelatedProducts } from "../../lib/catalog";
 import { calculateDiscountPercent, formatToman, toPersianDigits } from "../../lib/utils";
 import { currentCustomer } from "../../lib/customer-auth";
 
+export const dynamic = "force-dynamic";
+
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ tryon?: string }>;

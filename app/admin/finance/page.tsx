@@ -1,18 +1,18 @@
-"use client";
-
-import { useMemo } from "react";
 import { ArrowDownLeft, ArrowUpRight, Landmark, ReceiptText } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { mockProducts } from "../../lib/data/mockProducts";
 import { formatToman } from "../../lib/utils";
+import { listOrders } from "../../lib/orders";
 
-export default function AdminFinancePage() {
-  const metrics = useMemo(() => {
-    const gross = mockProducts.reduce((sum, product) => sum + (product.salePrice ?? product.basePrice) * product.salesCount, 0);
+export const dynamic = "force-dynamic";
+
+export default async function AdminFinancePage() {
+  const orders = await listOrders();
+  const metrics = (() => {
+    const gross = orders.filter((order) => order.paymentStatus === "paid").reduce((sum, order) => sum + Number(order.finalTotal || 0), 0);
     const fees = Math.round(gross * 0.015);
-    const cost = Math.round(gross * 0.42);
+    const cost = 0;
     return { gross, fees, cost, net: Math.max(0, gross - fees - cost) };
-  }, []);
+  })();
   const cards: Array<{ label: string; value: number; icon: LucideIcon; color: string }> = [
     { label: "فروش ناخالص", value: metrics.gross, icon: ReceiptText, color: "text-violet-700" },
     { label: "کارمزد درگاه", value: metrics.fees, icon: ArrowDownLeft, color: "text-rose-600" },

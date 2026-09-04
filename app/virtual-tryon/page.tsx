@@ -3,6 +3,8 @@ import VirtualTryonSelector from "../components/VirtualTryonSelector";
 import { currentCustomer } from "../lib/customer-auth";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "پرو آنلاین و پیشنهاد سایز | مینی رویال",
   description: "محصول را انتخاب کنید، اندازه‌های کودک را وارد کنید و پرو آنلاین لباس را امتحان کنید.",

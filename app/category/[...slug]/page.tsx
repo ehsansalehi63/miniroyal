@@ -6,6 +6,8 @@ import CategoryFilterSidebar from "../../components/CategoryFilterSidebar";
 import { CatalogFilterParams, Gender } from "../../lib/types/catalog";
 import { toPersianDigits } from "../../lib/utils";
 
+export const dynamic = "force-dynamic";
+
 interface CategoryPageProps {
   params: Promise<{ slug: string[] }>;
   searchParams: Promise<{
