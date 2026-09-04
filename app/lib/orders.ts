@@ -218,8 +218,7 @@ export async function updatePostexShipment(orderNumber: string, patch: { parcelN
 }
 
 export async function listOrders() {
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT o.order_number AS orderNumber,
+  const baseQuery = `SELECT o.order_number AS orderNumber,
       c.full_name AS recipientName, c.phone,
       o.final_amount AS finalTotal, o.status,
       o.payment_method AS paymentMethod, o.shipping_provider AS shippingProvider,
@@ -227,14 +226,25 @@ export async function listOrders() {
       JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.province')) AS province,
       JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.city')) AS city,
       JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.address')) AS address,
-      JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.postalCode')) AS postalCode,
-      o.postex_parcel_no AS postexParcelNo, o.postex_order_no AS postexOrderNo,
-      o.tracking_code AS trackingCode, o.tracking_status AS trackingStatus
+      JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.postalCode')) AS postalCode
      FROM orders o
      LEFT JOIN customers c ON c.id = o.customer_id
-     ORDER BY o.created_at DESC`
-  );
-  return rows;
+     ORDER BY o.created_at DESC`;
+  try {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      baseQuery.replace(
+        "     FROM orders o",
+        "      , o.postex_parcel_no AS postexParcelNo, o.postex_order_no AS postexOrderNo,\n      o.tracking_code AS trackingCode, o.tracking_status AS trackingStatus\n     FROM orders o"
+      )
+    );
+    return rows;
+  } catch (error) {
+    const code = error instanceof Error && "code" in error ? String(error.code) : "";
+    if (!["ER_BAD_FIELD_ERROR", "ER_BAD_TABLE_ERROR"].includes(code)) throw error;
+    // Keep the admin list usable while migration 008 is pending on production.
+    const [rows] = await pool.execute<RowDataPacket[]>(baseQuery);
+    return rows.map((row) => Object.assign(row, { postexParcelNo: null, postexOrderNo: null, trackingCode: null, trackingStatus: null }));
+  }
 }
 
 export async function updateOrderStatus(orderNumber: string, status: string) {
