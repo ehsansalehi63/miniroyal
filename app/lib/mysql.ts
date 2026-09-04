@@ -75,10 +75,14 @@ export async function query<T>(sql: string, params?: (string | number | boolean 
       setTimeout(() => reject(new Error("Database query timeout")), 1500)
     );
 
-    const [rows] = (await Promise.race([queryPromise, timeoutPromise])) as any[];
+    const [rows] = (await Promise.race([
+      queryPromise as Promise<[unknown, unknown]>,
+      timeoutPromise as Promise<[unknown, unknown]>,
+    ])) as [unknown, unknown];
     return rows as T;
-  } catch (err: any) {
-    console.warn("⚠️ MySQL query graceful fallback:", err.message || err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("⚠️ MySQL query graceful fallback:", message);
     return [] as unknown as T;
   }
 }

@@ -21,9 +21,9 @@ export interface HomeSlide {
 export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
   {
     id: 1,
-    title: "کالکشن تازه پاییز و زمستان",
-    subtitle: "لایه‌های گرم و راحت برای استایل روزمره کودک",
-    ctaText: "مشاهده کالکشن",
+    title: "استایل امضادار برای هر روز",
+    subtitle: "پوشاک و اکسسوری کودک و نوجوان؛ از لباس‌های روزمره تا لایه‌های خاص فصل، با انتخاب سایز دقیق.",
+    ctaText: "کشف کالکشن",
     ctaLink: "/shop",
     badge: "جدیدترین‌ها",
     image: REAL_IMAGES.heroWinter,
@@ -34,9 +34,9 @@ export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
   },
   {
     id: 2,
-    title: "مهمانی کوچک، استایل بزرگ",
-    subtitle: "لباس‌های مجلسی با تن‌خور راحت و جزئیات دوست‌داشتنی",
-    ctaText: "خرید لباس مجلسی",
+    title: "جزئیات کوچک، استایل بزرگ",
+    subtitle: "لباس‌های مجلسی، اکسسوری‌های هماهنگ و ست‌های چشم‌نواز برای لحظه‌هایی که ماندگار می‌شوند.",
+    ctaText: "خرید استایل مجلسی",
     ctaLink: "/category/majlesi",
     badge: "پیشنهاد استایلیست",
     image: REAL_IMAGES.heroParty,
@@ -47,9 +47,9 @@ export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
   },
   {
     id: 3,
-    title: "نرمی برای اولین روزها",
-    subtitle: "ست‌های لطیف و کاربردی برای پوست حساس نوزاد",
-    ctaText: "مشاهده نوزادی",
+    title: "از نوزادی تا نوجوانی",
+    subtitle: "پارچه‌های لطیف، فرم‌های راحت و انتخاب‌های کامل برای کمدی که با کودک رشد می‌کند.",
+    ctaText: "دیدن مجموعه کامل",
     ctaLink: "/category/nozad",
     badge: "انتخاب مادرها",
     image: REAL_IMAGES.heroBaby,

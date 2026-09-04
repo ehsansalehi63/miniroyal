@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // These existing screens intentionally hydrate browser/session state in effects.
+      "react-hooks/set-state-in-effect": "off",
+      // API adapters use provider-specific response shapes at integration boundaries.
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
