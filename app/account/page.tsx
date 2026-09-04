@@ -60,6 +60,7 @@ export default function AccountPage() {
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "عملیات انجام نشد.");
       setCustomer(data.customer);
+      window.dispatchEvent(new Event("miniroyal:auth-changed"));
       setPassword("");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "عملیات انجام نشد.");
@@ -95,6 +96,7 @@ export default function AccountPage() {
   async function logout() {
     await fetch("/api/customer/logout", { method: "POST" });
     setCustomer(null);
+    window.dispatchEvent(new Event("miniroyal:auth-changed"));
   }
 
   if (loading) {
