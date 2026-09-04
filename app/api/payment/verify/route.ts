@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const order = await findOrder(orderNumber);
-    if (!order || Number(order.final_total) !== amount) {
+    if (!order || Number(order.finalTotal) !== amount) {
       return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
     }
     const response = await fetch(`${getZarinpalApi()}/verify.json`, {

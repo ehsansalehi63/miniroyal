@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { describeSmsConfig } from "@/app/lib/sms";
+import { isZarinpalSandbox } from "@/app/lib/payment";
 
 export async function GET() {
   const smsConfig = describeSmsConfig();
@@ -18,7 +19,7 @@ export async function GET() {
       smsGateway: smsConfig.configured,
       smsProvider: smsConfig.rawProvider || null,
       smsMode: smsConfig.mode,
-      zarinpalSandbox: true,
+      zarinpalSandbox: isZarinpalSandbox(),
       customAdminPassword: true,
       userAuthSession: true,
     },

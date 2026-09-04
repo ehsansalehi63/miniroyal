@@ -19,8 +19,10 @@ export async function GET() {
     const dbTest = await query("SELECT COUNT(*) as count FROM products");
     const count = (dbTest as any[])?.[0]?.count ?? 0;
     checks["database"] = {
-      status: "ok",
-      detail: `اتصال دیتابیس MySQL برقرار است (${count} محصول در جدول محصولات ثبت شده).`,
+      status: Number(count) > 0 ? "ok" : "warning",
+      detail: Number(count) > 0
+        ? `اتصال دیتابیس MySQL برقرار است (${count} محصول در جدول محصولات ثبت شده).`
+        : "اتصال دیتابیس برقرار است، اما هنوز محصولی برای نمایش در جدول محصولات ثبت نشده است.",
     };
   } catch (err: any) {
     checks["database"] = {
@@ -33,8 +35,10 @@ export async function GET() {
   try {
     const products = await getFeaturedProducts(5);
     checks["catalog"] = {
-      status: "ok",
-      detail: `کاتالوگ فعال است (${products.length} محصول شاخص آماده نمایش).`,
+      status: products.length > 0 ? "ok" : "warning",
+      detail: products.length > 0
+        ? `کاتالوگ فعال است (${products.length} محصول شاخص آماده نمایش).`
+        : "کاتالوگ فعال است، اما محصول شاخصی برای نمایش ثبت نشده است.",
     };
   } catch (err: any) {
     checks["catalog"] = {
@@ -64,7 +68,7 @@ export async function GET() {
     // قبلاً اینجا مقدار ثابت "ok" بود و خرابی پیامک را پنهان می‌کرد.
     status: smsConfig.configured ? "ok" : "error",
     detail: smsConfig.configured
-      ? `${smsConfig.detail} (کلید API: ${smsConfig.apiKeyPreview}${smsConfig.lineNumber ? `، خط: ${smsConfig.lineNumber}` : ""}${smsConfig.patternCode ? `، پترن: ${smsConfig.patternCode}` : ""})`
+      ? "سامانه ارسال پیامک و OTP پیکربندی شده است."
       : `ارسال پیامک فعال نیست. ${smsConfig.problems.join(" | ")}`,
   };
 

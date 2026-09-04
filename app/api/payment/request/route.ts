@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "اطلاعات سفارش یا مبلغ معتبر نیست." }, { status: 400 });
     }
     const order = await findOrder(orderNumber);
-    if (!order || Number(order.final_total) !== amount || order.payment_status === "paid") {
+    if (!order || Number(order.finalTotal) !== amount || order.paymentStatus === "paid") {
       return NextResponse.json({ success: false, error: "سفارش معتبر یا قابل پرداخت نیست." }, { status: 400 });
     }
 
