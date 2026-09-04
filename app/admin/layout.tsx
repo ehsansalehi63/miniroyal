@@ -18,6 +18,7 @@ import {
   LogOut,
   Activity,
   ShieldCheck,
+  Landmark,
 } from "lucide-react";
 
 const adminNav = [
@@ -26,6 +27,7 @@ const adminNav = [
   { href: "/admin/products", label: "مدیریت محصولات", icon: ShoppingBag },
   { href: "/admin/orders", label: "سفارش‌ها و مرسوله‌ها", icon: PackageCheck },
   { href: "/admin/inventory", label: "مرکز کنترل انبار", icon: Warehouse },
+  { href: "/admin/finance", label: "حسابداری و مالی فروش", icon: Landmark },
   { href: "/admin/customers", label: "مشتریان و باشگاه", icon: Users },
   { href: "/admin/roles", label: "نقش‌ها و دسترسی ادمین", icon: ShieldCheck },
   { href: "/admin/coupons", label: "کد تخفیف و کمپین", icon: Tag },
