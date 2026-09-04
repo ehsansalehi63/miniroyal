@@ -23,7 +23,7 @@ export default function AdminSettingsPage() {
   const [isSandbox, setIsSandbox] = useState(true);
 
   // سامانه پیامک
-  const [smsProvider, setSmsProvider] = useState("kavenegar");
+  const [smsProvider, setSmsProvider] = useState("iranpayamak");
   const [smsApiKey, setSmsApiKey] = useState("");
   const [smsSenderLine, setSmsSenderLine] = useState("10008888");
   const [smsPatternCode, setSmsPatternCode] = useState("100100");
@@ -35,6 +35,7 @@ export default function AdminSettingsPage() {
 
   const [isSaved, setIsSaved] = useState(false);
   const [buildInfo, setBuildInfo] = useState<{ version: string; buildTime: string } | null>(null);
+  const [smsLive, setSmsLive] = useState<{ gateway: boolean; provider: string | null; mode: string | null } | null>(null);
 
   useEffect(() => {
     fetch("/api/system-status")
@@ -43,6 +44,11 @@ export default function AdminSettingsPage() {
         setBuildInfo({
           version: data.version || "1.2.0",
           buildTime: new Date(data.buildTime).toLocaleString("fa-IR"),
+        });
+        setSmsLive({
+          gateway: Boolean(data.features?.smsGateway),
+          provider: data.features?.smsProvider ?? null,
+          mode: data.features?.smsMode ?? null,
         });
       })
       .catch(() => {
@@ -210,6 +216,31 @@ export default function AdminSettingsPage() {
             <span>تنظیمات سامانه پیامک و کد ورود OTP</span>
           </h2>
 
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-[11px] leading-6 text-amber-900">
+            <p className="font-black">⚠️ این فرم فقط نمایشی است و چیزی ذخیره نمی‌کند.</p>
+            <p>
+              منبع حقیقت پیکربندی پیامک، متغیرهای محیطی سرور است:
+              <code dir="ltr" className="mx-1 rounded bg-white px-1.5 py-0.5 font-mono">SMS_PROVIDER</code>
+              <code dir="ltr" className="mx-1 rounded bg-white px-1.5 py-0.5 font-mono">SMS_API_KEY</code>
+              <code dir="ltr" className="mx-1 rounded bg-white px-1.5 py-0.5 font-mono">SMS_LINE_NUMBER</code>
+              <code dir="ltr" className="mx-1 rounded bg-white px-1.5 py-0.5 font-mono">SMS_PATTERN_CODE</code>
+              در فایل <code dir="ltr" className="mx-1 rounded bg-white px-1.5 py-0.5 font-mono">.env</code> مسیر برنامه — بعد از تغییر، سرویس را ری‌استارت کنید
+              (<code dir="ltr" className="mx-1 rounded bg-white px-1.5 py-0.5 font-mono">pm2 restart miniroyal</code>).
+            </p>
+            <p className="mt-2 font-bold">
+              وضعیت واقعی روی سرور:{" "}
+              {smsLive === null ? "در حال بررسی..." : smsLive.gateway ? (
+                <span className="text-emerald-700">
+                  فعال ✅ — سرویس {smsLive.provider} (مسیر {smsLive.mode})
+                </span>
+              ) : (
+                <span className="text-red-700">
+                  غیرفعال ❌ — پیامک ارسال نمی‌شود؛ جزئیات در صفحهٔ «سلامت سیستم»
+                </span>
+              )}
+            </p>
+          </div>
+
           <div className="space-y-3 text-xs">
             <div>
               <label className="block font-bold text-stone-700">سرویس‌دهنده پیامک</label>
@@ -218,10 +249,11 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setSmsProvider(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
               >
+                {/* فقط سرویس‌هایی که در app/lib/sms.ts پیاده‌سازی شده‌اند. */}
+                <option value="iranpayamak">ایران پیامک / فراز (IranPayamak)</option>
                 <option value="kavenegar">کاوه نگار (Kavenegar)</option>
-                <option value="melipayamak">ملی پیامک (Melipayamak)</option>
-                <option value="farazsms">فراز اس‌ام‌اس (FarazSMS)</option>
-                <option value="ghasedak">قاصدک (Ghasedak)</option>
+                <option value="smsir">اس‌ام‌اس آی‌آر (SMS.ir)</option>
+                <option value="console">حالت توسعه (console — بدون ارسال پیامک)</option>
               </select>
             </div>
 

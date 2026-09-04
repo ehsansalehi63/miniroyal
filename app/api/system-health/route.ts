@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { inspectDatabase, query } from "@/app/lib/mysql";
 import { getFeaturedProducts } from "@/app/lib/catalog";
+import { describeSmsConfig } from "@/app/lib/sms";
 
 export async function GET() {
   const timestamp = new Date().toISOString();
@@ -56,10 +57,15 @@ export async function GET() {
       : "Merchant ID یا کلید امضای پرداخت در Environment Variables تنظیم نشده است.",
   };
 
-  // ۵. تست سامانه پیامک OTP
+  // ۵. تست سامانه پیامک OTP — وضعیت واقعی از روی پیکربندی، نه مقدار ثابت
+  const smsConfig = describeSmsConfig();
   checks["sms_gateway"] = {
-    status: "ok",
-    detail: "سامانه ارسال پیامک و کد ورود OTP آماده اتصال است.",
+    // تا وقتی ارسال واقعی پیامک آماده نباشد، وضعیت «error» است؛
+    // قبلاً اینجا مقدار ثابت "ok" بود و خرابی پیامک را پنهان می‌کرد.
+    status: smsConfig.configured ? "ok" : "error",
+    detail: smsConfig.configured
+      ? `${smsConfig.detail} (کلید API: ${smsConfig.apiKeyPreview}${smsConfig.lineNumber ? `، خط: ${smsConfig.lineNumber}` : ""}${smsConfig.patternCode ? `، پترن: ${smsConfig.patternCode}` : ""})`
+      : `ارسال پیامک فعال نیست. ${smsConfig.problems.join(" | ")}`,
   };
 
   // ۶. تست وب‌هوک دیپلوی اتوماتیک

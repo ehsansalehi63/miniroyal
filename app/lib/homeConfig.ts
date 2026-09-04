@@ -1,4 +1,4 @@
-import { REAL_IMAGES } from "./imageCatalog";
+import { REAL_IMAGES, THUMB_IMAGES } from "./imageCatalog";
 
 export interface HomeSlide {
   id: number;
@@ -8,6 +8,8 @@ export interface HomeSlide {
   ctaLink: string;
   badge: string;
   image: string;
+  /** نسخهٔ سبک همان تصویر — برای بازتاب کف و مواردی که کیفیت کامل لازم نیست */
+  thumb: string;
   /** Tailwind gradient classes for the slide backdrop */
   color: string;
   /** Radial glow accent used behind the 3D model */
@@ -25,6 +27,7 @@ export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
     ctaLink: "/shop",
     badge: "جدیدترین‌ها",
     image: REAL_IMAGES.heroWinter,
+    thumb: THUMB_IMAGES.heroWinter,
     color: "from-violet-950 via-indigo-950 to-slate-950",
     glow: "#8b5cf6",
     particles: ["#c4b5fd", "#fbbf24"],
@@ -37,6 +40,7 @@ export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
     ctaLink: "/category/majlesi",
     badge: "پیشنهاد استایلیست",
     image: REAL_IMAGES.heroParty,
+    thumb: THUMB_IMAGES.heroParty,
     color: "from-rose-950 via-pink-950 to-stone-950",
     glow: "#f472b6",
     particles: ["#f9a8d4", "#fda4af"],
@@ -49,6 +53,7 @@ export const DEFAULT_HOME_SLIDES: HomeSlide[] = [
     ctaLink: "/category/nozad",
     badge: "انتخاب مادرها",
     image: REAL_IMAGES.heroBaby,
+    thumb: THUMB_IMAGES.heroBaby,
     color: "from-amber-950 via-stone-900 to-emerald-950",
     glow: "#34d399",
     particles: ["#a7f3d0", "#fcd34d"],

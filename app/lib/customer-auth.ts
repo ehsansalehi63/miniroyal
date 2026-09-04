@@ -2,15 +2,12 @@ import { createHmac, randomBytes, scrypt as nodeScrypt, timingSafeEqual } from "
 import { promisify } from "node:util";
 import { cookies } from "next/headers";
 import pool from "./mysql";
+import { sendOtp } from "./sms";
 
 const scrypt = promisify(nodeScrypt);
 const COOKIE_NAME = "miniroyal_customer_session";
 const SESSION_DAYS = 30;
 const OTP_MINUTES = 10;
-function envValue(value: string | undefined) {
-  return (value || "").trim().replace(/^['"]|['"]$/g, "");
-}
-
 async function ensureCustomerSchema() {
   await pool.execute(`
     CREATE TABLE IF NOT EXISTS customers (
@@ -46,91 +43,6 @@ async function ensureCustomerSchema() {
   `);
 }
 
-async function sendOtp(phone: string, code: string) {
-  const provider = envValue(process.env.SMS_PROVIDER || "console").toLowerCase();
-  const key = envValue(process.env.SMS_API_KEY);
-  if (provider === "console") {
-    if (process.env.NODE_ENV === "production") throw new Error("SMS_PROVIDER is not configured.");
-    console.info(`[MiniRoyal OTP] ${phone}: ${code}`);
-    return;
-  }
-  if (!key) throw new Error("SMS_API_KEY is not configured.");
-  const text = `کد تایید مینی رویال: ${code}`;
-  const lineNumber = envValue(process.env.SMS_LINE_NUMBER);
-  const patternCode = envValue(process.env.SMS_PATTERN_CODE);
-  if (provider === "iranpayamak" && patternCode) {
-    if (!lineNumber) throw new Error("SMS_LINE_NUMBER is not configured.");
-    const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/pattern", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "Api-Key": key,
-      },
-      body: JSON.stringify({
-        code: patternCode,
-        attributes: { var1: code },
-        recipient: phone,
-        line_number: lineNumber,
-        number_format: "english",
-        schedule: null,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    const result = await response.json().catch(() => null);
-    if (!response.ok || result?.status !== "success") {
-      console.warn("IranPayamak pattern OTP failed:", response.status, result);
-      throw new Error("ارسال کد تایید از الگوی ایران‌پیامک انجام نشد.");
-    }
-    return;
-  }
-  if (provider === "kavenegar") {
-    const url = `https://api.kavenegar.com/v1/${encodeURIComponent(key)}/sms/send.json`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ receptor: phone, message: text }),
-    });
-    if (!response.ok) throw new Error("SMS provider failed.");
-    return;
-  }
-  if (provider === "smsir") {
-    const response = await fetch("https://api.sms.ir/v1/send/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": key },
-      body: JSON.stringify({ lineNumber: process.env.SMS_LINE_NUMBER, messageText: text, mobiles: [phone] }),
-    });
-    if (!response.ok) throw new Error("SMS provider failed.");
-    return;
-  }
-  if (provider === "iranpayamak") {
-    if (!lineNumber) throw new Error("SMS_LINE_NUMBER is not configured.");
-    const response = await fetch("https://api.iranpayamak.com/ws/v1/sms/simple", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "Api-Key": key,
-      },
-      body: JSON.stringify({
-        text,
-        line_number: lineNumber,
-        recipients: [phone],
-        number_format: "english",
-        schedule: null,
-      }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    const result = await response.json().catch(() => null);
-    if (!response.ok || result?.status !== "success") {
-      console.warn("IranPayamak OTP failed:", response.status, result);
-      throw new Error("ارسال پیامک از ایران‌پیامک انجام نشد.");
-    }
-    return;
-  }
-  throw new Error("Unsupported SMS_PROVIDER.");
-}
-
 function otpHash(phone: string, code: string) {
   return createHmac("sha256", sessionSecret() || "otp-fallback").update(`${phone}:${code}`).digest("hex");
 }
@@ -141,7 +53,9 @@ export async function requestCustomerOtp(phone: string) {
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + OTP_MINUTES * 60_000);
   await pool.execute("INSERT INTO customer_otps (phone, code_hash, expires_at) VALUES (?, ?, ?)", [phone, otpHash(phone, code), expiresAt]);
-  await sendOtp(phone, code);
+  // نتیجهٔ ارسال را برمی‌گردانیم تا لایهٔ API بتواند بگوید کد واقعاً پیامک شده
+  // یا فقط در لاگ سرور ثبت شده است (حالت console).
+  return sendOtp(phone, code);
 }
 
 export async function verifyCustomerOtp(phone: string, code: string) {
