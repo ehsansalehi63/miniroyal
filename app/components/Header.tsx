@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ChevronDown, Menu, Search, ShoppingBag, Sparkles, User, X } from "lucide-react";
-import { searchAutocomplete } from "../lib/catalog";
 import { mockCategories } from "../lib/data/mockProducts";
 import { kidsCategories } from "../lib/kidsCategories";
 import { formatToman, toPersianDigits } from "../lib/utils";
@@ -36,7 +35,9 @@ export default function Header() {
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (!searchQuery.trim()) { setSearchResults({ products: [], categories: [] }); return; }
-      setSearchResults(await searchAutocomplete(searchQuery));
+      const response = await fetch(`/api/catalog/search?q=${encodeURIComponent(searchQuery)}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("Search failed");
+      setSearchResults(await response.json());
       setShowSearch(true);
     }, 180);
     return () => clearTimeout(timer);

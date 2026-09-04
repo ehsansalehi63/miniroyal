@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, findOrder } from "@/app/lib/orders";
-import { mockProducts } from "@/app/lib/data/mockProducts";
+import { getProductById } from "@/app/lib/catalog";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,16 +9,16 @@ export async function POST(request: NextRequest) {
         !Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ success: false, error: "اطلاعات سفارش کامل نیست." }, { status: 400 });
     }
-    const items = body.items.map((item: unknown) => {
+    const items = await Promise.all(body.items.map(async (item: unknown) => {
       const raw = item as { product?: { id?: unknown }; variant?: { id?: unknown }; quantity?: unknown };
-      const product = mockProducts.find((candidate) => candidate.id === Number(raw.product?.id));
+      const product = await getProductById(Number(raw.product?.id));
       const variant = product?.variants.find((candidate) => candidate.id === Number(raw.variant?.id));
       const quantity = Number(raw.quantity);
       if (!product || !variant || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
         throw new Error("کالا یا تنوع سفارش معتبر نیست.");
       }
       return { product, variant, quantity };
-    });
+    }));
     const result = await createOrder({ ...body, items });
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
