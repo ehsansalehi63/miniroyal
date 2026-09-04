@@ -17,6 +17,7 @@ import {
   Globe,
   LogOut,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 
 const adminNav = [
@@ -26,6 +27,7 @@ const adminNav = [
   { href: "/admin/orders", label: "سفارش‌ها و مرسوله‌ها", icon: PackageCheck },
   { href: "/admin/inventory", label: "مرکز کنترل انبار", icon: Warehouse },
   { href: "/admin/customers", label: "مشتریان و باشگاه", icon: Users },
+  { href: "/admin/roles", label: "نقش‌ها و دسترسی ادمین", icon: ShieldCheck },
   { href: "/admin/coupons", label: "کد تخفیف و کمپین", icon: Tag },
   { href: "/admin/reviews", label: "نظرات و بازخورد سایز", icon: MessageSquare },
   { href: "/admin/categories", label: "دسته‌ها و برندها", icon: FolderTree },
