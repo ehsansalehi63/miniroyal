@@ -50,7 +50,7 @@ export async function GET() {
   // ۳. تست موتور هوشمند پرو آنلاین (Smart Fit)
   checks["virtual_tryon"] = {
     status: "ok",
-    detail: "الگوریتم Smart Fit با ۲۸ جدول سایزبندی آماده به کار است.",
+    detail: "الگوریتم Smart Fit و راهنمای انتخاب سایز آماده به کار است.",
   };
 
   // ۴. وضعیت درگاه پرداخت زرین‌پال

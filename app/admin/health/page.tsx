@@ -46,7 +46,7 @@ export default function AdminHealthPage() {
   const getLabel = (key: string) => {
     switch (key) {
       case "database": return "دیتابیس MySQL و جداول";
-      case "catalog": return "کاتالوگ و محصولات ۳۰ گانه";
+      case "catalog": return "کاتالوگ محصولات";
       case "virtual_tryon": return "پرو آنلاین هوشمند (Smart Fit)";
       case "payment_gateway": return "درگاه پرداخت زرین‌پال";
       case "sms_gateway": return "سامانه پیامک و کد OTP";

@@ -172,23 +172,6 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
             </Link>
           </div>
 
-          <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-6 text-xs font-bold text-stone-400">
-            <div>
-              <dt className="sr-only">کیفیت</dt>
-              <dd className="text-xl font-black text-white">۱۰۰٪</dd>
-              <dd>انتخاب باکیفیت</dd>
-            </div>
-            <div>
-              <dt className="sr-only">ضمانت</dt>
-              <dd className="text-xl font-black text-white">۷ روز</dd>
-              <dd>بازگشت و تعویض</dd>
-            </div>
-            <div>
-              <dt className="sr-only">پرو آنلاین</dt>
-              <dd className="text-xl font-black text-white">۲۸</dd>
-              <dd>جدول سایز سانتی‌متری</dd>
-            </div>
-          </dl>
         </div>
 
         {/* ستون دوم فضای صحنه را نگه می‌دارد تا متن روی سوژه نیفتد */}
