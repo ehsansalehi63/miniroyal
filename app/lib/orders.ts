@@ -223,7 +223,13 @@ export async function listOrders() {
       c.full_name AS recipientName, c.phone,
       o.final_amount AS finalTotal, o.status,
       o.payment_method AS paymentMethod, o.shipping_provider AS shippingProvider,
-      o.payment_status AS paymentStatus, o.created_at AS createdAt
+      o.payment_status AS paymentStatus, o.created_at AS createdAt,
+      JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.province')) AS province,
+      JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.city')) AS city,
+      JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.address')) AS address,
+      JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.postalCode')) AS postalCode,
+      o.postex_parcel_no AS postexParcelNo, o.postex_order_no AS postexOrderNo,
+      o.tracking_code AS trackingCode, o.tracking_status AS trackingStatus
      FROM orders o
      LEFT JOIN customers c ON c.id = o.customer_id
      ORDER BY o.created_at DESC`

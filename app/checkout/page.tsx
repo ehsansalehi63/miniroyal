@@ -63,6 +63,10 @@ export default function CheckoutPage() {
     return () => controller.abort();
   }, [city, paymentMethod, items, getFinalTotal]);
 
+  useEffect(() => {
+    if (!city.trim().replace(/ي/g, "ی").includes("اصفهان") && paymentMethod === "cod") setPaymentMethod("zarinpal");
+  }, [city, paymentMethod]);
+
   if (!isMounted) return null;
 
   if (items.length === 0) {
@@ -287,7 +291,8 @@ export default function CheckoutPage() {
                 <span className="text-xl">💳</span>
               </label>
 
-              <label
+              {city.trim().replace(/ي/g, "ی").includes("اصفهان") && <label
+                key="cod"
                 className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
                   paymentMethod === "cod"
                     ? "border-violet-700 bg-violet-50/50 ring-2 ring-violet-200"
@@ -312,7 +317,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <span className="text-xl">💵</span>
-              </label>
+              </label>}
             </div>
           </div>
         </div>

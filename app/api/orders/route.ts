@@ -4,12 +4,21 @@ import { getProductById } from "@/app/lib/catalog";
 import { extractPostexIdentifiers, postexConfigured, registerPostexOrder } from "@/app/lib/postex";
 import { updatePostexShipment } from "@/app/lib/orders";
 
+function codAllowedForCity(city: unknown) {
+  const normalized = String(city || "").trim().replace(/ي/g, "ی").replace(/ك/g, "ک");
+  const allowed = (process.env.POSTEX_COD_CITIES || "اصفهان").split(",").map((item) => item.trim().replace(/ي/g, "ی").replace(/ك/g, "ک")).filter(Boolean);
+  return process.env.POSTEX_COD_ENABLED === "true" && allowed.some((item) => normalized === item);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     if (!body.recipientName || !body.phone || !body.address || !body.postalCode ||
         !Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ success: false, error: "اطلاعات سفارش کامل نیست." }, { status: 400 });
+    }
+    if (body.paymentMethod === "cod" && !codAllowedForCity(body.city)) {
+      return NextResponse.json({ success: false, error: "پرداخت در محل فعلاً فقط برای شهرهای فعال پستکس (اصفهان) قابل استفاده است." }, { status: 400 });
     }
     const items = await Promise.all(body.items.map(async (item: unknown) => {
       const raw = item as { product?: { id?: unknown }; variant?: { id?: unknown }; quantity?: unknown };

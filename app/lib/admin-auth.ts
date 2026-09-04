@@ -94,15 +94,22 @@ export async function currentAdmin() {
   if (!session) return null;
   const [rows] = await pool.execute("SELECT id, username, full_name, phone, role, is_active FROM users WHERE id = ? AND is_active = 1 LIMIT 1", [session.id]) as unknown as [Array<{ id: number; username: string; full_name: string; phone: string | null; role: string; is_active: number }>];
   const user = rows[0];
-  return user && user.role === session.role ? user : null;
+  if (!user || user.role !== session.role) return null;
+  let permissions: string[] = [];
+  try {
+    const [permissionRows] = await pool.execute(`SELECT p.permission_key AS permissionKey FROM admin_user_permissions up JOIN admin_permissions p ON p.id = up.permission_id WHERE up.user_id = ?`, [user.id]) as unknown as [Array<{ permissionKey: string }>];
+    permissions = permissionRows.map((row) => row.permissionKey);
+  } catch {}
+  return { ...user, permissions };
 }
 
 export async function clearAdminSession() {
   (await cookies()).delete(COOKIE_NAME);
 }
 
-export function canManage(admin: { role: string }, permission: string) {
+export function canManage(admin: { role: string; permissions?: string[] }, permission: string) {
   if (admin.role === "super_admin") return true;
+  if (admin.permissions?.includes(permission)) return true;
   if (admin.role === "admin") return !permission.startsWith("admins.");
   if (admin.role === "editor") return permission.startsWith("products.");
   if (admin.role === "operator") return permission.endsWith(".read") || permission === "orders.write" || permission === "inventory.write";
