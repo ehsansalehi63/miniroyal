@@ -5,7 +5,8 @@ import {
   toRial,
   getZarinpalApi,
 } from "@/app/lib/payment";
-import { findOrder, updatePayment } from "@/app/lib/orders";
+import { findOrder, updatePayment, updatePostexShipment } from "@/app/lib/orders";
+import { extractPostexIdentifiers, postexConfigured, registerPostexOrder } from "@/app/lib/postex";
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
@@ -47,6 +48,14 @@ export async function GET(req: NextRequest) {
       return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
     }
     await updatePayment(orderNumber, { paymentStatus: "paid", refId: String(refId) });
+    if (postexConfigured() && !order.postexParcelNo) {
+      try {
+        const postexResult = await registerPostexOrder(order as Record<string, unknown>);
+        await updatePostexShipment(orderNumber, extractPostexIdentifiers(postexResult));
+      } catch (shippingError) {
+        console.error("Automatic Postex registration after payment failed:", shippingError);
+      }
+    }
 
     return redirectTo(
       `/order/success/${encodeURIComponent(orderNumber)}?status=paid&refId=${encodeURIComponent(String(refId))}`

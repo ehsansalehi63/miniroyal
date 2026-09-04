@@ -32,6 +32,9 @@ export default function AccountPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [trackingOrder, setTrackingOrder] = useState("");
+  const [trackingResult, setTrackingResult] = useState<unknown>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/customer/me", { cache: "no-store" })
@@ -99,6 +102,22 @@ export default function AccountPage() {
     window.dispatchEvent(new Event("miniroyal:auth-changed"));
   }
 
+  async function trackOrder(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setTrackingLoading(true);
+    setTrackingResult(null);
+    try {
+      const response = await fetch(`/api/orders/tracking?identifier=${encodeURIComponent(trackingOrder)}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "رهگیری انجام نشد.");
+      setTrackingResult(data);
+    } catch (trackingError) {
+      setTrackingResult({ error: trackingError instanceof Error ? trackingError.message : "رهگیری انجام نشد." });
+    } finally {
+      setTrackingLoading(false);
+    }
+  }
+
   if (loading) {
     return <main className="mx-auto max-w-3xl px-4 py-24 text-center" dir="rtl">در حال بررسی حساب شما...</main>;
   }
@@ -118,6 +137,15 @@ export default function AccountPage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/shop" className="rounded-full bg-violet-700 px-5 py-3 text-sm font-black text-white hover:bg-violet-800">ادامه خرید</Link>
             <button onClick={logout} className="rounded-full border border-stone-300 px-5 py-3 text-sm font-black text-stone-700 hover:border-violet-400">خروج از حساب</button>
+          </div>
+          <div className="mt-8 rounded-2xl border border-violet-100 bg-violet-50/50 p-5">
+            <h2 className="text-base font-black text-stone-900">پیگیری مرسوله</h2>
+            <p className="mt-1 text-xs text-stone-500">شماره سفارش را وارد کنید تا آخرین وضعیت پستکس نمایش داده شود.</p>
+            <form onSubmit={trackOrder} className="mt-3 flex gap-2">
+              <input required value={trackingOrder} onChange={(event) => setTrackingOrder(event.target.value)} placeholder="مثال: MR-12345678" className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-violet-500" />
+              <button disabled={trackingLoading} className="rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">{trackingLoading ? "در حال بررسی..." : "رهگیری"}</button>
+            </form>
+            {Boolean(trackingResult) && <pre className="mt-3 max-h-44 overflow-auto rounded-xl bg-white p-3 text-left text-[10px] leading-5 text-stone-700" dir="ltr">{String(JSON.stringify(trackingResult, null, 2))}</pre>}
           </div>
         </div>
       </main>

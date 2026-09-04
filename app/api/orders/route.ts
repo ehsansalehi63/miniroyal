@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, findOrder } from "@/app/lib/orders";
 import { getProductById } from "@/app/lib/catalog";
+import { extractPostexIdentifiers, postexConfigured, registerPostexOrder } from "@/app/lib/postex";
+import { updatePostexShipment } from "@/app/lib/orders";
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +22,17 @@ export async function POST(request: NextRequest) {
       return { product, variant, quantity };
     }));
     const result = await createOrder({ ...body, items });
+    if (body.paymentMethod === "cod" && postexConfigured()) {
+      try {
+        const savedOrder = await findOrder(result.orderNumber);
+        const postexResult = savedOrder ? await registerPostexOrder(savedOrder as Record<string, unknown>) : null;
+        if (!postexResult) throw new Error("Saved order was not found for Postex registration.");
+        const identifiers = extractPostexIdentifiers(postexResult);
+        await updatePostexShipment(result.orderNumber, identifiers);
+      } catch (shippingError) {
+        console.error("Automatic Postex registration failed:", shippingError);
+      }
+    }
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     console.error("Create order failed:", error);

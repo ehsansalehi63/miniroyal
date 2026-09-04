@@ -155,6 +155,8 @@ export async function findOrder(identifier: string) {
       JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.address')) AS address,
       JSON_UNQUOTE(JSON_EXTRACT(o.shipping_address_json, '$.postalCode')) AS postalCode,
       o.final_amount AS finalTotal, o.shipping_provider AS shippingProvider,
+      o.postex_parcel_no AS postexParcelNo, o.postex_order_no AS postexOrderNo,
+      o.tracking_code AS trackingCode, o.tracking_status AS trackingStatus,
       o.status, o.payment_status AS paymentStatus, o.payment_method AS paymentMethod,
       o.payment_ref_id AS refId, o.created_at AS createdAt,
       GROUP_CONCAT(
@@ -201,6 +203,18 @@ export async function updatePayment(
     `UPDATE orders SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE order_number = ?`,
     values
   );
+}
+
+export async function updatePostexShipment(orderNumber: string, patch: { parcelNo?: string; postexOrderNo?: string; trackingCode?: string; trackingStatus?: string }) {
+  const fields: string[] = [];
+  const values: (string | number)[] = [];
+  if (patch.parcelNo) { fields.push("postex_parcel_no = ?"); values.push(patch.parcelNo); }
+  if (patch.postexOrderNo) { fields.push("postex_order_no = ?"); values.push(patch.postexOrderNo); }
+  if (patch.trackingCode) { fields.push("tracking_code = ?"); values.push(patch.trackingCode); }
+  if (patch.trackingStatus) { fields.push("tracking_status = ?"); values.push(patch.trackingStatus); }
+  if (!fields.length) return;
+  values.push(orderNumber);
+  await pool.execute(`UPDATE orders SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE order_number = ?`, values);
 }
 
 export async function listOrders() {
