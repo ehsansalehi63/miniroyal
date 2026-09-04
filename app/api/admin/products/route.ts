@@ -51,10 +51,11 @@ export async function GET(request: NextRequest) {
   if (search) { where.push("(p.title LIKE ? OR p.sku LIKE ? OR p.slug LIKE ?)"); params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
   if (status && allowedStatuses.includes(status as (typeof allowedStatuses)[number])) { where.push("p.status = ?"); params.push(status); }
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
-  const [rows] = await pool.execute<RowDataPacket[]>(`SELECT p.*,
+    const [rows] = await pool.execute<RowDataPacket[]>(`SELECT p.*, c.name AS categoryName,
       COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', v.id, 'sku', v.sku, 'size', v.size, 'color', v.color, 'colorCode', v.color_code, 'stock', v.stock, 'priceAdjustment', v.price_adjustment)) FROM product_variants v WHERE v.product_id = p.id), JSON_ARRAY()) AS variants,
       COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', m.id, 'url', m.url, 'alt', m.alt, 'sortOrder', m.sort_order, 'isPrimary', m.is_primary, 'mediaType', m.media_type)) FROM product_media m WHERE m.product_id = p.id), JSON_ARRAY()) AS images
-      FROM products p ${whereSql} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset]);
+      FROM products p LEFT JOIN categories c ON c.id = p.category_id
+      ${whereSql} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset]);
   return NextResponse.json({ success: true, products: rows });
 }
 
