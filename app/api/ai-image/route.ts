@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const admin = await currentAdmin();
+    if (!admin || !canManage(admin, "products.write")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
     const body = await req.json();
     const { prompt = "", category = "پسرانه" } = body;
 

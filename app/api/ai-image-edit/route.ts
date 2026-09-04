@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 
 const EDIT_URL = process.env.TRYON_API_URL || "https://gen.pollinations.ai/v1/images/edits";
 const MAX_DATA_URI_LENGTH = 11_000_000;
@@ -48,6 +49,8 @@ async function callAihubmix(image: string, prompt: string) {
 }
 
 export async function POST(request: NextRequest) {
+    const admin = await currentAdmin();
+    if (!admin || !canManage(admin, "products.write")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
     const pollinationsKey = process.env.POLLINATIONS_API_KEY;
     const aihubmixKey = process.env.AIHUBMIX_API_KEY;
     if (!pollinationsKey && !aihubmixKey) {

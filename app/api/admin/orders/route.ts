@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listOrders, updateOrderStatus } from "@/app/lib/orders";
+import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 
 export async function GET() {
+  const admin = await currentAdmin();
+  if (!admin || !canManage(admin, "orders.read")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
   try {
     return NextResponse.json({ success: true, orders: await listOrders() });
   } catch (error) {
@@ -13,6 +16,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const admin = await currentAdmin();
+  if (!admin || !canManage(admin, "orders.write")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
   try {
     const body = await request.json();
     if (typeof body.orderNumber !== "string" || typeof body.status !== "string") {

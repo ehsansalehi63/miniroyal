@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
-import { currentAdmin } from "@/app/lib/admin-auth";
+import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
 
 function slugify(value: string) {
@@ -9,14 +9,14 @@ function slugify(value: string) {
 
 export async function GET() {
   const admin = await currentAdmin();
-  if (!admin) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
+  if (!admin || !canManage(admin, "categories.read")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
   const [rows] = await pool.execute<RowDataPacket[]>("SELECT id, parent_id AS parentId, name, slug, description, icon, image_url AS imageUrl, sort_order AS sortOrder FROM categories WHERE is_active = 1 ORDER BY sort_order, id");
   return NextResponse.json({ success: true, categories: rows });
 }
 
 export async function POST(request: NextRequest) {
   const admin = await currentAdmin();
-  if (!admin) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
+  if (!admin || !canManage(admin, "categories.write")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
   const body = await request.json() as { name?: string; slug?: string; icon?: string; description?: string; parentId?: number | null; sortOrder?: number };
   const name = body.name?.trim();
   const slug = slugify(body.slug || name || "");

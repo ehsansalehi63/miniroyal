@@ -50,6 +50,8 @@ function otpHash(phone: string, code: string) {
 export async function requestCustomerOtp(phone: string) {
   if (!/^\d{10,15}$/.test(phone)) throw new Error("شماره موبایل معتبر نیست.");
   await ensureCustomerSchema();
+  const [recentRows] = await pool.execute("SELECT COUNT(*) AS count FROM customer_otps WHERE phone = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)", [phone]) as unknown as [Array<{ count: number }>];
+  if (Number(recentRows[0]?.count || 0) >= 3) throw new Error("برای این شماره درخواست‌های زیادی ثبت شده است؛ چند دقیقه بعد دوباره تلاش کنید.");
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + OTP_MINUTES * 60_000);
   await pool.execute("INSERT INTO customer_otps (phone, code_hash, expires_at) VALUES (?, ?, ?)", [phone, otpHash(phone, code), expiresAt]);

@@ -61,6 +61,8 @@ export async function requestAdminOtp(phoneInput: string) {
   if (!/^\d{10,15}$/.test(phone)) throw new Error("شماره موبایل معتبر نیست.");
   if (!secret()) throw new Error("AUTH_SESSION_SECRET یا PAYMENT_STATE_SECRET تنظیم نشده است.");
   await ensureAdminSchema();
+  const [recentRows] = await pool.execute("SELECT COUNT(*) AS count FROM admin_otps WHERE phone = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)", [phone]) as unknown as [Array<{ count: number }>];
+  if (Number(recentRows[0]?.count || 0) >= 3) throw new Error("برای این شماره درخواست‌های زیادی ثبت شده است؛ چند دقیقه بعد دوباره تلاش کنید.");
   const user = await ensureOwner(phone);
   if (!user || !user.is_active) throw new Error("این شماره در فهرست مدیران مجاز نیست.");
   const code = String(randomInt(100000, 1000000));
