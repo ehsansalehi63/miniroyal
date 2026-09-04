@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Pause, Play, Sparkles } from "lucide-react";
 import type { HomeSlide } from "../lib/homeConfig";
 
 interface CinematicHeroProps {
@@ -165,9 +165,10 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
             </Link>
             <Link
               href="/virtual-tryon"
-              className="inline-flex items-center gap-2 rounded-full border border-white/25 px-6 py-4 text-xs font-black text-white/90 transition hover:border-amber-300 hover:text-amber-200"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-l from-violet-600 to-fuchsia-600 px-6 py-4 text-xs font-black text-white shadow-[0_14px_35px_rgba(124,58,237,.45)] ring-2 ring-white/20 transition hover:-translate-y-0.5 hover:from-violet-500 hover:to-fuchsia-500"
             >
-              پرو آنلاین سایز
+              <Sparkles className="size-4" />
+              شروع پرو آنلاین سایز
             </Link>
           </div>
 
