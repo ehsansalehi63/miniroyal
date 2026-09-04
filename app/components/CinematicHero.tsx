@@ -158,7 +158,7 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
           <div className="mt-9 flex flex-wrap items-center gap-4">
             <Link
               href={slide.ctaLink}
-              className="inline-flex items-center gap-3 rounded-full bg-white px-7 py-4 text-xs font-black text-stone-950 shadow-[0_18px_45px_rgba(0,0,0,.45)] transition hover:bg-amber-300"
+              className="inline-flex items-center gap-3 rounded-full border-2 border-amber-200 bg-amber-300 px-7 py-4 text-xs font-black text-stone-950 shadow-[0_18px_45px_rgba(0,0,0,.5)] transition hover:border-amber-100 hover:bg-amber-200"
             >
               {slide.ctaText}
               <ArrowLeft className="size-4" />
