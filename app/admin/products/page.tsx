@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { mockProducts } from "../../lib/data/mockProducts";
 import { Product, SizeChartRow, Variant } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
@@ -14,6 +14,8 @@ export default function AdminProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowFormModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [apiMessage, setApiMessage] = useState("");
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -41,6 +43,17 @@ export default function AdminProductsPage() {
     tryOnAnchors: { shoulder: 50, waist: 52, length: 68 },
   });
 
+  useEffect(() => {
+    fetch("/api/admin/products?limit=100", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "دریافت محصولات از دیتابیس انجام نشد.");
+        if (Array.isArray(data.products) && data.products.length) setProducts(data.products.map((product: Product & { short_desc?: string; category_name?: string; size_chart_json?: SizeChartRow[] }) => ({ ...product, shortDesc: product.shortDesc || product.short_desc || "", categoryName: product.categoryName || product.category_name || "", images: Array.isArray(product.images) ? (product.images as Array<string | { url: string }>).map((image) => typeof image === "string" ? image : image.url) : [], variants: Array.isArray(product.variants) ? product.variants : [], sizeChartJson: product.sizeChartJson || product.size_chart_json || [] })));
+      })
+      .catch((error: unknown) => setApiMessage(error instanceof Error ? error.message : "دریافت محصولات انجام نشد."))
+      .finally(() => setLoadingProducts(false));
+  }, []);
+
   const filtered = products.filter(
     (p) =>
       p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,56 +61,25 @@ export default function AdminProductsPage() {
       p.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    setApiMessage("");
     const finalImages = images.length > 0 ? images : ["/images/products/boy-hoodie.svg"];
-
-    if (editingProduct) {
-      // Update existing
-      setProducts(
-        products.map((p) =>
-          p.id === editingProduct.id
-          ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile, mediaAngles }
-            : p
-        )
-      );
-    } else {
-      // Create new
-      const newProd: Product = {
-        id: Date.now(),
-        title,
-        slug: `prod-${Date.now()}`,
-        sku,
-        shortDesc: "محصول جدید افزوده شده توسط مدیر سیستم",
-        description: "توضیحات کامل محصول در پنل مدیریت ثبت شده است.",
-        categoryId: 1,
-        categorySlug: "pesaraneh",
-        categoryName,
-        gender: "boy",
-        ageMinMonth: 24,
-        ageMaxMonth: 96,
-        basePrice,
-        salePrice,
-        isFeatured: false,
-        isSpecialOffer: false,
-        salesCount: 0,
-        viewsCount: 0,
-        ratingAvg: 5.0,
-        ratingCount: 1,
-        status: "active",
-        fitType: "normal",
-        sizeChartJson: sizeChart,
-        fitProfile,
-        images: finalImages,
-        mediaAngles,
-        variants: variants.map((variant) => ({ ...variant, id: Date.now() + variant.id, productId: Date.now(), sku: variant.sku || `${sku}-${variant.id}` })),
-        publishedAt: new Date().toISOString().split("T")[0],
-      };
-      setProducts([newProd, ...products]);
-    }
-
-    setShowFormModal(false);
-    setEditingProduct(null);
+    const payload = {
+      title, sku, categoryId: editingProduct?.categoryId || 1, categoryName, basePrice, salePrice,
+      shortDesc: editingProduct?.shortDesc || "محصول جدید افزوده شده توسط مدیر سیستم",
+      description: editingProduct?.description || "توضیحات کامل محصول در پنل مدیریت ثبت شده است.",
+      gender: editingProduct?.gender || "boy", ageMinMonth: editingProduct?.ageMinMonth || 24, ageMaxMonth: editingProduct?.ageMaxMonth || 96,
+      status: editingProduct?.status || "draft", fitType: editingProduct?.fitType || "normal", sizeChartJson: sizeChart, fitProfile, images: finalImages.map((url, index) => ({ url, alt: title, sortOrder: index, isPrimary: index === 0 })),
+      mediaAngles: Object.values(mediaAngles).filter(Boolean), variants: variants.map((variant) => ({ sku: variant.sku || `${sku}-${variant.id}`, size: variant.size, color: variant.color, colorCode: variant.colorCode, stock: variant.stock, priceAdjustment: variant.priceAdjustment })),
+    };
+    const response = await fetch(editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products", { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await response.json();
+    if (!response.ok || !data.success) { setApiMessage(data.error || "ذخیرهٔ محصول در دیتابیس انجام نشد."); return; }
+    setApiMessage("محصول با موفقیت در MySQL ذخیره شد.");
+    if (editingProduct) setProducts(products.map((p) => p.id === editingProduct.id ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile, mediaAngles } : p));
+    else window.location.reload();
+    setShowFormModal(false); setEditingProduct(null);
   };
 
   const handleEdit = (p: Product) => {
@@ -115,10 +97,13 @@ export default function AdminProductsPage() {
     setShowFormModal(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("آیا از حذف این محصول اطمینان دارید؟")) {
-      setProducts(products.filter((p) => p.id !== id));
-    }
+  const handleDelete = async (id: number) => {
+    if (!confirm("آیا از حذف این محصول اطمینان دارید؟")) return;
+    const response = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+    const data = await response.json();
+    if (!response.ok || !data.success) { setApiMessage(data.error || "حذف محصول انجام نشد."); return; }
+    setProducts(products.filter((p) => p.id !== id));
+    setApiMessage("محصول آرشیو شد.");
   };
 
   return (
