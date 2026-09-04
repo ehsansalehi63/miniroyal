@@ -100,3 +100,7 @@ INSERT IGNORE INTO finance_accounts (code, title, account_type) VALUES
  ('5100','بهای تمام‌شده کالای فروش‌رفته','expense'),
  ('5200','هزینه ارسال و بسته‌بندی','expense'),
  ('5300','هزینه بازاریابی و پیامک','expense');
+
+-- Link admin accounts to verified phone identities for OTP-based administration.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) NULL UNIQUE AFTER email;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP NULL AFTER is_active;

@@ -46,36 +46,54 @@ function useIsMounted() {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const isMounted = useIsMounted();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [loginStep, setLoginStep] = useState<"phone" | "code">("phone");
   const [loginError, setLoginError] = useState("");
+  const [adminRole, setAdminRole] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("miniroyal_admin_token");
-    if (token === "authenticated_admin") {
-      setIsAuthenticated(true);
-    }
+    fetch("/api/admin/auth/session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data: { authenticated?: boolean; admin?: { role?: string } }) => {
+        if (data.authenticated) {
+          setIsAuthenticated(true);
+          setAdminRole(data.admin?.role || "");
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const storedPassword = localStorage.getItem("miniroyal_admin_password") || "admin123";
-    
-    if (
-      (username === "admin" || username === "admin@miniroyal.shop" || username === "09123456789") &&
-      password === storedPassword
-    ) {
-      localStorage.setItem("miniroyal_admin_token", "authenticated_admin");
-      setIsAuthenticated(true);
-      setLoginError("");
-    } else {
-      setLoginError("نام کاربری یا رمز عبور اشتباه است.");
+    setLoginError("");
+    const response = await fetch("/api/admin/auth/request-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone }) });
+    const data = await response.json() as { success?: boolean; error?: string };
+    if (!response.ok || !data.success) {
+      setLoginError(data.error || "ارسال کد ورود انجام نشد.");
+      return;
     }
+    setLoginStep("code");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("miniroyal_admin_token");
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    const response = await fetch("/api/admin/auth/verify-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone, code }) });
+    const data = await response.json() as { success?: boolean; error?: string };
+    if (!response.ok || !data.success) {
+      setLoginError(data.error || "کد ورود نادرست است.");
+      return;
+    }
+    setIsAuthenticated(true);
+    setAdminRole("super_admin");
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/auth/logout", { method: "POST" });
     setIsAuthenticated(false);
+    setLoginStep("phone");
+    setCode("");
   };
 
   if (!isMounted) {
@@ -101,48 +119,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-stone-300">نام کاربری یا شماره موبایل</label>
-              <div className="relative mt-1">
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
-                  className="w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-xs text-white outline-none focus:border-violet-500"
-                  required
-                />
+          {loginStep === "phone" ? (
+            <form onSubmit={handleRequestOtp} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-300">شماره موبایل مدیر مجاز</label>
+                <input type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="۰۹۱۳۳۲۸۷۹۸۴" className="mt-1 w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-xs text-white outline-none focus:border-violet-500" required />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-300">رمز عبور ادمین</label>
-              <div className="relative mt-1">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-xs text-white outline-none focus:border-violet-500"
-                  required
-                />
-              </div>
-            </div>
-
-            {loginError && (
-              <p className="rounded-xl bg-rose-500/10 p-2.5 text-center text-xs font-bold text-rose-400 border border-rose-500/20">
-                {loginError}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-xs font-black text-white shadow-lg transition hover:brightness-110"
-            >
-              ورود به پنل مدیریت ←
-            </button>
-          </form>
+              {loginError && <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-center text-xs font-bold text-rose-400">{loginError}</p>}
+              <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-xs font-black text-white shadow-lg transition hover:brightness-110">ارسال کد ورود با پیامک ←</button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="mt-6 space-y-4">
+              <div><label className="block text-xs font-bold text-stone-300">کد ارسال‌شده به {phone}</label><input type="text" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="کد ۶ رقمی" className="mt-1 w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-center text-lg tracking-[.35em] text-white outline-none focus:border-violet-500" required /></div>
+              {loginError && <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-center text-xs font-bold text-rose-400">{loginError}</p>}
+              <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-xs font-black text-white shadow-lg transition hover:brightness-110">تأیید و ورود به پنل ←</button>
+              <button type="button" onClick={() => { setLoginStep("phone"); setCode(""); setLoginError(""); }} className="w-full text-xs font-bold text-stone-400 hover:text-white">تغییر شماره</button>
+            </form>
+          )}
 
           <div className="mt-6 text-center">
             <Link href="/" className="text-xs font-bold text-stone-400 hover:text-white">
@@ -163,10 +156,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="grid size-10 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-xl shadow-md">
               <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
             </span>
-            <div>
-              <span className="block font-black text-sm text-white">مدیریت مینی رویال</span>
-              <span className="text-[10px] font-bold text-violet-400">پنل کنترل اصلی</span>
-            </div>
+              <div>
+                <span className="block font-black text-sm text-white">مدیریت مینی رویال</span>
+                <span className="text-[10px] font-bold text-violet-400">{adminRole || "پنل کنترل اصلی"}</span>
+              </div>
           </div>
         </div>
 
