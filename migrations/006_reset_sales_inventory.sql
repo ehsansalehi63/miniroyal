@@ -2,18 +2,17 @@
 -- Confirmed scope: preserve products, customers, users, media, and settings.
 -- This is intentionally destructive and should be run only after a database backup.
 
-SET FOREIGN_KEY_CHECKS = 0;
-
-TRUNCATE TABLE order_items;
-TRUNCATE TABLE orders;
-TRUNCATE TABLE inventory_movements;
-TRUNCATE TABLE inventory_reservations;
-TRUNCATE TABLE inventory_alerts;
-TRUNCATE TABLE stock_count_items;
-TRUNCATE TABLE stock_counts;
-TRUNCATE TABLE inventory_lots;
-TRUNCATE TABLE inventory_balances;
+-- Use DELETE rather than TRUNCATE: phpMyAdmin may execute statements in
+-- separate sessions, while TRUNCATE is rejected when foreign keys reference
+-- the table even if the child table is empty.
+DELETE FROM order_items;
+DELETE FROM inventory_reservations;
+DELETE FROM orders;
+DELETE FROM inventory_movements;
+DELETE FROM inventory_alerts;
+DELETE FROM stock_count_items;
+DELETE FROM stock_counts;
+DELETE FROM inventory_lots;
+DELETE FROM inventory_balances;
 
 UPDATE product_variants SET stock = 0, updated_at = CURRENT_TIMESTAMP;
-
-SET FOREIGN_KEY_CHECKS = 1;
