@@ -3,7 +3,7 @@ import {
   getSiteUrl,
   isValidPaymentState,
   toRial,
-  ZARINPAL_LIVE_API,
+  getZarinpalApi,
 } from "@/app/lib/payment";
 import { findOrder, updatePayment } from "@/app/lib/orders";
 
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     if (!order || Number(order.final_total) !== amount) {
       return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
     }
-    const response = await fetch(`${ZARINPAL_LIVE_API}/verify.json`, {
+    const response = await fetch(`${getZarinpalApi()}/verify.json`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({

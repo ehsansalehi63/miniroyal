@@ -3,8 +3,8 @@ import {
   createPaymentState,
   getSiteUrl,
   toRial,
-  ZARINPAL_LIVE_API,
-  ZARINPAL_LIVE_START,
+  getZarinpalApi,
+  getZarinpalStartUrl,
 } from "@/app/lib/payment";
 import { findOrder, updatePayment } from "@/app/lib/orders";
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     callbackUrl.searchParams.set("amount", String(amount));
     callbackUrl.searchParams.set("state", state);
 
-    const response = await fetch(`${ZARINPAL_LIVE_API}/request.json`, {
+    const response = await fetch(`${getZarinpalApi()}/request.json`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      paymentUrl: `${ZARINPAL_LIVE_START}/${result.data.authority}`,
+      paymentUrl: getZarinpalStartUrl(String(result.data.authority)),
     });
   } catch (error) {
     console.error("ZarinPal request error:", error);
