@@ -34,7 +34,7 @@ export default async function AdminDashboardPage() {
         </div>
 
         <Link
-          href="/admin/products"
+          href="./products"
           className="rounded-2xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
         >
           + افزودن محصول جدید
@@ -134,7 +134,7 @@ export default async function AdminDashboardPage() {
                     <td className="p-3 font-black text-rose-600">{toPersianDigits(lowVariant?.stock || 0)} عدد</td>
                     <td className="p-3">
                       <Link
-                        href={`/admin/products?edit=${p.id}`}
+                        href={`./products?edit=${p.id}`}
                         className="rounded-lg bg-violet-50 px-3 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-100"
                       >
                         ویرایش موجودی

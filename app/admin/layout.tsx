@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard,
@@ -49,6 +50,8 @@ function useIsMounted() {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const isMounted = useIsMounted();
+  const pathname = usePathname();
+  const adminBase = `/${pathname.split("/").filter(Boolean)[0] || "admin"}`;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
@@ -173,7 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={`${adminBase}${item.href.replace(/^\/admin/, "")}`}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold text-stone-300 transition hover:bg-stone-800 hover:text-white"
               >
                 <Icon className="size-4 text-violet-400" />
