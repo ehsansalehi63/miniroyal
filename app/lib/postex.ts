@@ -87,11 +87,14 @@ async function defaultBoxTypeId() {
   return Number(first?.id || first?.code || first?.boxTypeId || 0);
 }
 
-async function defaultCourierCode() {
+async function resolveDefaultCourier() {
   const data = await postexFetch<unknown>("/api/v1/common/shipping-methods", { method: "GET" });
   const rows = Array.isArray(data) ? data : (data as { entries?: unknown[]; data?: unknown[] })?.entries || (data as { data?: unknown[] })?.data || [];
   const first = rows[0] as Record<string, unknown> | undefined;
-  return String(first?.courierCode || first?.courier_code || first?.code || "").trim();
+  return {
+    code: String(first?.courierCode || first?.courier_code || first?.code || "").trim(),
+    serviceType: String(first?.serviceType || first?.service_type || "EXPRESS").trim() || "EXPRESS",
+  };
 }
 
 export async function getPostexQuote(input: {
@@ -106,7 +109,9 @@ export async function getPostexQuote(input: {
   const fromCityCode = Number(process.env.POSTEX_ORIGIN_CITY_CODE || await cityCode(process.env.POSTEX_ORIGIN_CITY || "اصفهان"));
   const toCityCode = await cityCode(input.destinationCity);
   const boxTypeId = await defaultBoxTypeId();
-  const courierCode = process.env.POSTEX_COURIER_CODE?.trim() || await defaultCourierCode();
+  const configuredCourierCode = process.env.POSTEX_COURIER_CODE?.trim();
+  const courier = configuredCourierCode ? { code: configuredCourierCode, serviceType: process.env.POSTEX_SERVICE_TYPE || "EXPRESS" } : await resolveDefaultCourier();
+  const courierCode = courier.code;
   console.info("Postex quote request meta", { fromCityCode, toCityCode, boxTypeId, hasCourierCode: Boolean(courierCode) });
   const quoteBody: Record<string, unknown> = {
     collection_type: process.env.POSTEX_COLLECTION_TYPE || "pick_up",
@@ -130,7 +135,7 @@ export async function getPostexQuote(input: {
     }],
     value_added_service: { request_label: true, request_packaging: false, request_sms_notification: true },
   };
-  if (courierCode) quoteBody.courier = { courier_code: courierCode, service_type: process.env.POSTEX_SERVICE_TYPE || "EXPRESS" };
+  if (courierCode) quoteBody.courier = { courier_code: courierCode, service_type: courier.serviceType };
   return postexFetch<unknown>("/api/v1/shipping/quotes", {
     method: "POST",
     body: JSON.stringify(quoteBody),
