@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Activity, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Server, ShieldCheck, Database, ShoppingBag, CreditCard, MessageSquare, Image, Sparkles } from "lucide-react";
+import { Activity, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Server, ShieldCheck, Database, ShoppingBag, CreditCard, MessageSquare, Image, Sparkles, Truck } from "lucide-react";
 
 interface HealthCheckResult {
   status: "healthy" | "unhealthy";
@@ -39,6 +39,7 @@ export default function AdminHealthPage() {
       case "sms_gateway": return MessageSquare;
       case "github_webhook": return Server;
       case "image_cdn": return Image;
+      case "postex_shipping": return Truck;
       default: return Activity;
     }
   };
@@ -52,6 +53,7 @@ export default function AdminHealthPage() {
       case "sms_gateway": return "سامانه پیامک و کد OTP";
       case "github_webhook": return "دیپلوی اتوماتیک Webhook";
       case "image_cdn": return "بارگذاری عکس‌ها و CDN";
+      case "postex_shipping": return "سرویس ارسال و رهگیری پستکس";
       case "cart_and_checkout": return "سبد خرید و سیستم تسویه";
       default: return key;
     }

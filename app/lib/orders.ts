@@ -1,5 +1,12 @@
 import pool from "./mysql";
-import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
+import {
+  calculateCouponDiscount,
+  findBuiltInCoupon,
+  normalizeCouponCode,
+  resolveShippingCost,
+  type Coupon,
+} from "./coupons";
 
 export type OrderItemInput = {
   product: {
@@ -26,10 +33,47 @@ export type CreateOrderInput = {
   city: string;
   address: string;
   postalCode: string;
-  shippingProvider: "tipax" | "post" | "peyk";
+  shippingProvider: "tipax" | "post" | "peyk" | "postex";
   paymentMethod: "zarinpal" | "cod";
   items: OrderItemInput[];
+  /** کد تخفیف اعمال‌شده در سبد؛ اعتبارسنجی و محاسبهٔ مبلغ آن روی سرور انجام می‌شود. */
+  couponCode?: string | null;
+  /** کرایهٔ استعلام‌شده (مثلاً از پستکس)؛ در صورت نامعتبر بودن، نرخ پیش‌فرض جایگزین می‌شود. */
+  shippingCost?: number | null;
 };
+
+/**
+ * کد تخفیف ابتدا از جدول `coupons` خوانده می‌شود (تا کدهای ساخته‌شده در پنل هم کار کنند)
+ * و در نبود رکورد فعال، به کدهای پیش‌فرض برنامه برمی‌گردیم. هر خطای دیتابیس اینجا نباید
+ * ثبت سفارش را متوقف کند، فقط تخفیف اعمال نمی‌شود.
+ */
+async function resolveCoupon(connection: PoolConnection, code: unknown): Promise<Coupon | null> {
+  const normalized = normalizeCouponCode(code);
+  if (!normalized) return null;
+  try {
+    const [rows] = await connection.execute<RowDataPacket[]>(
+      `SELECT code, discount_type, discount_value, min_order_amount, max_discount
+       FROM coupons
+       WHERE code = ? AND is_active = 1 AND (expires_at IS NULL OR expires_at > NOW())
+         AND (usage_limit IS NULL OR times_used < usage_limit)
+       LIMIT 1`,
+      [normalized]
+    );
+    const row = rows[0];
+    if (row) {
+      return {
+        code: String(row.code),
+        discountType: row.discount_type === "fixed" ? "fixed" : "percent",
+        discountValue: Number(row.discount_value) || 0,
+        minOrderAmount: Number(row.min_order_amount) || 0,
+        maxDiscount: row.max_discount === null || row.max_discount === undefined ? null : Number(row.max_discount),
+      };
+    }
+  } catch (error) {
+    console.error("Coupon lookup failed; falling back to built-in coupons.", error);
+  }
+  return findBuiltInCoupon(normalized);
+}
 
 function dbPaymentMethod(method: CreateOrderInput["paymentMethod"]) {
   return method === "zarinpal" ? "online" : "cod";
@@ -64,9 +108,12 @@ export async function createOrder(input: CreateOrderInput) {
       const unitPrice = (item.product.salePrice ?? item.product.basePrice) + item.variant.priceAdjustment;
       return sum + unitPrice * item.quantity;
     }, 0);
-    const discount = 0;
-    const shippingCost = subtotal >= 500000 ? 0 : 45000;
-    const finalTotal = subtotal - discount + shippingCost;
+    // تخفیف و کرایه باید دقیقاً همان چیزی باشد که مشتری در سبد/تسویه دیده است؛
+    // در غیر این صورت مبلغ سفارش با مبلغ درگاه نمی‌خواند و پرداخت رد می‌شود.
+    const coupon = await resolveCoupon(connection, input.couponCode);
+    const discount = calculateCouponDiscount(coupon, subtotal);
+    const shippingCost = resolveShippingCost(subtotal, input.shippingCost ?? null);
+    const finalTotal = Math.max(0, subtotal - discount + shippingCost);
     const orderNumber = `MR-${Date.now().toString().slice(-8)}`;
     const shippingAddress = JSON.stringify({
       recipientName: input.recipientName.trim(),
@@ -136,8 +183,15 @@ export async function createOrder(input: CreateOrderInput) {
       );
     }
 
+    if (coupon && discount > 0) {
+      // شمارندهٔ استفادهٔ کد تخفیف؛ خطای این به‌روزرسانی نباید سفارش را برگرداند.
+      await connection
+        .execute("UPDATE coupons SET times_used = times_used + 1 WHERE code = ?", [coupon.code])
+        .catch((error: unknown) => console.error("Coupon usage counter update failed:", error));
+    }
+
     await connection.commit();
-    return { orderNumber, orderId: orderResult.insertId };
+    return { orderNumber, orderId: orderResult.insertId, subtotal, discount, shippingCost, finalTotal };
   } catch (error) {
     await connection.rollback();
     throw error;

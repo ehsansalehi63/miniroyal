@@ -3,6 +3,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Product, Variant } from "./types/catalog";
+// تعریف کدهای تخفیف مشترک با سرور است (app/lib/coupons.ts) تا مبلغ سبد و مبلغ سفارش یکی بماند.
+import { calculateCouponDiscount, findBuiltInCoupon, type Coupon } from "./coupons";
 
 export interface CartItem {
   id: string; // unique key e.g. `${product.id}-${variant.id}`
@@ -11,12 +13,7 @@ export interface CartItem {
   quantity: number;
 }
 
-export interface Coupon {
-  code: string;
-  discountType: "percent" | "fixed";
-  discountValue: number; // e.g. 10 for 10% or 50000 for 50k Toman
-  minOrderAmount: number;
-}
+export type { Coupon };
 
 interface CartState {
   items: CartItem[];
@@ -32,12 +29,6 @@ interface CartState {
   getDiscountAmount: () => number;
   getFinalTotal: () => number;
 }
-
-const MOCK_COUPONS: Coupon[] = [
-  { code: "MINI10", discountType: "percent", discountValue: 10, minOrderAmount: 200000 },
-  { code: "ROYAL50", discountType: "fixed", discountValue: 50000, minOrderAmount: 400000 },
-  { code: "WELCOME", discountType: "percent", discountValue: 15, minOrderAmount: 0 },
-];
 
 export const useCart = create<CartState>()(
   persist(
@@ -81,8 +72,7 @@ export const useCart = create<CartState>()(
       },
 
       applyCoupon: (code) => {
-        const cleanCode = code.trim().toUpperCase();
-        const found = MOCK_COUPONS.find((c) => c.code === cleanCode);
+        const found = findBuiltInCoupon(code);
 
         if (!found) {
           return { success: false, message: "کد تخفیف وارد شده معتبر نیست." };
@@ -112,17 +102,7 @@ export const useCart = create<CartState>()(
           return sum + (unitPrice + item.variant.priceAdjustment) * item.quantity;
         }, 0),
 
-      getDiscountAmount: () => {
-        const subtotal = get().getRawSubtotal();
-        const coupon = get().appliedCoupon;
-        if (!coupon) return 0;
-
-        if (coupon.discountType === "percent") {
-          return Math.round((subtotal * coupon.discountValue) / 100);
-        } else {
-          return Math.min(subtotal, coupon.discountValue);
-        }
-      },
+      getDiscountAmount: () => calculateCouponDiscount(get().appliedCoupon, get().getRawSubtotal()),
 
       getFinalTotal: () => {
         const subtotal = get().getRawSubtotal();

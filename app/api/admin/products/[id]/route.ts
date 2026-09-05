@@ -21,7 +21,12 @@ export async function GET(_request: NextRequest, context: Context) {
   if (!admin || !canManage(admin, "products.read")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
   const id = await getId(context); if (!id) return NextResponse.json({ success: false, error: "شناسهٔ محصول معتبر نیست." }, { status: 400 });
   await ensureProductAttributeTables(pool);
-  const [products] = await pool.execute<RowDataPacket[]>("SELECT * FROM products WHERE id = ? LIMIT 1", [id]);
+  // نام و اسلاگ دسته هم برگردانده می‌شود؛ فرم ویرایش پنل بر اساس دستهٔ محصول تصمیم
+  // می‌گیرد کدام مشخصات را نشان دهد و بدون این دو مقدار «بدون دسته‌بندی» می‌شد.
+  const [products] = await pool.execute<RowDataPacket[]>(
+    "SELECT p.*, c.name AS categoryName, c.slug AS categorySlug FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ? LIMIT 1",
+    [id]
+  );
   if (!products[0]) return NextResponse.json({ success: false, error: "محصول پیدا نشد." }, { status: 404 });
   const [variants] = await pool.execute<RowDataPacket[]>("SELECT id, product_id AS productId, sku, size, color, color_code AS colorCode, stock, price_adjustment AS priceAdjustment FROM product_variants WHERE product_id = ? ORDER BY id", [id]);
   const [images] = await pool.execute<RowDataPacket[]>("SELECT id, url, alt, sort_order AS sortOrder, is_primary AS isPrimary, media_type AS mediaType FROM product_media WHERE product_id = ? ORDER BY sort_order, id", [id]);

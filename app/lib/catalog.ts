@@ -27,17 +27,46 @@ function parseJson<T>(value: unknown, fallback: T): T {
   try { return JSON.parse(String(value)) as T; } catch { return fallback; }
 }
 
+/**
+ * خطاهای پایگاه‌داده (قطعی MySQL، نبودن جدول، تمام‌شدن کانکشن‌ها) نباید کل سایت را
+ * ۵۰۰ کنند. قبلاً هر خطای اینجا مستقیم به رندر صفحه پرتاب می‌شد و صفحهٔ اصلی،
+ * فروشگاه و دسته‌ها همگی خطای کامل می‌دادند. حالا خطا لاگ می‌شود (با throttle تا
+ * لاگ هاست پر نشود) و سایت با تاکسونومی ثابت/لیست خالی سرِپا می‌ماند.
+ */
+let lastCatalogErrorLoggedAt = 0;
+function reportCatalogFailure(scope: string, error: unknown) {
+  const now = Date.now();
+  if (now - lastCatalogErrorLoggedAt > 30_000) {
+    lastCatalogErrorLoggedAt = now;
+    console.error(`[catalog] ${scope} failed; falling back to degraded catalog.`, error);
+  }
+}
+
 async function loadCategories() {
-  const [rows] = await pool.execute<CategoryRow[]>("SELECT id, parent_id, name, slug, description, icon, image_url, sort_order FROM categories WHERE is_active = 1 ORDER BY sort_order, id");
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  return rows.map((row): Category => ({
-    id: row.id, parentId: row.parent_id, parentSlug: row.parent_id ? byId.get(row.parent_id)?.slug : undefined,
-    name: row.name, slug: row.slug, description: row.description || undefined, icon: row.icon || undefined,
-    imageUrl: row.image_url || undefined, sortOrder: row.sort_order,
-  }));
+  try {
+    const [rows] = await pool.execute<CategoryRow[]>("SELECT id, parent_id, name, slug, description, icon, image_url, sort_order FROM categories WHERE is_active = 1 ORDER BY sort_order, id");
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return rows.map((row): Category => ({
+      id: row.id, parentId: row.parent_id, parentSlug: row.parent_id ? byId.get(row.parent_id)?.slug : undefined,
+      name: row.name, slug: row.slug, description: row.description || undefined, icon: row.icon || undefined,
+      imageUrl: row.image_url || undefined, sortOrder: row.sort_order,
+    }));
+  } catch (error) {
+    reportCatalogFailure("loadCategories", error);
+    return staticCategories as Category[];
+  }
 }
 
 async function loadProducts(where = "p.status = 'active'", params: (string | number)[] = []) {
+  try {
+    return await queryProducts(where, params);
+  } catch (error) {
+    reportCatalogFailure("loadProducts", error);
+    return [] as Product[];
+  }
+}
+
+async function queryProducts(where: string, params: (string | number)[]) {
   const [productRows] = await pool.execute<ProductRow[]>(
     `SELECT p.id, p.title, p.slug, p.sku, p.short_desc, p.description, p.category_id,
       c.slug AS category_slug, c.name AS category_name, b.name AS brand_name, p.gender,

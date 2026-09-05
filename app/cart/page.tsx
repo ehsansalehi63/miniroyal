@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { useCart } from "../lib/cart";
 import { formatToman, toPersianDigits } from "../lib/utils";
+import { DEFAULT_SHIPPING_COST, FREE_SHIPPING_THRESHOLD } from "../lib/coupons";
+import { PRODUCT_FALLBACKS } from "../lib/imageCatalog";
 import { Trash2, ShoppingBag, ArrowRight, Tag } from "lucide-react";
 
 function useIsMounted() {
@@ -30,6 +32,7 @@ export default function CartPage() {
     getRawSubtotal,
     getDiscountAmount,
     getFinalTotal,
+    getTotalItems,
   } = useCart();
 
   if (!isMounted) {
@@ -43,8 +46,11 @@ export default function CartPage() {
   const subtotal = getRawSubtotal();
   const discount = getDiscountAmount();
   const finalTotal = getFinalTotal();
-  const freeShippingThreshold = 500000;
+  // آستانه و کرایهٔ پیش‌فرض از app/lib/coupons.ts خوانده می‌شود تا سبد، تسویه و
+  // مبلغ ثبت‌شدهٔ سفارش هیچ‌وقت با هم اختلاف نداشته باشند.
+  const freeShippingThreshold = FREE_SHIPPING_THRESHOLD;
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
+  const estimatedShipping = remainingForFreeShipping === 0 ? 0 : DEFAULT_SHIPPING_COST;
   const freeShippingPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
   const handleApplyCoupon = (e: React.FormEvent) => {
@@ -86,7 +92,7 @@ export default function CartPage() {
       </nav>
 
       <h1 className="text-2xl font-black text-stone-900 sm:text-3xl">
-        سبد خرید شما ({toPersianDigits(items.length)} کالا)
+        سبد خرید شما ({toPersianDigits(getTotalItems())} کالا)
       </h1>
 
       {/* نوار ارسال رایگان */}
@@ -124,10 +130,17 @@ export default function CartPage() {
                 className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm"
               >
                 <div className="flex items-center gap-4 w-full sm:w-auto">
+                  {/* اگر رسانهٔ محصول حذف/خراب شده باشد، به‌جای کادر خالی تصویر جایگزین نشان داده می‌شود. */}
                   <img
-                    src={item.product.images[0]}
+                    src={item.product.images[0] || PRODUCT_FALLBACKS.boy}
                     alt={item.product.title}
-                    className="size-20 rounded-2xl object-cover"
+                    className="size-20 rounded-2xl border border-stone-100 object-cover"
+                    onError={(event) => {
+                      const image = event.currentTarget;
+                      if (image.dataset.fallbackApplied === "1") return;
+                      image.dataset.fallbackApplied = "1";
+                      image.src = PRODUCT_FALLBACKS.boy;
+                    }}
                   />
                   <div>
                     <h3 className="text-sm font-bold text-stone-900">
@@ -221,14 +234,14 @@ export default function CartPage() {
               <div className="flex justify-between text-stone-600 font-medium">
                 <span>هزینه ارسال (پست/تیپاکس):</span>
                 <span className="font-bold text-stone-900">
-                  {remainingForFreeShipping === 0 ? "رایگان 🎉" : formatToman(45000)}
+                  {estimatedShipping === 0 ? "رایگان 🎉" : formatToman(estimatedShipping)}
                 </span>
               </div>
 
               <div className="border-t border-stone-100 pt-4 flex justify-between text-sm font-black text-stone-900">
                 <span>مبلغ قابل پرداخت:</span>
                 <span className="text-violet-700">
-                  {formatToman(finalTotal + (remainingForFreeShipping === 0 ? 0 : 45000))}
+                  {formatToman(finalTotal + estimatedShipping)}
                 </span>
               </div>
             </div>

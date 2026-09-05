@@ -3,11 +3,20 @@
 import { useEffect, useState } from "react";
 import { Category, Product, SizeChartRow, Variant } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
+import { ADMIN_PRODUCT_IMAGE_FALLBACK, normalizeAdminProduct, normalizeAdminProducts } from "../../lib/admin-product-normalize";
 import DropzoneImageUploader from "../../components/DropzoneImageUploader";
 import ProductAngleMediaManager from "../../components/ProductAngleMediaManager";
 import ProductSpecificationsEditor, { ProductAttributeDraft } from "../../components/ProductSpecificationsEditor";
 import type { ProductMediaAngle, ProductAngleMedia } from "../../lib/types/catalog";
 import { Search, Plus, Edit, Trash2, Copy } from "lucide-react";
+
+/** وضعیت واقعی محصول؛ پیش‌تر همهٔ ردیف‌ها بدون توجه به دیتابیس «فعال در سایت» نشان داده می‌شدند. */
+const STATUS_BADGES: Record<Product["status"], { label: string; className: string }> = {
+  active: { label: "فعال در سایت", className: "bg-emerald-100 text-emerald-800" },
+  draft: { label: "پیش‌نویس", className: "bg-stone-200 text-stone-700" },
+  review: { label: "در انتظار بازبینی", className: "bg-amber-100 text-amber-800" },
+  archived: { label: "آرشیو شده", className: "bg-rose-100 text-rose-700" },
+};
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -54,16 +63,10 @@ export default function AdminProductsPage() {
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "دریافت محصولات از دیتابیس انجام نشد.");
-        if (Array.isArray(data.products) && data.products.length) setProducts(data.products.map((product: Product & { short_desc?: string; category_name?: string; size_chart_json?: SizeChartRow[] }) => ({
-          ...product,
-          title: String(product.title || "محصول بدون عنوان"),
-          sku: String(product.sku || "بدون SKU"),
-          shortDesc: product.shortDesc || product.short_desc || "",
-          categoryName: String(product.categoryName || product.category_name || "بدون دسته‌بندی"),
-          images: Array.isArray(product.images) ? (product.images as Array<string | { url: string }>).map((image) => typeof image === "string" ? image : image.url).filter(Boolean) : [],
-          variants: Array.isArray(product.variants) ? product.variants : [],
-          sizeChartJson: product.sizeChartJson || product.size_chart_json || [],
-        })));
+        // خروجی API ردیف خام دیتابیس (snake_case) است؛ normalizeAdminProducts آن را به
+        // ساختار Product تبدیل می‌کند وگرنه قیمت/دسته/وضعیت خالی می‌ماند.
+        // آرایهٔ خالی هم باید set شود تا بعد از حذف آخرین محصول، ردیف قدیمی در جدول نماند.
+        setProducts(normalizeAdminProducts(data.products));
       })
       .catch((error: unknown) => setApiMessage(error instanceof Error ? error.message : "دریافت محصولات انجام نشد."))
       .finally(() => setLoadingProducts(false));
@@ -81,7 +84,7 @@ export default function AdminProductsPage() {
     const timer = window.setTimeout(() => {
       fetch(`/api/admin/products?search=${encodeURIComponent(query)}&includeArchived=1&limit=5`, { cache: "no-store" })
         .then((response) => response.json())
-        .then((data) => setSimilarProducts(Array.isArray(data.products) ? data.products.filter((item: Product) => item.id !== editingProduct?.id) : []))
+        .then((data) => setSimilarProducts(normalizeAdminProducts(data.products).filter((item) => item.id !== editingProduct?.id)))
         .catch(() => setSimilarProducts([]));
     }, 450);
     return () => window.clearTimeout(timer);
@@ -128,12 +131,36 @@ export default function AdminProductsPage() {
       setSaveStage("ذخیره انجام شد؛ در حال تازه‌سازی فهرست محصولات...");
       const refreshResponse = await fetch("/api/admin/products?limit=100", { cache: "no-store", signal: AbortSignal.timeout(30_000) });
       const refreshed = await refreshResponse.json().catch(() => ({}));
-      if (refreshResponse.ok && Array.isArray(refreshed.products)) setProducts(refreshed.products);
+      if (refreshResponse.ok && Array.isArray(refreshed.products)) setProducts(normalizeAdminProducts(refreshed.products));
       setShowFormModal(false); setEditingProduct(null);
     } catch (error) { setApiMessage(error instanceof Error && error.name === "TimeoutError" ? "ذخیره بیش از ۶۰ ثانیه طول کشید. تصویرها را کوچک‌تر کنید یا دوباره تلاش کنید." : error instanceof Error ? error.message : "ارتباط با سرور هنگام ذخیره قطع شد."); setSaveStage(""); } finally { setSaving(false); }
   };
 
-  const handleEdit = (p: Product) => {
+  /**
+   * فرم ویرایش باید با دادهٔ کامل محصول باز شود. فهرست مدیریت (`GET /api/admin/products`)
+   * زاویه‌های رسانه (product_media_angles) را برنمی‌گرداند؛ اگر فرم با همان دادهٔ ناقص باز
+   * می‌شد، PATCH بعدی آرایهٔ خالی mediaAngles می‌فرستاد و همهٔ عکس‌های زاویه‌ای ذخیره‌شدهٔ
+   * محصول پاک می‌شد. بنابراین ابتدا نسخهٔ کامل محصول از endpoint تکی خوانده می‌شود و در
+   * صورت خطا، ردیف فهرست به‌عنوان fallback استفاده می‌شود.
+   */
+  const handleEdit = async (product: Product) => {
+    let p = product;
+    try {
+      const response = await fetch(`/api/admin/products/${product.id}`, { cache: "no-store", signal: AbortSignal.timeout(20_000) });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data?.product) {
+        const detailed = normalizeAdminProduct(data.product);
+        // اگر endpoint تکی نام دسته را نداشت، مقدار ردیف فهرست حفظ می‌شود.
+        p = {
+          ...detailed,
+          categoryName: detailed.categoryName && detailed.categoryName !== "بدون دسته‌بندی" ? detailed.categoryName : product.categoryName,
+          categorySlug: detailed.categorySlug || product.categorySlug,
+        };
+      }
+      else setApiMessage("دریافت اطلاعات کامل محصول ناموفق بود؛ فرم با اطلاعات فهرست باز شد.");
+    } catch {
+      setApiMessage("دریافت اطلاعات کامل محصول ناموفق بود؛ فرم با اطلاعات فهرست باز شد.");
+    }
     setEditingProduct(p);
     setTitle(p.title);
     setCategoryName(p.categoryName);
@@ -169,7 +196,7 @@ export default function AdminProductsPage() {
     if (!response.ok || !data.success) { setApiMessage(data.error || "حذف محصول انجام نشد."); return; }
     const refreshResponse = await fetch("/api/admin/products?limit=100", { cache: "no-store" });
     const refreshed = await refreshResponse.json().catch(() => ({}));
-    if (refreshResponse.ok && Array.isArray(refreshed.products)) setProducts(refreshed.products);
+    if (refreshResponse.ok && Array.isArray(refreshed.products)) setProducts(normalizeAdminProducts(refreshed.products));
     setApiMessage("محصول در دیتابیس آرشیو شد و از فهرست مدیریت حذف شد.");
   };
 
@@ -206,6 +233,28 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
+      {/*
+        پیام‌های موفقیت/خطای API تا پیش از این فقط در state ذخیره می‌شدند و هیچ‌جا
+        نمایش داده نمی‌شدند؛ یعنی وقتی ذخیرهٔ محصول شکست می‌خورد مدیر هیچ بازخوردی
+        نمی‌دید. طبق قانون «خطاها باید دیده شوند» اینجا رندر می‌شوند.
+      */}
+      {apiMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-xs font-bold ${
+            /موفقیت|ذخیره شد|آرشیو شد/.test(apiMessage)
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-rose-200 bg-rose-50 text-rose-700"
+          }`}
+        >
+          <span>{apiMessage}</span>
+          <button type="button" onClick={() => setApiMessage("")} className="shrink-0 text-[11px] font-bold underline">
+            بستن
+          </button>
+        </div>
+      )}
+
       {/* جستجو و فیلتر */}
       <div className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
         <Search className="size-4 text-stone-400" />
@@ -235,10 +284,32 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 text-stone-800">
+              {loadingProducts && (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-stone-500">در حال بارگذاری محصولات از دیتابیس...</td>
+                </tr>
+              )}
+              {!loadingProducts && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-stone-500">
+                    {products.length === 0 ? "هنوز محصولی در دیتابیس ثبت نشده است." : "محصولی با این جستجو پیدا نشد."}
+                  </td>
+                </tr>
+              )}
               {filtered.map((p) => (
                 <tr key={p.id} className="hover:bg-stone-50 transition">
                   <td className="p-3">
-                    <img src={p.images[0]} alt={p.title} className="size-12 rounded-xl object-cover" />
+                    <img
+                      src={p.images[0] || ADMIN_PRODUCT_IMAGE_FALLBACK}
+                      alt={p.title}
+                      className="size-12 rounded-xl border border-stone-200 object-cover"
+                      onError={(event) => {
+                        const image = event.currentTarget;
+                        if (image.dataset.fallbackApplied === "1") return;
+                        image.dataset.fallbackApplied = "1";
+                        image.src = ADMIN_PRODUCT_IMAGE_FALLBACK;
+                      }}
+                    />
                   </td>
                   <td className="p-3 font-bold max-w-xs">{p.title}</td>
                   <td className="p-3 font-mono text-stone-500">{p.sku}</td>
@@ -252,14 +323,14 @@ export default function AdminProductsPage() {
                     {formatToman(p.salePrice ?? p.basePrice)}
                   </td>
                   <td className="p-3">
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                      فعال در سایت
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${STATUS_BADGES[p.status]?.className || STATUS_BADGES.draft.className}`}>
+                      {STATUS_BADGES[p.status]?.label || STATUS_BADGES.draft.label}
                     </span>
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleEdit(p)}
+                        onClick={() => void handleEdit(p)}
                         className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 hover:text-violet-700"
                         title="ویرایش"
                       >

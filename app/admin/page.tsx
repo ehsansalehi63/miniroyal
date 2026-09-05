@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AdminPanelLink from "./AdminPanelLink";
 import { getProducts } from "../lib/catalog";
 import { listOrders } from "../lib/orders";
 import { formatToman, toPersianDigits } from "../lib/utils";
@@ -33,12 +33,12 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        <Link
-          href="/ehsanpaneladmin/products"
+        <AdminPanelLink
+          to="/products"
           className="rounded-2xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
         >
           + افزودن محصول جدید
-        </Link>
+        </AdminPanelLink>
       </div>
 
       {/* کارت‌های KPI اصلی */}
@@ -99,7 +99,7 @@ export default async function AdminDashboardPage() {
             {toPersianDigits(lowStockProducts.length)} محصول
           </div>
           <span className="mt-1 block text-[11px] font-bold text-amber-600">
-            سایزهای زیر ۳ عدد نیازمند شارژ
+            سایزهای با موجودی ۳ عدد و کمتر
           </span>
         </div>
       </div>
@@ -133,18 +133,26 @@ export default async function AdminDashboardPage() {
                     <td className="p-3">{lowVariant?.size} - {lowVariant?.color}</td>
                     <td className="p-3 font-black text-rose-600">{toPersianDigits(lowVariant?.stock || 0)} عدد</td>
                     <td className="p-3">
-                      <Link
-                        href={`/ehsanpaneladmin/products?edit=${p.id}`}
+                      <AdminPanelLink
+                        to={`/products?edit=${p.id}`}
                         className="rounded-lg bg-violet-50 px-3 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-100"
                       >
                         ویرایش موجودی
-                      </Link>
+                      </AdminPanelLink>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          {lowStockProducts.length > 5 && (
+            <p className="p-3 text-[11px] font-semibold text-stone-500">
+              نمایش ۵ مورد از {toPersianDigits(lowStockProducts.length)} محصول کم‌موجودی؛ فهرست کامل در «مرکز کنترل انبار».
+            </p>
+          )}
+          {lowStockProducts.length === 0 && (
+            <p className="p-3 text-[11px] font-semibold text-stone-500">همهٔ سایزها موجودی کافی دارند.</p>
+          )}
         </div>
       </div>
     </div>

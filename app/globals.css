@@ -8,6 +8,25 @@
   --ink-muted: #746b78;
 }
 
+/*
+  ریست پایهٔ لینک‌ها. این قوانین قبلاً به‌صورت یک <style> بدون لایه در <head>
+  تزریق می‌شدند؛ در Tailwind v4 هر قانونِ بدون لایه از تمام کلاس‌های
+  @layer utilities قوی‌تر است، بنابراین `a { color: inherit }` رنگ همهٔ
+  کلاس‌های text-* را روی لینک‌ها خنثی می‌کرد. با انتقال به @layer base
+  رفتار پیش‌فرض (ارث‌بری رنگ و حذف زیرخط) حفظ می‌شود ولی هر کلاس رنگ
+  Tailwind دوباره اولویت دارد.
+*/
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
 body {
   background:
     radial-gradient(circle at 6% 0%, rgba(245, 158, 11, 0.11), transparent 26rem),

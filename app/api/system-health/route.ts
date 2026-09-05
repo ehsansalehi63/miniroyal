@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { inspectDatabase, query } from "@/app/lib/mysql";
 import { getFeaturedProducts } from "@/app/lib/catalog";
 import { describeSmsConfig } from "@/app/lib/sms";
+import { checkPostexConnection } from "@/app/lib/postex";
 
 export async function GET() {
   const timestamp = new Date().toISOString();
@@ -84,7 +85,17 @@ export async function GET() {
     detail: "کانفیگ images.unoptimized جهت لود سریع عکس‌ها فعال است.",
   };
 
-  // ۸. تست سبد خرید و استان‌ها
+  // ۸. تست اتصال سرویس پست/پستکس — دقیقاً همان چیزی که هنگام استعلام کرایه و ثبت
+  // مرسوله استفاده می‌شود (GET /api/v1/user/whoami).
+  const postex = await checkPostexConnection();
+  checks["postex_shipping"] = {
+    status: postex.ok ? "ok" : postex.configured ? "error" : "warning",
+    detail: postex.ok
+      ? `اتصال به پستکس برقرار است (${postex.durationMs} میلی‌ثانیه).`
+      : ("message" in postex ? String(postex.message) : "اتصال به پستکس برقرار نشد."),
+  };
+
+  // ۹. تست سبد خرید و استان‌ها
   checks["cart_and_checkout"] = {
     status: "ok",
     detail: "فروشگاه آماده ثبت سفارش، کدهای تخفیف (MINI10، ROYAL50) و فاکتور لایو است.",

@@ -1,15 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PRODUCT_FALLBACKS } from "../lib/imageCatalog";
 
 interface ProductGalleryProps {
   images: string[];
   title: string;
 }
 
+/**
+ * تصویر جایگزین وقتی محصول هیچ رسانه‌ای ندارد یا فایل رسانه پاک/خراب شده است.
+ * پیش از این در این حالت یک کادر خاکستری خالی (یا آیکن تصویر شکسته) نمایش داده می‌شد.
+ */
+const FALLBACK_IMAGE = PRODUCT_FALLBACKS.boy;
+
 export default function ProductGallery({ images, title }: ProductGalleryProps) {
-  const [activeImage, setActiveImage] = useState(images[0] || "");
+  const gallery = images.filter((image) => typeof image === "string" && image.trim().length > 0);
+  const [activeImage, setActiveImage] = useState(gallery[0] || FALLBACK_IMAGE);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<string[]>([]);
+
+  // اگر محصول (مثلاً بعد از ویرایش در پنل) تصویر دیگری گرفت، تصویر فعال هم به‌روز شود.
+  useEffect(() => {
+    setActiveImage(gallery[0] || FALLBACK_IMAGE);
+    setBrokenImages([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images.join("|")]);
+
+  const safeSrc = (url: string) => (brokenImages.includes(url) ? FALLBACK_IMAGE : url);
+  const markBroken = (url: string) => setBrokenImages((current) => (current.includes(url) ? current : [...current, url]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -20,8 +39,9 @@ export default function ProductGallery({ images, title }: ProductGalleryProps) {
         onMouseLeave={() => setIsZoomed(false)}
       >
         <img
-          src={activeImage}
+          src={safeSrc(activeImage)}
           alt={title}
+          onError={() => markBroken(activeImage)}
           className={`h-full w-full object-cover object-center transition-transform duration-500 ${
             isZoomed ? "scale-125 cursor-zoom-in" : "scale-100"
           }`}
@@ -32,11 +52,11 @@ export default function ProductGallery({ images, title }: ProductGalleryProps) {
       </div>
 
       {/* لیست بندانگشتی‌ها */}
-      {images.length > 1 && (
+      {gallery.length > 1 && (
         <div className="flex items-center gap-3 overflow-x-auto pb-2">
-          {images.map((img, idx) => (
+          {gallery.map((img, idx) => (
             <button
-              key={idx}
+              key={`${img}-${idx}`}
               onClick={() => setActiveImage(img)}
               className={`relative aspect-square size-20 shrink-0 overflow-hidden rounded-2xl border-2 transition ${
                 activeImage === img
@@ -44,7 +64,12 @@ export default function ProductGallery({ images, title }: ProductGalleryProps) {
                   : "border-transparent opacity-70 hover:opacity-100"
               }`}
             >
-              <img src={img} alt={`${title} - ${idx + 1}`} className="h-full w-full object-cover" />
+              <img
+                src={safeSrc(img)}
+                alt={`${title} - ${idx + 1}`}
+                onError={() => markBroken(img)}
+                className="h-full w-full object-cover"
+              />
             </button>
           ))}
         </div>

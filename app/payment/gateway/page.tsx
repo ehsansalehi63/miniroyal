@@ -10,16 +10,17 @@ function PaymentGatewayContent() {
 
   useEffect(() => {
     const orderNumber = searchParams.get("orderNumber") || "";
-    const amount = Number(searchParams.get("amount"));
-    if (!orderNumber || !Number.isSafeInteger(amount)) {
+    if (!orderNumber) {
       router.replace("/checkout");
       return;
     }
     let cancelled = false;
+    // مبلغ عمداً ارسال نمی‌شود؛ سرور مبلغ نهایی همان سفارش را از دیتابیس می‌خواند تا
+    // اختلاف تخفیف/کرایه بین مرورگر و سرور باعث رد شدن پرداخت نشود.
     fetch("/api/payment/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderNumber, amount }),
+      body: JSON.stringify({ orderNumber }),
     })
       .then(async (response) => {
         const data = await response.json();

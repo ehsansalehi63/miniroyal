@@ -17,17 +17,28 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const orderNumber = typeof body.orderNumber === "string" ? body.orderNumber.trim() : "";
-    const amount = Number(body.amount);
     const description = typeof body.description === "string"
       ? body.description.slice(0, 500)
       : `پرداخت سفارش ${orderNumber}`;
 
-    if (!orderNumber || !Number.isSafeInteger(amount) || amount < 1000) {
-      return NextResponse.json({ success: false, error: "اطلاعات سفارش یا مبلغ معتبر نیست." }, { status: 400 });
+    if (!orderNumber) {
+      return NextResponse.json({ success: false, error: "شمارهٔ سفارش معتبر نیست." }, { status: 400 });
     }
     const order = await findOrder(orderNumber);
-    if (!order || Number(order.finalTotal) !== amount || order.paymentStatus === "paid") {
-      return NextResponse.json({ success: false, error: "سفارش معتبر یا قابل پرداخت نیست." }, { status: 400 });
+    if (!order) {
+      return NextResponse.json({ success: false, error: "سفارش پیدا نشد." }, { status: 404 });
+    }
+    if (order.paymentStatus === "paid") {
+      return NextResponse.json({ success: false, error: "این سفارش قبلاً پرداخت شده است." }, { status: 400 });
+    }
+    /*
+      مبلغ پرداخت فقط از روی سفارش ذخیره‌شده خوانده می‌شود. قبلاً مبلغ ارسالی مرورگر
+      با مبلغ سفارش مقایسه می‌شد و چون سرور تخفیف/کرایهٔ استعلامی را ذخیره نمی‌کرد،
+      هر سفارش دارای کد تخفیف با پیام «سفارش معتبر یا قابل پرداخت نیست» رد می‌شد.
+    */
+    const amount = Number(order.finalTotal);
+    if (!Number.isSafeInteger(amount) || amount < 1000) {
+      return NextResponse.json({ success: false, error: "مبلغ سفارش برای پرداخت آنلاین معتبر نیست." }, { status: 400 });
     }
 
     const state = createPaymentState(orderNumber, amount);

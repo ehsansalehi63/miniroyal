@@ -4,6 +4,9 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "../lib/cart";
 import { formatToman } from "../lib/utils";
+import { FREE_SHIPPING_THRESHOLD, baseShippingCost } from "../lib/coupons";
+import { LOCAL_SHIPPING_TARIFFS, type ShippingProviderId } from "../lib/shipping-tariffs";
+import { IRAN_PROVINCES } from "../lib/iran-provinces";
 import Link from "next/link";
 import { ShieldCheck, MapPin, Truck, CreditCard } from "lucide-react";
 
@@ -18,7 +21,7 @@ function useIsMounted() {
 export default function CheckoutPage() {
   const router = useRouter();
   const isMounted = useIsMounted();
-  const { items, getRawSubtotal, getDiscountAmount, getFinalTotal, clearCart } = useCart();
+  const { items, appliedCoupon, getRawSubtotal, getDiscountAmount, getFinalTotal, clearCart } = useCart();
 
   // Form State
   const [recipientName, setRecipientName] = useState("");
@@ -27,13 +30,14 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("تهران");
   const [address, setAddress] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [shippingProvider, setShippingProvider] = useState<"postex" | "tipax" | "post" | "peyk">("postex");
+  const [shippingProvider, setShippingProvider] = useState<ShippingProviderId>("postex");
   const [postexShippingCost, setPostexShippingCost] = useState<number | null>(null);
   const [postexQuoteLoading, setPostexQuoteLoading] = useState(false);
   const [postexQuoteError, setPostexQuoteError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"zarinpal" | "cod">("zarinpal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cities, setCities] = useState<Array<{ id: number; name: string; province: string }>>([]);
+  const [provinceOptions, setProvinceOptions] = useState<string[]>([...IRAN_PROVINCES]);
   const [citiesError, setCitiesError] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
@@ -41,8 +45,18 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     fetch("/api/shipping/postex/cities", { cache: "force-cache" })
-      .then(async (response) => { const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست."); setCities(Array.isArray(data.cities) ? data.cities : []); })
-      .catch((error) => setCitiesError(error instanceof Error ? error.message : "فهرست شهرها در دسترس نیست."));
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست.");
+        setCities(Array.isArray(data.cities) ? data.cities : []);
+        // در حالت fallback فهرست استان‌های ثابت برمی‌گردد تا انتخاب استان استاندارد بماند.
+        setProvinceOptions(Array.isArray(data.provinces) && data.provinces.length ? data.provinces : [...IRAN_PROVINCES]);
+        setCitiesError(typeof data.notice === "string" ? data.notice : "");
+      })
+      .catch((error) => {
+        setProvinceOptions([...IRAN_PROVINCES]);
+        setCitiesError(error instanceof Error ? error.message : "فهرست شهرها در دسترس نیست.");
+      });
   }, []);
 
   const selectCurrentLocation = () => {
@@ -64,18 +78,10 @@ export default function CheckoutPage() {
     }).then(async (response) => {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || "استعلام هزینه ارسال انجام نشد.");
-      const numbers: number[] = [];
-      const collect = (value: unknown) => {
-        if (!value || typeof value !== "object") return;
-        for (const [key, child] of Object.entries(value)) {
-          if (typeof child === "number" && /(price|amount|cost|total|fee|tariff)/i.test(key) && child > 0) numbers.push(child);
-          else if (typeof child === "object") collect(child);
-        }
-      };
-      collect(result.data);
-      const rialAmount = Math.min(...numbers.filter((value) => value > 1000));
-      if (!Number.isFinite(rialAmount)) throw new Error("هزینه ارسال از پاسخ پستکس قابل تشخیص نیست.");
-      setPostexShippingCost(Math.ceil(rialAmount / 10));
+      // مبلغ به تومان و آمادهٔ نمایش از سرور می‌آید (app/lib/postex.ts → extractQuotePriceToman).
+      const price = Number(result.price);
+      if (!Number.isSafeInteger(price) || price < 0) throw new Error("هزینه ارسال از پاسخ پستکس قابل تشخیص نیست.");
+      setPostexShippingCost(price);
     }).catch((error) => { if (error.name !== "AbortError") { setPostexShippingCost(null); setPostexQuoteError(error instanceof Error ? error.message : "استعلام هزینه ارسال انجام نشد."); } }).finally(() => setPostexQuoteLoading(false));
     return () => controller.abort();
   }, [city, paymentMethod, items, getFinalTotal]);
@@ -99,7 +105,17 @@ export default function CheckoutPage() {
 
   const subtotal = getRawSubtotal();
   const discount = getDiscountAmount();
-  const shippingCost = shippingProvider === "postex" && postexShippingCost !== null ? postexShippingCost : subtotal >= 500000 ? 0 : 45000;
+  /*
+    هزینهٔ هر روش ارسال جداگانه حساب می‌شود. پیش از این یک عدد واحد برای هر سه گزینه
+    نمایش داده می‌شد و مثلاً هر سه ردیف «رایگان» بودند، در حالی که تیپاکس و پیک نرخ
+    متفاوتی دارند. برای پستکس اگر استعلام آنلاین موفق باشد همان مبلغ، و در غیر این
+    صورت نرخ پایهٔ محلی استفاده می‌شود.
+  */
+  const shippingCostFor = (provider: ShippingProviderId) => {
+    if (provider === "postex") return postexShippingCost ?? baseShippingCost(subtotal);
+    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : LOCAL_SHIPPING_TARIFFS[provider];
+  };
+  const shippingCost = shippingCostFor(shippingProvider);
   const finalTotal = getFinalTotal() + shippingCost;
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
@@ -117,7 +133,9 @@ export default function CheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           recipientName, phone, province, city, address, postalCode, latitude, longitude,
-          shippingProvider, paymentMethod, subtotal, discount, shippingCost, finalTotal,
+          shippingProvider, paymentMethod, shippingCost,
+          // فقط «کد» تخفیف فرستاده می‌شود؛ مبلغ تخفیف و جمع نهایی روی سرور محاسبه می‌شود.
+          couponCode: appliedCoupon?.code || null,
           items,
         }),
       });
@@ -125,7 +143,8 @@ export default function CheckoutPage() {
       if (!response.ok || !result.success) throw new Error(result.error || "ثبت سفارش ناموفق بود.");
       clearCart();
       if (paymentMethod === "zarinpal") {
-        router.push(`/payment/gateway?orderNumber=${result.orderNumber}&amount=${finalTotal}`);
+        // مبلغ پرداخت از روی سفارش ذخیره‌شده در سرور خوانده می‌شود، نه از URL.
+        router.push(`/payment/gateway?orderNumber=${result.orderNumber}`);
       } else {
         router.push(`/order/success/${result.orderNumber}?status=pending`);
       }
@@ -182,9 +201,9 @@ export default function CheckoutPage() {
                 />
               </div>
 
-              <div><label className="block text-xs font-bold text-stone-700">استان *</label>{cities.length ? <select required value={province} onChange={(e) => { setProvince(e.target.value); setCity(""); }} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب استان</option>{[...new Set(cities.map((item) => item.province).filter(Boolean))].map((item) => <option key={item} value={item}>{item}</option>)}</select> : <input type="text" required value={province} onChange={(e) => setProvince(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}</div>
+              <div><label className="block text-xs font-bold text-stone-700">استان *</label><select required value={province} onChange={(e) => { setProvince(e.target.value); setCity(""); }} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب استان</option>{(cities.length ? [...new Set(cities.map((item) => item.province).filter(Boolean))] : provinceOptions).map((item) => <option key={item} value={item}>{item}</option>)}</select></div>
 
-              <div><label className="block text-xs font-bold text-stone-700">شهر *</label>{cities.length ? <select required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب شهر</option>{cities.filter((item) => !province || item.province === province).map((item) => <option key={`${item.id}-${item.name}`} value={item.name}>{item.name}</option>)}</select> : <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}{citiesError && <p className="mt-1 text-[10px] text-amber-700">{citiesError}؛ شهر را دستی وارد کنید.</p>}</div>
+              <div><label className="block text-xs font-bold text-stone-700">شهر *</label>{cities.length ? <select required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب شهر</option>{cities.filter((item) => !province || item.province === province).map((item) => <option key={`${item.id}-${item.name}`} value={item.name}>{item.name}</option>)}</select> : <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}{citiesError && <p className="mt-1 text-[10px] text-amber-700">{citiesError}</p>}</div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-stone-700">آدرس دقیق پستی *</label>
@@ -248,12 +267,16 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <span className="text-xs font-bold text-violet-700">
-                    {shippingProvider === "postex" && postexQuoteLoading ? "در حال بررسی" : shippingCost === 0 ? "رایگان" : formatToman(shippingCost)}
+                    {m.id === "postex" && postexQuoteLoading
+                      ? "در حال بررسی"
+                      : shippingCostFor(m.id) === 0
+                        ? "رایگان"
+                        : formatToman(shippingCostFor(m.id))}
                   </span>
                 </label>
               ))}
             </div>
-            {postexQuoteError && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-[11px] font-semibold leading-5 text-amber-800">{postexQuoteError} هزینه پایه موقتاً نمایش داده شد.</p>}
+            {postexQuoteError && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-[11px] font-semibold leading-5 text-amber-800">{postexQuoteError} نرخ پایهٔ فروشگاه اعمال شد و سفارش قابل ثبت است.</p>}
           </div>
 
           {/* روش پرداخت */}

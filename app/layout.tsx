@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import LiveChatWidget from "./components/LiveChatWidget";
+import SiteChrome from "./components/SiteChrome";
 import { vazirmatn } from "./fonts";
 import "./globals.css";
 
@@ -59,24 +60,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
-      <head>
-        {/*
-          فونت وزیرمتن به‌صورت لوکال با next/font/local بارگذاری می‌شود.
-          لینک قبلی به fonts.googleapis.com (Anton و Inter) حذف شد: آن دو فونت هیچ‌جا
-          استفاده نمی‌شدند و فقط یک درخواست render-blocking به دامنهٔ خارجی بودند
-          که از داخل ایران هم کند و ناپایدار است.
-        */}
-        <style dangerouslySetInnerHTML={{ __html: `
-          body { margin: 0; padding: 0; background-color: #fbf8f5; color: #211b25; }
-          a { text-decoration: none; color: inherit; }
-          * { box-sizing: border-box; }
-        ` }} />
-      </head>
+      {/*
+        فونت وزیرمتن به‌صورت لوکال با next/font/local بارگذاری می‌شود.
+        لینک قبلی به fonts.googleapis.com (Anton و Inter) حذف شد: آن دو فونت هیچ‌جا
+        استفاده نمی‌شدند و فقط یک درخواست render-blocking به دامنهٔ خارجی بودند
+        که از داخل ایران هم کند و ناپایدار است.
+
+        ریست پایه (margin بدنه، رنگ لینک و box-sizing) قبلاً به‌صورت <style> داخل
+        <head> تزریق می‌شد. آن استایل «بدون لایه» بود و در Tailwind v4 هر قانون
+        بدون لایه بر تمام کلاس‌های @layer utilities برتری دارد؛ نتیجه این بود که
+        روی هر <a> رنگِ کلاس‌هایی مثل text-white یا text-violet-800 نادیده گرفته
+        می‌شد و لینک رنگ والد را ارث می‌برد (مثلاً متن دکمهٔ «شروع پرو آنلاین»
+        سفیدِ روی پس‌زمینهٔ سفید و نامرئی می‌شد). همان ریست حالا در globals.css
+        داخل @layer base قرار دارد تا کلاس‌های Tailwind دوباره کار کنند.
+      */}
       <body className="min-h-screen bg-stone-50/50 text-stone-900 font-sans antialiased flex flex-col selection:bg-violet-100 selection:text-violet-900">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <LiveChatWidget />
+        <SiteChrome header={<Header />} footer={<Footer />} chat={<LiveChatWidget />}>
+          {children}
+        </SiteChrome>
       </body>
     </html>
   );

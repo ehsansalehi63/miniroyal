@@ -30,7 +30,18 @@ export async function POST(request: NextRequest) {
       }
       return { product, variant, quantity };
     }));
-    const result = await createOrder({ ...body, items });
+    const allowedProviders = ["tipax", "post", "peyk", "postex"] as const;
+    const shippingProvider = allowedProviders.includes(body.shippingProvider) ? body.shippingProvider : "post";
+    const quotedShipping = Number(body.shippingCost);
+    // مبلغ تخفیف از سمت مرورگر پذیرفته نمی‌شود؛ فقط «کد» تخفیف ارسال می‌شود و
+    // سرور خودش مبلغ آن را حساب می‌کند.
+    const result = await createOrder({
+      ...body,
+      items,
+      shippingProvider,
+      couponCode: typeof body.couponCode === "string" ? body.couponCode : null,
+      shippingCost: Number.isFinite(quotedShipping) ? Math.round(quotedShipping) : null,
+    });
     if (body.paymentMethod === "cod" && postexConfigured()) {
       try {
         const savedOrder = await findOrder(result.orderNumber);

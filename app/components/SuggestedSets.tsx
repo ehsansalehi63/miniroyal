@@ -23,7 +23,8 @@ export default function SuggestedSets({ sets }: { sets: SuggestedSet[] }) {
             <div className="grid grid-cols-2 gap-3">
               {set.products.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
-            <Link href={`/shop?set=${set.id}`} className="mt-4 block rounded-xl bg-fuchsia-700 py-2.5 text-center text-xs font-black text-white hover:bg-fuchsia-800">
+            {/* رنگ دکمه با پالت برند (بنفش) هماهنگ شد؛ سرخابی قبلی با بقیهٔ CTAهای سایت جور نبود. */}
+            <Link href={`/shop?set=${set.id}`} className="mt-4 block rounded-xl bg-violet-700 py-2.5 text-center text-xs font-black text-white transition hover:bg-violet-800">
               مشاهده این ست
             </Link>
           </div>

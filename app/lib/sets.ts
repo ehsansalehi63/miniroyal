@@ -31,5 +31,27 @@ export function getSuggestedSets(products: Product[], limit = 4): SuggestedSet[]
       });
     }
   }
-  return result.sort((a, b) => b.score - a.score).slice(0, limit);
+  /*
+    انتخاب حریصانه با جلوگیری از تکرار محصول: قبلاً فقط چهار جفتِ با بیشترین امتیاز
+    برداشته می‌شد و چون امتیاز عمدتاً به فروش محصول وابسته است، هر چهار «ست پیشنهادی»
+    تقریباً از یک محصول تکراری ساخته می‌شدند. حالا هر محصول حداکثر در یک ست ظاهر
+    می‌شود و اگر ترکیب کافی نبود، بقیهٔ جفت‌های پرامتیاز پر می‌کنند.
+  */
+  const ranked = result.sort((a, b) => b.score - a.score);
+  const used = new Set<number>();
+  const unique: SuggestedSet[] = [];
+  for (const set of ranked) {
+    if (unique.length >= limit) break;
+    if (set.products.some((product) => used.has(product.id))) continue;
+    set.products.forEach((product) => used.add(product.id));
+    unique.push(set);
+  }
+  if (unique.length < limit) {
+    for (const set of ranked) {
+      if (unique.length >= limit) break;
+      if (unique.some((item) => item.id === set.id)) continue;
+      unique.push(set);
+    }
+  }
+  return unique;
 }

@@ -69,7 +69,7 @@ export default function LiveChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-700 px-5 py-3.5 text-white shadow-2xl transition-all hover:scale-105 hover:shadow-violet-500/50"
+          className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-700 px-4 py-3.5 text-white shadow-2xl transition-all hover:scale-105 hover:shadow-violet-500/50 sm:px-5"
           aria-label="چت آنلاین و مشاوره خرید"
         >
           <span className="relative flex size-3">
@@ -77,7 +77,8 @@ export default function LiveChatWidget() {
             <span className="relative inline-flex size-3 rounded-full bg-amber-400" />
           </span>
           <MessageCircle className="size-5" />
-          <span className="text-xs font-black">مشاوره خرید و چت آنلاین</span>
+          {/* روی موبایل فقط آیکن نمایش داده می‌شود تا حباب چت روی محتوای صفحه نیفتد. */}
+          <span className="hidden text-xs font-black sm:inline">مشاوره خرید و چت آنلاین</span>
         </button>
       )}
 
