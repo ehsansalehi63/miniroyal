@@ -44,28 +44,37 @@ async function postexFetch<T>(path: string, init: RequestInit = {}) {
 }
 
 async function cityCode(city: string) {
-  const data = await postexFetch<unknown>("/api/v1/locality/cities/all", { method: "GET" });
+  const data = await postexFetch<unknown>("/api/v1/locality/cities/to/all", { method: "GET" });
   const rows = Array.isArray(data) ? data : (data as { entries?: unknown[] })?.entries || (data as { data?: unknown[] })?.data || [];
   const normalized = city.trim().replace(/ي/g, "ی").replace(/ك/g, "ک");
   const match = rows.find((row) => {
-    const item = row as { id?: number; code?: number; cityName?: string; name?: string };
-    return [item.cityName, item.name].filter(Boolean).some((name) => String(name).trim().replace(/ي/g, "ی").replace(/ك/g, "ک") === normalized);
-  }) as { id?: number; code?: number } | undefined;
-  const code = match?.id ?? match?.code;
+    const item = row as { id?: number; code?: number; cityId?: number; city_id?: number; cityCode?: number; city_code?: number; cityName?: string; city_name?: string; name?: string };
+    return [item.cityName, item.city_name, item.name].filter(Boolean).some((name) => String(name).trim().replace(/ي/g, "ی").replace(/ك/g, "ک") === normalized);
+  }) as { id?: number; code?: number; cityId?: number; city_id?: number; cityCode?: number; city_code?: number } | undefined;
+  const code = match?.id ?? match?.code ?? match?.cityId ?? match?.city_id ?? match?.cityCode ?? match?.city_code;
   if (!code) throw new Error(`Postex city code was not found for ${city}.`);
   return Number(code);
 }
 
 export async function listPostexCities() {
-  const data = await postexFetch<unknown>("/api/v1/locality/cities/all", { method: "GET" });
+  const data = await postexFetch<unknown>("/api/v1/locality/cities/to/all", { method: "GET" });
   const rows = Array.isArray(data) ? data : (data as { entries?: unknown[]; data?: unknown[] })?.entries || (data as { data?: unknown[] })?.data || [];
   return rows.map((row) => {
     const item = row as Record<string, unknown>;
     return {
-      id: Number(item.id || item.code || 0),
-      name: String(item.cityName || item.name || item.city_name || "").trim(),
-      province: String(item.provinceName || item.province_name || item.province || "").trim(),
+      id: Number(item.id || item.code || item.cityId || item.city_id || item.cityCode || item.city_code || 0),
+      name: String(item.cityName || item.name || item.city_name || item.title || "").trim(),
+      province: String(item.provinceName || item.province_name || item.province || item.provinceTitle || "").trim(),
     };
+  }).filter((item) => item.id > 0 && item.name);
+}
+
+export async function listPostexProvinces() {
+  const data = await postexFetch<unknown>("/api/v1/locality/provinces", { method: "GET" });
+  const rows = Array.isArray(data) ? data : (data as { entries?: unknown[]; data?: unknown[] })?.entries || (data as { data?: unknown[] })?.data || [];
+  return rows.map((row) => {
+    const item = row as Record<string, unknown>;
+    return { id: Number(item.id || item.code || item.provinceId || item.province_code || 0), name: String(item.provinceName || item.name || item.title || "").trim() };
   }).filter((item) => item.id > 0 && item.name);
 }
 
