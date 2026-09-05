@@ -52,6 +52,19 @@ async function cityCode(city: string) {
   return Number(code);
 }
 
+export async function listPostexCities() {
+  const data = await postexFetch<unknown>("/api/v1/locality/cities/all", { method: "GET" });
+  const rows = Array.isArray(data) ? data : (data as { entries?: unknown[]; data?: unknown[] })?.entries || (data as { data?: unknown[] })?.data || [];
+  return rows.map((row) => {
+    const item = row as Record<string, unknown>;
+    return {
+      id: Number(item.id || item.code || 0),
+      name: String(item.cityName || item.name || item.city_name || "").trim(),
+      province: String(item.provinceName || item.province_name || item.province || "").trim(),
+    };
+  }).filter((item) => item.id > 0 && item.name);
+}
+
 export async function getPostexQuote(input: {
   destinationCity: string;
   paymentType: "SENDER" | "COD" | "FREE_SHIPPING" | "RECEIVER";
@@ -79,8 +92,8 @@ export async function getPostexQuote(input: {
           total_weight: input.totalWeight,
           is_fragile: false,
           is_liquid: false,
-          total_value: input.totalValue,
-          pre_paid_amount: input.paymentType === "SENDER" ? input.totalValue : 0,
+          total_value: input.totalValue * 10,
+          pre_paid_amount: input.paymentType === "SENDER" ? input.totalValue * 10 : 0,
           total_value_currency: "IRR",
           box_type_id: Number(process.env.POSTEX_DEFAULT_BOX_TYPE_ID || 0),
         },

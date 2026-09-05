@@ -33,6 +33,23 @@ export default function CheckoutPage() {
   const [postexQuoteError, setPostexQuoteError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"zarinpal" | "cod">("zarinpal");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cities, setCities] = useState<Array<{ id: number; name: string; province: string }>>([]);
+  const [citiesError, setCitiesError] = useState("");
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [locationMessage, setLocationMessage] = useState("");
+
+  useEffect(() => {
+    fetch("/api/shipping/postex/cities", { cache: "force-cache" })
+      .then(async (response) => { const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست."); setCities(Array.isArray(data.cities) ? data.cities : []); })
+      .catch((error) => setCitiesError(error instanceof Error ? error.message : "فهرست شهرها در دسترس نیست."));
+  }, []);
+
+  const selectCurrentLocation = () => {
+    if (!navigator.geolocation) { setLocationMessage("مرورگر شما موقعیت مکانی را پشتیبانی نمی‌کند."); return; }
+    setLocationMessage("در حال دریافت موقعیت شما...");
+    navigator.geolocation.getCurrentPosition((position) => { setLatitude(position.coords.latitude); setLongitude(position.coords.longitude); setLocationMessage("موقعیت فعلی ثبت شد؛ آدرس پستی را هم کامل وارد کنید."); }, () => setLocationMessage("دسترسی به موقعیت ممکن نشد؛ مجوز مرورگر را فعال کنید."), { enableHighAccuracy: true, timeout: 10000 });
+  };
 
   useEffect(() => {
     if (!city.trim() || !items.length) return;
@@ -99,7 +116,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipientName, phone, province, city, address, postalCode,
+          recipientName, phone, province, city, address, postalCode, latitude, longitude,
           shippingProvider, paymentMethod, subtotal, discount, shippingCost, finalTotal,
           items,
         }),
@@ -165,27 +182,9 @@ export default function CheckoutPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-stone-700">استان *</label>
-                <input
-                  type="text"
-                  required
-                  value={province}
-                  onChange={(e) => setProvince(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
-                />
-              </div>
+              <div><label className="block text-xs font-bold text-stone-700">استان *</label>{cities.length ? <select required value={province} onChange={(e) => { setProvince(e.target.value); setCity(""); }} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب استان</option>{[...new Set(cities.map((item) => item.province).filter(Boolean))].map((item) => <option key={item} value={item}>{item}</option>)}</select> : <input type="text" required value={province} onChange={(e) => setProvince(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}</div>
 
-              <div>
-                <label className="block text-xs font-bold text-stone-700">شهر *</label>
-                <input
-                  type="text"
-                  required
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
-                />
-              </div>
+              <div><label className="block text-xs font-bold text-stone-700">شهر *</label>{cities.length ? <select required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب شهر</option>{cities.filter((item) => !province || item.province === province).map((item) => <option key={`${item.id}-${item.name}`} value={item.name}>{item.name}</option>)}</select> : <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}{citiesError && <p className="mt-1 text-[10px] text-amber-700">{citiesError}؛ شهر را دستی وارد کنید.</p>}</div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-stone-700">آدرس دقیق پستی *</label>
@@ -210,6 +209,7 @@ export default function CheckoutPage() {
                   className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
                 />
               </div>
+              <div className="sm:col-span-2 rounded-2xl border border-violet-100 bg-violet-50/60 p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold text-violet-950">ثبت موقعیت روی نقشه</p><p className="mt-1 text-[10px] text-violet-800">موقعیت فعلی برای دقت ارسال ذخیره می‌شود؛ آدرس پستی را هم کامل بنویسید.</p></div><button type="button" onClick={selectCurrentLocation} className="rounded-xl bg-violet-700 px-3 py-2 text-[11px] font-bold text-white">استفاده از موقعیت فعلی</button></div>{locationMessage && <p className="mt-2 text-[10px] font-semibold text-violet-800">{locationMessage}</p>}{latitude !== null && longitude !== null && <a className="mt-2 block text-[10px] text-violet-700 underline" href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=18/${latitude}/${longitude}`} target="_blank" rel="noreferrer">مشاهده موقعیت ثبت‌شده روی نقشه</a>}</div>
             </div>
           </div>
 
