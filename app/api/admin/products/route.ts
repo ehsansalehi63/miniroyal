@@ -3,6 +3,8 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
 import { validateMediaUrl } from "@/app/lib/media-validation";
+import { replaceProductAttributes } from "@/app/lib/product-attributes";
+import { ensureProductAttributeTables } from "@/app/lib/product-attribute-schema";
 
 const allowedStatuses = ["draft", "review", "active", "archived"] as const;
 const allowedGenders = ["boy", "girl", "unisex"] as const;
@@ -15,6 +17,7 @@ type ProductInput = {
   faqJson?: unknown; sizeChartJson?: unknown; features?: unknown; fabricMaterial?: string; washCare?: string; fitProfile?: unknown; tryOnAsset?: unknown;
   images?: Array<{ url: string; alt?: string; sortOrder?: number; isPrimary?: boolean; mediaType?: "image" | "video" }>;
   mediaAngles?: Array<{ angle: string; url: string; alt?: string; isAiOptimized?: boolean; isTryOnReady?: boolean; sortOrder?: number }>;
+  attributes?: unknown;
   variants?: Array<{ sku: string; size: string; color: string; colorCode?: string; stock?: number; priceAdjustment?: number }>;
 };
 
@@ -45,12 +48,14 @@ function validate(input: ProductInput) {
     const mediaError = validateMediaUrl(media.url);
     if (mediaError) return mediaError;
   }
+  if (input.attributes !== undefined && !Array.isArray(input.attributes)) return "مشخصات محصول باید به‌صورت فهرست ارسال شوند.";
   return null;
 }
 
 export async function GET(request: NextRequest) {
   const admin = await currentAdmin();
   if (!admin || !canManage(admin, "products.read")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
+  await ensureProductAttributeTables(pool);
   const search = request.nextUrl.searchParams.get("search")?.trim() || "";
   const status = request.nextUrl.searchParams.get("status");
   const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") || 50), 1), 100);
@@ -62,7 +67,8 @@ export async function GET(request: NextRequest) {
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
     const [rows] = await pool.execute<RowDataPacket[]>(`SELECT p.*, c.name AS categoryName,
       COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', v.id, 'sku', v.sku, 'size', v.size, 'color', v.color, 'colorCode', v.color_code, 'stock', v.stock, 'priceAdjustment', v.price_adjustment)) FROM product_variants v WHERE v.product_id = p.id), JSON_ARRAY()) AS variants,
-      COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', m.id, 'url', m.url, 'alt', m.alt, 'sortOrder', m.sort_order, 'isPrimary', m.is_primary, 'mediaType', m.media_type)) FROM product_media m WHERE m.product_id = p.id), JSON_ARRAY()) AS images
+      COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', m.id, 'url', m.url, 'alt', m.alt, 'sortOrder', m.sort_order, 'isPrimary', m.is_primary, 'mediaType', m.media_type)) FROM product_media m WHERE m.product_id = p.id), JSON_ARRAY()) AS images,
+      COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', a.id, 'definitionId', a.definition_id, 'fieldKey', a.field_key, 'label', a.label, 'value', COALESCE(a.value_json, JSON_QUOTE(a.value_text)), 'unit', a.unit, 'isCustom', a.is_custom, 'sortOrder', a.sort_order)) FROM product_attributes a WHERE a.product_id = p.id), JSON_ARRAY()) AS attributes
       FROM products p LEFT JOIN categories c ON c.id = p.category_id
       ${whereSql} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset]);
   return NextResponse.json({ success: true, products: rows });
@@ -71,6 +77,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const admin = await currentAdmin();
   if (!admin || !canManage(admin, "products.write")) return NextResponse.json({ success: false, error: "دسترسی ایجاد محصول ندارید." }, { status: 403 });
+  await ensureProductAttributeTables(pool);
   let input: ProductInput;
   try { input = await request.json() as ProductInput; } catch { return bad("بدنهٔ درخواست JSON معتبر نیست."); }
   const validationError = validate(input);
@@ -88,6 +95,7 @@ export async function POST(request: NextRequest) {
     for (const [index, variant] of (input.variants || []).entries()) await connection.execute("INSERT INTO product_variants (product_id, sku, size, color, color_code, stock, price_adjustment) VALUES (?, ?, ?, ?, ?, ?, ?)", [productId, variant.sku.trim(), variant.size.trim(), variant.color.trim(), variant.colorCode || null, variant.stock ?? 0, variant.priceAdjustment ?? 0]);
     for (const [index, media] of (input.images || []).entries()) await connection.execute("INSERT INTO product_media (product_id, url, alt, sort_order, is_primary, media_type) VALUES (?, ?, ?, ?, ?, ?)", [productId, media.url, media.alt || input.title, media.sortOrder ?? index, media.isPrimary ?? index === 0 ? 1 : 0, media.mediaType || "image"]);
     for (const [index, media] of (input.mediaAngles || []).entries()) await connection.execute("INSERT INTO product_media_angles (product_id, angle, url, alt, is_ai_optimized, is_tryon_ready, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)", [productId, media.angle, media.url, media.alt || input.title, media.isAiOptimized ? 1 : 0, media.isTryOnReady ? 1 : 0, media.sortOrder ?? index]);
+    await replaceProductAttributes(connection, productId, input.attributes);
     await connection.commit();
     return NextResponse.json({ success: true, id: productId, slug }, { status: 201 });
   } catch (error) { await connection.rollback(); const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "SKU یا slug تکراری است." : "ذخیرهٔ محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }

@@ -55,6 +55,17 @@ export interface SizeChartRow {
   easeCm?: string;
 }
 
+export interface ProductAttribute {
+  id?: number;
+  definitionId?: number | null;
+  fieldKey: string;
+  label: string;
+  value: string | number | boolean | string[];
+  unit?: string | null;
+  isCustom?: boolean;
+  sortOrder?: number;
+}
+
 export interface ProductFAQ {
   question: string;
   answer: string;
@@ -127,6 +138,7 @@ export interface Product {
     tryOnAnchors: { shoulder: number; waist: number; length: number };
   };
   mediaAngles?: Partial<Record<ProductMediaAngle, ProductAngleMedia>>;
+  attributes?: ProductAttribute[];
   tryOnAsset?: {
     url: string;
     layerType: "top" | "bottom" | "full" | "accessory";

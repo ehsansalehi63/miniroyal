@@ -3,6 +3,8 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
 import { validateMediaUrl } from "@/app/lib/media-validation";
+import { replaceProductAttributes, getProductAttributes } from "@/app/lib/product-attributes";
+import { ensureProductAttributeTables } from "@/app/lib/product-attribute-schema";
 
 type Context = { params: Promise<{ id: string }> };
 const allowedStatuses = ["draft", "review", "active", "archived"];
@@ -18,18 +20,21 @@ export async function GET(_request: NextRequest, context: Context) {
   const admin = await currentAdmin();
   if (!admin || !canManage(admin, "products.read")) return NextResponse.json({ success: false, error: "دسترسی غیرمجاز" }, { status: 403 });
   const id = await getId(context); if (!id) return NextResponse.json({ success: false, error: "شناسهٔ محصول معتبر نیست." }, { status: 400 });
+  await ensureProductAttributeTables(pool);
   const [products] = await pool.execute<RowDataPacket[]>("SELECT * FROM products WHERE id = ? LIMIT 1", [id]);
   if (!products[0]) return NextResponse.json({ success: false, error: "محصول پیدا نشد." }, { status: 404 });
   const [variants] = await pool.execute<RowDataPacket[]>("SELECT id, product_id AS productId, sku, size, color, color_code AS colorCode, stock, price_adjustment AS priceAdjustment FROM product_variants WHERE product_id = ? ORDER BY id", [id]);
   const [images] = await pool.execute<RowDataPacket[]>("SELECT id, url, alt, sort_order AS sortOrder, is_primary AS isPrimary, media_type AS mediaType FROM product_media WHERE product_id = ? ORDER BY sort_order, id", [id]);
   const [angles] = await pool.execute<RowDataPacket[]>("SELECT id, angle, url, alt, is_ai_optimized AS isAiOptimized, is_tryon_ready AS isTryOnReady, sort_order AS sortOrder FROM product_media_angles WHERE product_id = ? ORDER BY sort_order, id", [id]);
-  return NextResponse.json({ success: true, product: { ...products[0], variants, images, mediaAngles: angles } });
+  const attributes = await getProductAttributes(pool, id);
+  return NextResponse.json({ success: true, product: { ...products[0], variants, images, mediaAngles: angles, attributes } });
 }
 
 export async function PATCH(request: NextRequest, context: Context) {
   const admin = await currentAdmin();
   if (!admin || !canManage(admin, "products.write")) return NextResponse.json({ success: false, error: "دسترسی ویرایش محصول ندارید." }, { status: 403 });
   const id = await getId(context); if (!id) return NextResponse.json({ success: false, error: "شناسهٔ محصول معتبر نیست." }, { status: 400 });
+  await ensureProductAttributeTables(pool);
   let body: Record<string, unknown>;
   try { body = await request.json() as Record<string, unknown>; } catch { return NextResponse.json({ success: false, error: "بدنهٔ درخواست JSON معتبر نیست." }, { status: 400 }); }
   for (const collectionKey of ["images", "mediaAngles"] as const) {
@@ -63,6 +68,7 @@ export async function PATCH(request: NextRequest, context: Context) {
       await connection.execute("DELETE FROM product_media_angles WHERE product_id = ?", [id]);
       for (const [index, media] of (body.mediaAngles as Array<Record<string, unknown>>).entries()) await connection.execute("INSERT INTO product_media_angles (product_id, angle, url, alt, is_ai_optimized, is_tryon_ready, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)", [id, String(media.angle), String(media.url), media.alt ? String(media.alt) : null, media.isAiOptimized ? 1 : 0, media.isTryOnReady ? 1 : 0, Number(media.sortOrder ?? index)] as Array<string | number | null>);
     }
+    if (Array.isArray(body.attributes)) await replaceProductAttributes(connection, id, body.attributes);
     await connection.commit();
     return NextResponse.json({ success: true, id });
   } catch (error) { await connection.rollback(); const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "SKU یا slug تکراری است." : "ویرایش محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }

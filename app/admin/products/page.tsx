@@ -5,8 +5,9 @@ import { Category, Product, SizeChartRow, Variant } from "../../lib/types/catalo
 import { formatToman } from "../../lib/utils";
 import DropzoneImageUploader from "../../components/DropzoneImageUploader";
 import ProductAngleMediaManager from "../../components/ProductAngleMediaManager";
+import ProductSpecificationsEditor, { ProductAttributeDraft } from "../../components/ProductSpecificationsEditor";
 import type { ProductMediaAngle, ProductAngleMedia } from "../../lib/types/catalog";
-import { Search, Plus, Edit, Trash2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Copy } from "lucide-react";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,6 +18,8 @@ export default function AdminProductsPage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState(0);
+  const [attributes, setAttributes] = useState<ProductAttributeDraft[]>([]);
+  const [saving, setSaving] = useState(false);
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -78,15 +81,18 @@ export default function AdminProductsPage() {
       description: editingProduct?.description || "توضیحات کامل محصول در پنل مدیریت ثبت شده است.",
       gender: editingProduct?.gender || "boy", ageMinMonth: editingProduct?.ageMinMonth || 24, ageMaxMonth: editingProduct?.ageMaxMonth || 96,
       status: editingProduct?.status || "draft", fitType: editingProduct?.fitType || "normal", sizeChartJson: sizeChart, fitProfile, images: finalImages.map((url, index) => ({ url, alt: title, sortOrder: index, isPrimary: index === 0 })),
-      mediaAngles: Object.values(mediaAngles).filter(Boolean), variants: variants.map((variant) => ({ sku: variant.sku || `${sku}-${variant.id}`, size: variant.size, color: variant.color, colorCode: variant.colorCode, stock: variant.stock, priceAdjustment: variant.priceAdjustment })),
+      mediaAngles: Object.values(mediaAngles).filter(Boolean), attributes, variants: variants.map((variant) => ({ sku: variant.sku || `${sku}-${variant.id}`, size: variant.size, color: variant.color, colorCode: variant.colorCode, stock: variant.stock, priceAdjustment: variant.priceAdjustment })),
     };
-    const response = await fetch(editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products", { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    const data = await response.json();
-    if (!response.ok || !data.success) { setApiMessage(data.error || "ذخیرهٔ محصول در دیتابیس انجام نشد."); return; }
-    setApiMessage("محصول با موفقیت در MySQL ذخیره شد.");
-    if (editingProduct) setProducts(products.map((p) => p.id === editingProduct.id ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile, mediaAngles } : p));
-    else window.location.reload();
-    setShowFormModal(false); setEditingProduct(null);
+    setSaving(true);
+    try {
+      const response = await fetch(editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products", { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) { setApiMessage(data.error || "ذخیرهٔ محصول در دیتابیس انجام نشد."); return; }
+      setApiMessage("محصول و مشخصات آن با موفقیت ذخیره شد.");
+      if (editingProduct) setProducts(products.map((p) => p.id === editingProduct.id ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile, mediaAngles, attributes } : p));
+      else window.location.reload();
+      setShowFormModal(false); setEditingProduct(null);
+    } catch (error) { setApiMessage(error instanceof Error ? error.message : "ارتباط با سرور هنگام ذخیره قطع شد."); } finally { setSaving(false); }
   };
 
   const handleEdit = (p: Product) => {
@@ -100,9 +106,19 @@ export default function AdminProductsPage() {
     setVariants(p.variants?.length ? p.variants : [{ id: p.id * 1000, productId: p.id, sku: `${p.sku}-01`, size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
             setImages(p.images || []);
     setMediaAngles(p.mediaAngles || {});
+    setAttributes((p.attributes || []) as ProductAttributeDraft[]);
     setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : [{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
     setFitProfile(p.fitProfile ?? fitProfile);
     setShowFormModal(true);
+  };
+
+  const handleClone = async (id: number) => {
+    if (!confirm("از این محصول یک پیش‌نویس کپی ساخته شود؟")) return;
+    const response = await fetch(`/api/admin/products/${id}/clone`, { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) { setApiMessage(data.error || "کپی محصول انجام نشد."); return; }
+    setApiMessage("کپی پیش‌نویس محصول ساخته شد.");
+    window.location.reload();
   };
 
   const handleDelete = async (id: number) => {
@@ -130,6 +146,8 @@ export default function AdminProductsPage() {
             setTitle("");
             setImages(["/images/products/boy-hoodie.svg"]);
             setMediaAngles({});
+            setAttributes([]);
+            setCategoryId(0);
             setVariants([{ id: Date.now(), productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
             setSizeChart([{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
             setFitProfile({ garmentType: "top", measurementMethod: "garment", preferredBodyMeasurement: "height", easeCm: 7, stretch: "low", sizeSystem: "age", tryOnAnchors: { shoulder: 50, waist: 52, length: 68 } });
@@ -201,8 +219,9 @@ export default function AdminProductsPage() {
                       >
                         <Edit className="size-4" />
                       </button>
+                      <button onClick={() => void handleClone(p.id)} className="rounded-lg p-1.5 text-stone-600 hover:bg-sky-50 hover:text-sky-700" title="ساخت کپی"><Copy className="size-4" /></button>
                       <button
-                        onClick={() => handleDelete(p.id)}
+                        onClick={() => void handleDelete(p.id)}
                         className="rounded-lg p-1.5 text-stone-600 hover:bg-rose-50 hover:text-rose-600"
                         title="حذف"
                       >
@@ -310,7 +329,7 @@ export default function AdminProductsPage() {
                   <label className="block font-bold text-stone-700">دسته‌بندی *</label>
                   <select
                     value={categoryId || editingProduct?.categoryId || ""}
-                    onChange={(e) => { const id = Number(e.target.value); setCategoryId(id); setCategoryName(categories.find((category) => category.id === id)?.name || ""); }}
+                    onChange={(e) => { const id = Number(e.target.value); setCategoryId(id); setCategoryName(categories.find((category) => category.id === id)?.name || ""); setAttributes([]); }}
                     className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
                     required
                   >
@@ -322,6 +341,8 @@ export default function AdminProductsPage() {
                   </select>
                 </div>
               </div>
+
+              <ProductSpecificationsEditor categoryId={categoryId || editingProduct?.categoryId || 0} value={attributes} onChange={setAttributes} />
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -349,9 +370,10 @@ export default function AdminProductsPage() {
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-violet-700 py-3 font-bold text-white shadow-md hover:bg-violet-800"
+                  className="flex-1 rounded-xl bg-violet-700 py-3 font-bold text-white shadow-md hover:bg-violet-800 disabled:cursor-wait disabled:opacity-60"
+                  disabled={saving}
                 >
-                  ذخیره تغییرات
+                  {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}
                 </button>
                 <button
                   type="button"
