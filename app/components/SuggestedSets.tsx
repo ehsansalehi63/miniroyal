@@ -5,7 +5,7 @@ import { SuggestedSet } from "../lib/sets";
 export default function SuggestedSets({ sets }: { sets: SuggestedSet[] }) {
   if (!sets.length) return null;
   return (
-    <section dir="rtl" className="mx-auto max-w-7xl px-4">
+    <section dir="rtl" className="mx-auto site-container px-4">
       <div className="border-b border-stone-200 pb-4">
         <h2 className="text-xl font-black text-stone-900 sm:text-2xl">ست‌های پیشنهادی مینی رویال</h2>
         <p className="mt-1 text-xs text-stone-500">پیشنهاد خودکار بر اساس هماهنگی گروه سنی، مخاطب، موجودی و محبوبیت</p>

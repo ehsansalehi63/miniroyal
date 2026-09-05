@@ -90,7 +90,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="mx-auto site-container px-4 py-8">
         {/* مسیر خرده‌نانی */}
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-500">
           <Link href="/" className="hover:text-violet-700">خانه</Link>

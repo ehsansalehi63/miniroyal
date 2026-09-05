@@ -116,7 +116,7 @@ export default async function HomePage() {
       <CinematicHero slides={DEFAULT_HOME_SLIDES} videoSrc={heroVideoSrc} />
 
       {/* نوار اعتماد */}
-      <section aria-label="خدمات و تضمین‌های مینی رویال" className="mx-auto max-w-7xl px-4">
+      <section aria-label="خدمات و تضمین‌های مینی رویال" className="mx-auto site-container px-4">
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {TRUST_ITEMS.map((item) => (
             <li key={item.title} className="flex items-start gap-3 rounded-2xl border border-stone-200/80 bg-white/85 p-4">
@@ -131,7 +131,7 @@ export default async function HomePage() {
       </section>
 
       {/* دسته‌بندی‌ها: یک بخش واحد با زیردسته‌های واقعی */}
-      <section aria-labelledby="categories-heading" className="mx-auto max-w-7xl px-4">
+      <section aria-labelledby="categories-heading" className="mx-auto site-container px-4">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-4">
           <div>
             <p className="fashion-kicker text-[10px] font-black">Kids fashion edit</p>
@@ -191,7 +191,7 @@ export default async function HomePage() {
       <SuggestedSets sets={getSuggestedSets(featuredProducts)} />
 
       {/* محصولات ویژه */}
-      <section aria-labelledby="featured-heading" className="mx-auto max-w-7xl px-4">
+      <section aria-labelledby="featured-heading" className="mx-auto site-container px-4">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-4">
           <div>
             <h2 id="featured-heading" className="text-xl font-black text-stone-900 sm:text-2xl">
@@ -205,7 +205,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
           {featuredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -213,7 +213,7 @@ export default async function HomePage() {
       </section>
 
       {/* بنر پرو آنلاین */}
-      <section aria-labelledby="tryon-heading" className="mx-auto max-w-7xl px-4">
+      <section aria-labelledby="tryon-heading" className="mx-auto site-container px-4">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-l from-violet-900 via-fuchsia-900 to-stone-900 p-8 text-white shadow-2xl sm:p-10">
           <div className="relative z-10 flex flex-col items-center justify-between gap-6 md:flex-row md:items-center">
             <div className="space-y-3 text-center md:text-right">
@@ -238,7 +238,7 @@ export default async function HomePage() {
       </section>
 
       {/* نظرات مشتریان */}
-      <section aria-labelledby="reviews-heading" className="mx-auto max-w-7xl px-4">
+      <section aria-labelledby="reviews-heading" className="mx-auto site-container px-4">
         <div className="border-b border-stone-200 pb-4">
           <h2 id="reviews-heading" className="text-xl font-black text-stone-900 sm:text-2xl">
             تجربهٔ مشتری‌های مینی رویال
@@ -268,7 +268,7 @@ export default async function HomePage() {
       </section>
 
       {/* مجلهٔ استایل */}
-      <section aria-labelledby="blog-heading" className="mx-auto max-w-7xl px-4">
+      <section aria-labelledby="blog-heading" className="mx-auto site-container px-4">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-4">
           <div>
             <h2 id="blog-heading" className="text-xl font-black text-stone-900 sm:text-2xl">

@@ -18,7 +18,7 @@ export default async function Footer() {
   try { const databaseCategories = await getCategories(); if (databaseCategories.length) categories = databaseCategories; } catch { /* keep footer navigation available during a database outage */ }
   return (
     <footer className="border-t border-stone-800 bg-[#17131d] text-stone-300">
-      <div className="mx-auto max-w-7xl px-4 py-14">
+      <div className="mx-auto site-container px-4 py-14">
         <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr_1fr]">
           <div>
             <div className="flex items-center gap-3"><span className="grid size-12 overflow-hidden rounded-full border border-amber-400 bg-stone-950"><img src="/images/brand/miniroyal-logo.webp" width={48} height={72} alt="لوگوی مینی رویال" className="size-full object-cover" /></span><span className="text-xl font-black text-white">مینی رویال</span></div>

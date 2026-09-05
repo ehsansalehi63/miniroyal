@@ -46,6 +46,10 @@ img {
   color: var(--ink-muted);
 }
 
+.site-container {
+  width: min(100%, 92.5rem);
+}
+
 .fashion-surface {
   border: 1px solid rgba(214, 211, 209, 0.78);
   background: rgba(255, 255, 255, 0.9);

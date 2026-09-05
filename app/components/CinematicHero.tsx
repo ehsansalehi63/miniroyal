@@ -69,7 +69,7 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
       aria-label="کالکشن‌های مینی رویال"
       onPointerMove={handlePointerMove}
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
-      className="hero-stage relative mx-auto max-w-7xl overflow-hidden bg-[#0b0711] text-white"
+      className="hero-stage relative mx-auto site-container overflow-hidden bg-[#0b0711] text-white"
     >
       {/* ── ۱. نور استودیو و کف صحنه ─────────────────────────────── */}
       <div className="hero-spotlight" aria-hidden="true" />

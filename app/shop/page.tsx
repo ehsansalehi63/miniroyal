@@ -47,7 +47,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   });
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto site-container px-4 py-8">
       {/* مسیر خرده‌نانی Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
         <Link href="/" className="hover:text-violet-700">خانه</Link>
