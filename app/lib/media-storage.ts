@@ -11,6 +11,11 @@ const HOSTINGER_MEDIA_DIR = process.env.HOME
 const MEDIA_DIR = process.env.MEDIA_UPLOAD_DIR || (process.env.NODE_ENV === "production" ? HOSTINGER_MEDIA_DIR : path.join(process.cwd(), "public", "uploads", "products"));
 const MEDIA_PUBLIC_PREFIX = "/uploads/products";
 
+export function mediaFilePath(filename: string) {
+  if (!/^[a-zA-Z0-9._-]+$/.test(filename) || filename.includes("..")) return null;
+  return path.join(MEDIA_DIR, filename);
+}
+
 function extensionForMime() {
   return "webp";
 }
