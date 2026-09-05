@@ -46,6 +46,7 @@ export async function PATCH(request: NextRequest, context: Context) {
   }
   const connection = await pool.getConnection();
   try {
+    await connection.execute("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
     await connection.beginTransaction();
     const fields: Array<[string, unknown]> = [];
     const map: Record<string, string> = { title: "title", slug: "slug", sku: "sku", shortDesc: "short_desc", description: "description", categoryId: "category_id", brandId: "brand_id", supplierId: "supplier_id", gender: "gender", ageMinMonth: "age_min_month", ageMaxMonth: "age_max_month", basePrice: "base_price", salePrice: "sale_price", costPrice: "cost_price", isFeatured: "is_featured", isSpecialOffer: "is_special_offer", status: "status", fitType: "fit_type", seoTitle: "seo_title", seoDesc: "seo_desc", fabricMaterial: "fabric_material", washCare: "wash_care" };
@@ -71,7 +72,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     if (Array.isArray(body.attributes)) await replaceProductAttributes(connection, id, body.attributes);
     await connection.commit();
     return NextResponse.json({ success: true, id });
-  } catch (error) { await connection.rollback(); const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "SKU یا slug تکراری است." : "ویرایش محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }
+  } catch (error) { await connection.rollback(); console.error("Admin product update failed:", error); const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "SKU یا slug تکراری است." : error instanceof Error && /collation|charset/i.test(error.message) ? "خطای هماهنگی زبان دیتابیس رخ داد؛ لطفاً دوباره تلاش کنید." : "ویرایش محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }
 }
 
 export async function DELETE(_request: NextRequest, context: Context) {

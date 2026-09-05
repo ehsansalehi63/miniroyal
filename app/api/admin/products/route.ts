@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
   if (validationError) return bad(validationError);
   const connection = await pool.getConnection();
   try {
+    await connection.execute("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
     await connection.beginTransaction();
     const slug = slugify(input.slug || input.title);
     const [productResult] = await connection.execute<ResultSetHeader>(`INSERT INTO products
@@ -98,5 +99,5 @@ export async function POST(request: NextRequest) {
     await replaceProductAttributes(connection, productId, input.attributes);
     await connection.commit();
     return NextResponse.json({ success: true, id: productId, slug }, { status: 201 });
-  } catch (error) { await connection.rollback(); const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "SKU یا slug تکراری است." : "ذخیرهٔ محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }
+  } catch (error) { await connection.rollback(); console.error("Admin product create failed:", error); const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "SKU یا slug تکراری است." : error instanceof Error && /collation|charset/i.test(error.message) ? "خطای هماهنگی زبان دیتابیس رخ داد؛ لطفاً دوباره تلاش کنید." : "ذخیرهٔ محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }
 }

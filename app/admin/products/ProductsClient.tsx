@@ -20,6 +20,7 @@ export default function AdminProductsPage() {
   const [categoryId, setCategoryId] = useState(0);
   const [attributes, setAttributes] = useState<ProductAttributeDraft[]>([]);
   const [saving, setSaving] = useState(false);
+  const [saveStage, setSaveStage] = useState("");
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -85,6 +86,7 @@ export default function AdminProductsPage() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiMessage("");
+    setSaveStage("در حال آماده‌سازی اطلاعات محصول...");
     const finalImages = images.length > 0 ? images : ["/images/products/boy-hoodie.svg"];
     const payload = {
       title, sku, categoryId: categoryId || editingProduct?.categoryId || categories[0]?.id || 0, categoryName, basePrice, salePrice,
@@ -96,14 +98,17 @@ export default function AdminProductsPage() {
     };
     setSaving(true);
     try {
-      const response = await fetch(editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products", { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      setSaveStage("در حال ذخیره محصول، تصاویر و مشخصات در سرور...");
+      const response = await fetch(editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products", { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: AbortSignal.timeout(60_000) });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success) { setApiMessage(data.error || "ذخیرهٔ محصول در دیتابیس انجام نشد."); return; }
+      if (!response.ok || !data.success) { setApiMessage(data.error || `ذخیره محصول ناموفق بود (HTTP ${response.status}).`); setSaveStage(""); return; }
       setApiMessage("محصول و مشخصات آن با موفقیت ذخیره شد.");
-      if (editingProduct) setProducts(products.map((p) => p.id === editingProduct.id ? { ...p, title, categoryName, basePrice, salePrice, sku, images: finalImages, variants, sizeChartJson: sizeChart, fitProfile, mediaAngles, attributes } : p));
-      else window.location.reload();
+      setSaveStage("ذخیره انجام شد؛ در حال تازه‌سازی فهرست محصولات...");
+      const refreshResponse = await fetch("/api/admin/products?limit=100", { cache: "no-store", signal: AbortSignal.timeout(30_000) });
+      const refreshed = await refreshResponse.json().catch(() => ({}));
+      if (refreshResponse.ok && Array.isArray(refreshed.products)) setProducts(refreshed.products);
       setShowFormModal(false); setEditingProduct(null);
-    } catch (error) { setApiMessage(error instanceof Error ? error.message : "ارتباط با سرور هنگام ذخیره قطع شد."); } finally { setSaving(false); }
+    } catch (error) { setApiMessage(error instanceof Error && error.name === "TimeoutError" ? "ذخیره بیش از ۶۰ ثانیه طول کشید. تصویرها را کوچک‌تر کنید یا دوباره تلاش کنید." : error instanceof Error ? error.message : "ارتباط با سرور هنگام ذخیره قطع شد."); setSaveStage(""); } finally { setSaving(false); }
   };
 
   const handleEdit = (p: Product) => {
@@ -397,6 +402,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
+              {saveStage && <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-[11px] font-bold text-sky-800">{saveStage}</p>}
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
@@ -408,7 +414,8 @@ export default function AdminProductsPage() {
                 <button
                   type="button"
                   onClick={() => setShowFormModal(false)}
-                  className="rounded-xl bg-stone-100 px-5 py-3 font-bold text-stone-700 hover:bg-stone-200"
+                  disabled={saving}
+                  className="rounded-xl bg-stone-100 px-5 py-3 font-bold text-stone-700 hover:bg-stone-200 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   انصراف
                 </button>

@@ -19,7 +19,7 @@ export default function DropzoneImageUploader({ images, onChange }: Props) {
   const uploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch("/api/admin/media/upload", { method: "POST", body: formData });
+    const response = await fetch("/api/admin/media/upload", { method: "POST", body: formData, signal: AbortSignal.timeout(60_000) });
     const data = await response.json().catch(() => null);
     if (!response.ok || !data?.success || !data.url) throw new Error(data?.error || "آپلود تصویر انجام نشد.");
     return String(data.url);
@@ -57,7 +57,11 @@ export default function DropzoneImageUploader({ images, onChange }: Props) {
     setBusy("upload");
     setMessage(`در حال آپلود ${valid.length} تصویر...`);
     try {
-      const uploaded = await Promise.all(valid.map(uploadFile));
+      const uploaded: string[] = [];
+      for (const [index, file] of valid.entries()) {
+        setMessage(`در حال آپلود تصویر ${index + 1} از ${valid.length}...`);
+        uploaded.push(await uploadFile(file));
+      }
       const firstIndex = images.length;
       const combinedImages = [...images, ...uploaded];
       onChange(combinedImages);
