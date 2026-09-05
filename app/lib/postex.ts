@@ -100,6 +100,7 @@ export async function getPostexQuote(input: {
   const toCityCode = await cityCode(input.destinationCity);
   const boxTypeId = await defaultBoxTypeId();
   const courierCode = process.env.POSTEX_COURIER_CODE?.trim();
+  console.info("Postex quote request meta", { fromCityCode, toCityCode, boxTypeId, hasCourierCode: Boolean(courierCode) });
   const quoteBody: Record<string, unknown> = {
     collection_type: process.env.POSTEX_COLLECTION_TYPE || "pick_up",
     from_city_code: fromCityCode,
