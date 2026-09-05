@@ -23,8 +23,8 @@ export default function CheckoutPage() {
   // Form State
   const [recipientName, setRecipientName] = useState("");
   const [phone, setPhone] = useState("");
-  const [province, setProvince] = useState("تهران");
-  const [city, setCity] = useState("تهران");
+  const [province, setProvince] = useState("");
+  const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [shippingProvider, setShippingProvider] = useState<"postex" | "tipax" | "post" | "peyk">("postex");
@@ -41,7 +41,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     fetch("/api/shipping/postex/cities", { cache: "force-cache" })
-      .then(async (response) => { const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست."); setCities(Array.isArray(data.cities) ? data.cities : []); })
+      .then(async (response) => { const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست."); const nextCities = Array.isArray(data.cities) ? data.cities : []; setCities(nextCities); if (!nextCities.some((item: { province?: string }) => item.province)) { setProvince(""); setCity(""); } })
       .catch((error) => setCitiesError(error instanceof Error ? error.message : "فهرست شهرها در دسترس نیست."));
   }, []);
 
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
                 />
               </div>
 
-              <div><label className="block text-xs font-bold text-stone-700">استان *</label>{cities.length ? <select required value={province} onChange={(e) => { setProvince(e.target.value); setCity(""); }} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب استان</option>{[...new Set(cities.map((item) => item.province).filter(Boolean))].map((item) => <option key={item} value={item}>{item}</option>)}</select> : <input type="text" required value={province} onChange={(e) => setProvince(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}</div>
+              <div><label className="block text-xs font-bold text-stone-700">استان *</label>{cities.length && cities.some((item) => item.province) ? <select required value={province} onChange={(e) => { setProvince(e.target.value); setCity(""); }} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب استان</option>{[...new Set(cities.map((item) => item.province).filter(Boolean))].map((item) => <option key={item} value={item}>{item}</option>)}</select> : <input type="text" required value={province} onChange={(e) => setProvince(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}</div>
 
               <div><label className="block text-xs font-bold text-stone-700">شهر *</label>{cities.length ? <select required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب شهر</option>{cities.filter((item) => !province || item.province === province).map((item) => <option key={`${item.id}-${item.name}`} value={item.name}>{item.name}</option>)}</select> : <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}{citiesError && <p className="mt-1 text-[10px] text-amber-700">{citiesError}؛ شهر را دستی وارد کنید.</p>}</div>
 
