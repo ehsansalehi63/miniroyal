@@ -79,7 +79,7 @@ export default function AdminProductsPage() {
     const query = title.trim() || sku.trim();
     if (!showAddModal || query.length < 2) { setSimilarProducts([]); return; }
     const timer = window.setTimeout(() => {
-      fetch(`/api/admin/products?search=${encodeURIComponent(query)}&limit=5`, { cache: "no-store" })
+      fetch(`/api/admin/products?search=${encodeURIComponent(query)}&includeArchived=1&limit=5`, { cache: "no-store" })
         .then((response) => response.json())
         .then((data) => setSimilarProducts(Array.isArray(data.products) ? data.products.filter((item: Product) => item.id !== editingProduct?.id) : []))
         .catch(() => setSimilarProducts([]));
@@ -167,8 +167,10 @@ export default function AdminProductsPage() {
     const response = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
     const data = await response.json();
     if (!response.ok || !data.success) { setApiMessage(data.error || "حذف محصول انجام نشد."); return; }
-    setProducts(products.filter((p) => p.id !== id));
-    setApiMessage("محصول آرشیو شد.");
+    const refreshResponse = await fetch("/api/admin/products?limit=100", { cache: "no-store" });
+    const refreshed = await refreshResponse.json().catch(() => ({}));
+    if (refreshResponse.ok && Array.isArray(refreshed.products)) setProducts(refreshed.products);
+    setApiMessage("محصول در دیتابیس آرشیو شد و از فهرست مدیریت حذف شد.");
   };
 
   return (

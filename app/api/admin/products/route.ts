@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
   const where: string[] = [];
   if (search) { where.push("(p.title LIKE ? OR p.sku LIKE ? OR p.slug LIKE ?)"); params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
   if (status && allowedStatuses.includes(status as (typeof allowedStatuses)[number])) { where.push("p.status = ?"); params.push(status); }
+  else if (request.nextUrl.searchParams.get("includeArchived") !== "1") where.push("p.status <> 'archived'");
   const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
     const [rows] = await pool.execute<RowDataPacket[]>(`SELECT p.*, c.name AS categoryName,
       COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', v.id, 'sku', v.sku, 'size', v.size, 'color', v.color, 'colorCode', v.color_code, 'stock', v.stock, 'priceAdjustment', v.price_adjustment)) FROM product_variants v WHERE v.product_id = p.id), JSON_ARRAY()) AS variants,
