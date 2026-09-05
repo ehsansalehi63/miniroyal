@@ -76,30 +76,33 @@ export async function getPostexQuote(input: {
 }) {
   const fromCityCode = Number(process.env.POSTEX_ORIGIN_CITY_CODE || await cityCode(process.env.POSTEX_ORIGIN_CITY || "اصفهان"));
   const toCityCode = await cityCode(input.destinationCity);
+  const courierCode = process.env.POSTEX_COURIER_CODE?.trim();
+  const quoteBody: Record<string, unknown> = {
+    collection_type: process.env.POSTEX_COLLECTION_TYPE || "pick_up",
+    from_city_code: fromCityCode,
+    parcels: [{
+      custom_parcel_id: "miniroyal-quote",
+      to_city_code: toCityCode,
+      payment_type: input.paymentType,
+      parcel_properties: {
+        length: input.length || Number(process.env.POSTEX_DEFAULT_LENGTH_CM || 30),
+        width: input.width || Number(process.env.POSTEX_DEFAULT_WIDTH_CM || 20),
+        height: input.height || Number(process.env.POSTEX_DEFAULT_HEIGHT_CM || 10),
+        total_weight: input.totalWeight,
+        is_fragile: false,
+        is_liquid: false,
+        total_value: input.totalValue * 10,
+        pre_paid_amount: input.paymentType === "SENDER" ? input.totalValue * 10 : 0,
+        total_value_currency: "IRR",
+        box_type_id: Number(process.env.POSTEX_DEFAULT_BOX_TYPE_ID || 0),
+      },
+    }],
+    value_added_service: { request_label: true, request_packaging: false, request_sms_notification: true },
+  };
+  if (courierCode) quoteBody.courier = { courier_code: courierCode, service_type: process.env.POSTEX_SERVICE_TYPE || "EXPRESS" };
   return postexFetch<unknown>("/api/v1/shipping/quotes", {
     method: "POST",
-    body: JSON.stringify({
-      collection_type: process.env.POSTEX_COLLECTION_TYPE || "pick_up",
-      from_city_code: fromCityCode,
-      parcels: [{
-        custom_parcel_id: "miniroyal-quote",
-        to_city_code: toCityCode,
-        payment_type: input.paymentType,
-        parcel_properties: {
-          length: input.length || Number(process.env.POSTEX_DEFAULT_LENGTH_CM || 30),
-          width: input.width || Number(process.env.POSTEX_DEFAULT_WIDTH_CM || 20),
-          height: input.height || Number(process.env.POSTEX_DEFAULT_HEIGHT_CM || 10),
-          total_weight: input.totalWeight,
-          is_fragile: false,
-          is_liquid: false,
-          total_value: input.totalValue * 10,
-          pre_paid_amount: input.paymentType === "SENDER" ? input.totalValue * 10 : 0,
-          total_value_currency: "IRR",
-          box_type_id: Number(process.env.POSTEX_DEFAULT_BOX_TYPE_ID || 0),
-        },
-      }],
-      value_added_service: { request_label: true, request_packaging: false, request_sms_notification: true },
-    }),
+    body: JSON.stringify(quoteBody),
   });
 }
 
