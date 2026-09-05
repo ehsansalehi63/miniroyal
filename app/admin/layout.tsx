@@ -55,6 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const adminBase = `/${pathname.split("/").filter(Boolean)[0] || "admin"}`;
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [loginStep, setLoginStep] = useState<"phone" | "code">("phone");
@@ -70,7 +71,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           setAdminRole(data.admin?.role || "");
         }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setIsCheckingSession(false));
   }, []);
 
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -111,6 +113,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="text-center">
           <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="mx-auto size-16 rounded-2xl object-cover" />
           <p className="mt-4 text-xs font-bold text-stone-400">در حال بارگذاری پنل مدیریت مینی رویال...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCheckingSession) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-stone-900 text-white font-sans dir-rtl">
+        <div className="text-center">
+          <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="mx-auto size-16 rounded-2xl object-cover" />
+          <p className="mt-4 text-xs font-bold text-stone-400">در حال بررسی نشست مدیریت...</p>
         </div>
       </div>
     );

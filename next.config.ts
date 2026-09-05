@@ -13,6 +13,23 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Admin sessions and API responses are user-specific. Hostinger's
+        // front proxy must never cache an anonymous response and replay it
+        // after a successful admin login.
+        source: "/api/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, no-cache, max-age=0, must-revalidate" },
+          { key: "Vary", value: "Cookie" },
+        ],
+      },
+      {
+        source: "/admin/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, no-cache, max-age=0, must-revalidate" },
+          { key: "Vary", value: "Cookie" },
+        ],
+      },
+      {
         // دارایی‌های لوکال انگشت‌نامه‌دار نیستند، ولی محتوا به‌ندرت عوض می‌شود؛
         // با ETag و کش یک‌ماهه، بازدیدهای بعدی دیگر ۵۰ مگابایت تصویر دانلود نمی‌کنند.
         source: "/images/:path*",
