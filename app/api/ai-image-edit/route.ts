@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, imageUrl, provider: "aihubmix" });
     }
 
-    if (!pollinationsKey) return NextResponse.json({ success: false, code: "IMAGE_PROVIDER_ERROR", error: "سرویس AIHubMix پاسخ قابل استفاده برنگرداند." }, { status: 502 });
+    if (!pollinationsKey) return NextResponse.json({ success: false, code: "IMAGE_PROVIDER_UNAVAILABLE", error: "سرویس ویرایش AI در حال حاضر پاسخ قابل استفاده نمی‌دهد؛ تصویر اصلی حفظ شده است. ذخیره عادی محصول همچنان قابل انجام است." }, { status: 503 });
 
     const form = new FormData();
     form.append("image", new Blob([new Uint8Array(input.buffer)], { type: input.mime }), "product-image");
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     const result = await response.json().catch(() => null);
     const output = result?.data?.[0];
     const imageSource = output?.b64_json ? `data:image/png;base64,${output.b64_json}` : typeof output?.url === "string" ? output.url : null;
-    if (!response.ok || !imageSource) return NextResponse.json({ success: false, error: providerError(result, response.status) }, { status: 502 });
+    if (!response.ok || !imageSource) return NextResponse.json({ success: false, code: "IMAGE_PROVIDER_UNAVAILABLE", error: `${providerError(result, response.status)} تصویر اصلی حفظ شده است و ذخیره عادی محصول وابسته به AI نیست.` }, { status: 503 });
 
     const imageUrl = await storeImageSource(imageSource, request.url);
     return NextResponse.json({ success: true, imageUrl, provider: "pollinations" });
@@ -101,6 +101,6 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error && /timeout|abort/i.test(error.message)
       ? "ویرایش تصویر بیشتر از زمان مجاز طول کشید؛ تصویر اصلی حفظ شد و می‌توانید دوباره تلاش کنید."
       : error instanceof Error ? error.message : "ویرایش تصویر محصول انجام نشد.";
-    return NextResponse.json({ success: false, error: message }, { status: 502 });
+    return NextResponse.json({ success: false, code: "IMAGE_PROVIDER_UNAVAILABLE", error: `${message} تصویر اصلی حفظ شده است و ذخیره عادی محصول وابسته به AI نیست.` }, { status: 503 });
   }
 }

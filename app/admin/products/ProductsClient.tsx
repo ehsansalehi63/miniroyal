@@ -102,6 +102,13 @@ export default function AdminProductsPage() {
     setApiMessage("");
     setDuplicateProduct(null);
     setSaveStage("در حال آماده‌سازی اطلاعات محصول...");
+    const existingSku = !editingProduct && similarProducts.find((item) => String(item.sku || "").trim().toLowerCase() === sku.trim().toLowerCase());
+    if (existingSku) {
+      setDuplicateProduct(existingSku);
+      setApiMessage("این کد محصول قبلاً ثبت شده است؛ محصول قبلی را ویرایش کنید یا کد دیگری وارد کنید.");
+      setSaveStage("");
+      return;
+    }
     const finalImages = images.length > 0 ? images : ["/images/products/boy-hoodie.svg"];
     const payload = {
       title, sku, categoryId: categoryId || editingProduct?.categoryId || categories[0]?.id || 0, categoryName, basePrice, salePrice,

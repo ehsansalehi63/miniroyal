@@ -5,7 +5,10 @@ import sharp from "sharp";
 
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
 const MAX_REMOTE_BYTES = 12 * 1024 * 1024;
-const MEDIA_DIR = process.env.MEDIA_UPLOAD_DIR || path.join(process.cwd(), "public", "uploads", "products");
+const HOSTINGER_MEDIA_DIR = process.env.HOME
+  ? path.join(process.env.HOME, "domains", "miniroyal.shop", "public_html", "uploads", "products")
+  : path.join(process.cwd(), "public", "uploads", "products");
+const MEDIA_DIR = process.env.MEDIA_UPLOAD_DIR || (process.env.NODE_ENV === "production" ? HOSTINGER_MEDIA_DIR : path.join(process.cwd(), "public", "uploads", "products"));
 const MEDIA_PUBLIC_PREFIX = "/uploads/products";
 
 function extensionForMime() {
