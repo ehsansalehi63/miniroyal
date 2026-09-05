@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
+import { validateMediaUrl } from "@/app/lib/media-validation";
 
 const allowedStatuses = ["draft", "review", "active", "archived"] as const;
 const allowedGenders = ["boy", "girl", "unisex"] as const;
@@ -35,6 +36,14 @@ function validate(input: ProductInput) {
   for (const variant of input.variants || []) {
     if (!variant.sku?.trim() || !variant.size?.trim() || !variant.color?.trim()) return "SKU، سایز و رنگ همهٔ variantها الزامی است.";
     if (!Number.isSafeInteger(variant.stock ?? 0) || (variant.stock ?? 0) < 0) return "موجودی variant معتبر نیست.";
+  }
+  for (const media of input.images || []) {
+    const mediaError = validateMediaUrl(media.url);
+    if (mediaError) return mediaError;
+  }
+  for (const media of input.mediaAngles || []) {
+    const mediaError = validateMediaUrl(media.url);
+    if (mediaError) return mediaError;
   }
   return null;
 }

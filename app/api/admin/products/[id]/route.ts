@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
+import { validateMediaUrl } from "@/app/lib/media-validation";
 
 type Context = { params: Promise<{ id: string }> };
 const allowedStatuses = ["draft", "review", "active", "archived"];
@@ -31,6 +32,13 @@ export async function PATCH(request: NextRequest, context: Context) {
   const id = await getId(context); if (!id) return NextResponse.json({ success: false, error: "شناسهٔ محصول معتبر نیست." }, { status: 400 });
   let body: Record<string, unknown>;
   try { body = await request.json() as Record<string, unknown>; } catch { return NextResponse.json({ success: false, error: "بدنهٔ درخواست JSON معتبر نیست." }, { status: 400 }); }
+  for (const collectionKey of ["images", "mediaAngles"] as const) {
+    if (!Array.isArray(body[collectionKey])) continue;
+    for (const media of body[collectionKey] as Array<Record<string, unknown>>) {
+      const mediaError = validateMediaUrl(media.url);
+      if (mediaError) return NextResponse.json({ success: false, error: mediaError }, { status: 400 });
+    }
+  }
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
