@@ -26,8 +26,12 @@ export type CreateOrderInput = {
   city: string;
   address: string;
   postalCode: string;
-  shippingProvider: "tipax" | "post" | "peyk";
+  shippingProvider: "postex" | "tipax" | "post" | "peyk";
   paymentMethod: "zarinpal" | "cod";
+  shippingCost?: number;
+  discount?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   items: OrderItemInput[];
 };
 
@@ -64,8 +68,9 @@ export async function createOrder(input: CreateOrderInput) {
       const unitPrice = (item.product.salePrice ?? item.product.basePrice) + item.variant.priceAdjustment;
       return sum + unitPrice * item.quantity;
     }, 0);
-    const discount = 0;
-    const shippingCost = subtotal >= 500000 ? 0 : 45000;
+    const discount = Number.isFinite(Number(input.discount)) ? Math.max(0, Number(input.discount)) : 0;
+    const requestedShippingCost = Number(input.shippingCost);
+    const shippingCost = Number.isFinite(requestedShippingCost) && requestedShippingCost >= 0 ? requestedShippingCost : subtotal >= 500000 ? 0 : 45000;
     const finalTotal = subtotal - discount + shippingCost;
     const orderNumber = `MR-${Date.now().toString().slice(-8)}`;
     const shippingAddress = JSON.stringify({
@@ -75,6 +80,8 @@ export async function createOrder(input: CreateOrderInput) {
       city: input.city.trim(),
       address: input.address.trim(),
       postalCode: input.postalCode.trim(),
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
     });
 
     // Lock and decrement each variant inside the same transaction. This prevents
