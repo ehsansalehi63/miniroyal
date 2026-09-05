@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     if (fields.length) await connection.execute<ResultSetHeader>(`UPDATE products SET ${fields.map(([column]) => `\`${column}\` = ?`).join(", ")} WHERE id = ?`, [...fields.map(([, value]) => value), id] as Array<string | number | null>);
     if (Array.isArray(body.variants)) {
       await connection.execute("DELETE FROM product_variants WHERE product_id = ?", [id]);
-      for (const variant of body.variants as Array<Record<string, unknown>>) await connection.execute("INSERT INTO product_variants (product_id, sku, size, color, color_code, stock, price_adjustment) VALUES (?, ?, ?, ?, ?, ?, ?)", [id, String(variant.sku || "").trim(), String(variant.size || "").trim(), String(variant.color || "").trim(), variant.colorCode ? String(variant.colorCode) : null, Number(variant.stock || 0), Number(variant.priceAdjustment || 0)] as Array<string | number | null>);
+      for (const variant of (body.variants as Array<Record<string, unknown>>).filter((item) => String(item.sku || "").trim() || String(item.size || "").trim() || String(item.color || "").trim())) await connection.execute("INSERT INTO product_variants (product_id, sku, size, color, color_code, stock, price_adjustment) VALUES (?, ?, ?, ?, ?, ?, ?)", [id, String(variant.sku || "").trim(), String(variant.size || "").trim(), String(variant.color || "").trim(), variant.colorCode ? String(variant.colorCode) : null, Number(variant.stock || 0), Number(variant.priceAdjustment || 0)] as Array<string | number | null>);
     }
     if (Array.isArray(body.images)) {
       await connection.execute("DELETE FROM product_media WHERE product_id = ?", [id]);

@@ -27,16 +27,12 @@ export default function AdminProductsPage() {
   const [basePrice, setBasePrice] = useState(380000);
   const [salePrice, setSalePrice] = useState(295000);
   const [sku, setSku] = useState("KID-BOY-NEW");
-  const [variants, setVariants] = useState<Variant[]>([
-    { id: 1, productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 },
-  ]);
+  const [variants, setVariants] = useState<Variant[]>([]);
   const [images, setImages] = useState<string[]>([
     "/images/products/boy-hoodie.svg",
   ]);
   const [mediaAngles, setMediaAngles] = useState<Partial<Record<ProductMediaAngle, ProductAngleMedia>>>({});
-  const [sizeChart, setSizeChart] = useState<SizeChartRow[]>([
-    { size: "۴ سال", ageRange: "۳ تا ۴ سال", heightCm: "۹۸ تا ۱۰۴", chestCm: "۵۴ تا ۵۶", lengthCm: "۴۲" },
-  ]);
+  const [sizeChart, setSizeChart] = useState<SizeChartRow[]>([]);
   const [fitProfile, setFitProfile] = useState<NonNullable<Product["fitProfile"]>>({
     garmentType: "top",
     measurementMethod: "garment",
@@ -89,8 +85,8 @@ export default function AdminProductsPage() {
       shortDesc: editingProduct?.shortDesc || "محصول جدید افزوده شده توسط مدیر سیستم",
       description: editingProduct?.description || "توضیحات کامل محصول در پنل مدیریت ثبت شده است.",
       gender: editingProduct?.gender || "boy", ageMinMonth: editingProduct?.ageMinMonth || 24, ageMaxMonth: editingProduct?.ageMaxMonth || 96,
-      status: editingProduct?.status || "draft", fitType: editingProduct?.fitType || "normal", sizeChartJson: sizeChart, fitProfile, images: finalImages.map((url, index) => ({ url, alt: title, sortOrder: index, isPrimary: index === 0 })),
-      mediaAngles: Object.values(mediaAngles).filter(Boolean), attributes, variants: variants.map((variant) => ({ sku: variant.sku || `${sku}-${variant.id}`, size: variant.size, color: variant.color, colorCode: variant.colorCode, stock: variant.stock, priceAdjustment: variant.priceAdjustment })),
+      status: editingProduct?.status || "draft", fitType: editingProduct?.fitType || "normal", sizeChartJson: sizeChart.filter((row) => Object.values(row).some((value) => String(value ?? "").trim())), fitProfile, images: finalImages.map((url, index) => ({ url, alt: title, sortOrder: index, isPrimary: index === 0 })),
+      mediaAngles: Object.values(mediaAngles).filter(Boolean), attributes, variants: variants.filter((variant) => variant.sku.trim() || variant.size.trim() || variant.color.trim()).map((variant) => ({ sku: variant.sku, size: variant.size, color: variant.color, colorCode: variant.colorCode, stock: variant.stock, priceAdjustment: variant.priceAdjustment })),
     };
     setSaving(true);
     try {
@@ -112,11 +108,11 @@ export default function AdminProductsPage() {
     setBasePrice(p.basePrice);
     setSalePrice(p.salePrice ?? p.basePrice);
     setSku(p.sku);
-    setVariants(p.variants?.length ? p.variants : [{ id: p.id * 1000, productId: p.id, sku: `${p.sku}-01`, size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
+    setVariants(p.variants?.length ? p.variants : []);
             setImages(p.images || []);
     setMediaAngles(p.mediaAngles || {});
     setAttributes((p.attributes || []) as ProductAttributeDraft[]);
-    setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : [{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
+    setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : []);
     setFitProfile(p.fitProfile ?? fitProfile);
     setShowFormModal(true);
   };
@@ -157,8 +153,8 @@ export default function AdminProductsPage() {
             setMediaAngles({});
             setAttributes([]);
             setCategoryId(0);
-            setVariants([{ id: Date.now(), productId: 0, sku: "KID-BOY-NEW-01", size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }]);
-            setSizeChart([{ size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }]);
+            setVariants([]);
+            setSizeChart([]);
             setFitProfile({ garmentType: "top", measurementMethod: "garment", preferredBodyMeasurement: "height", easeCm: 7, stretch: "low", sizeSystem: "age", tryOnAnchors: { shoulder: 50, waist: 52, length: 68 } });
             setShowFormModal(true);
           }}
@@ -271,14 +267,14 @@ export default function AdminProductsPage() {
 
               <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4" dir="rtl">
                 <div className="flex items-center justify-between gap-3">
-                  <div><h4 className="text-xs font-black text-sky-950">رنگ‌ها، سایزها و موجودی انبار</h4><p className="mt-1 text-[10px] text-sky-800">برای هر ترکیب رنگ/سایز یک کد کالا ثبت کنید.</p></div>
+                  <div><h4 className="text-xs font-black text-sky-950">ترکیب‌ها و موجودی انبار <span className="font-normal text-sky-700">(اختیاری)</span></h4><p className="mt-1 text-[10px] text-sky-800">در صورت نیاز، برای هر ترکیب رنگ/سایز یک ردیف و یک کد کالا ثبت کنید؛ تکمیل این بخش ضروری نیست.</p></div>
                   <button type="button" onClick={() => setVariants([...variants, { id: Date.now(), productId: 0, sku: `${sku}-${variants.length + 1}`, size: "", color: "", colorCode: "#000000", stock: 0, priceAdjustment: 0 }])} className="rounded-lg bg-sky-700 px-3 py-2 text-[10px] font-bold text-white">افزودن ترکیب</button>
                 </div>
                 <div className="mt-3 space-y-2">
                   {variants.map((variant, index) => (
                     <div key={variant.id} className="grid gap-2 sm:grid-cols-6">
                       {(["sku", "size", "color", "colorCode", "stock", "priceAdjustment"] as const).map((field) => (
-                        <input key={field} required={field !== "priceAdjustment"} type={field === "stock" || field === "priceAdjustment" ? "number" : field === "colorCode" ? "color" : "text"} placeholder={{ sku: "کد کالا", size: "سایز", color: "رنگ", colorCode: "رنگ", stock: "موجودی", priceAdjustment: "اختلاف قیمت" }[field]} value={variant[field]} onChange={(e) => setVariants(variants.map((item, i) => i === index ? { ...item, [field]: field === "stock" || field === "priceAdjustment" ? Number(e.target.value) : e.target.value } : item))} className="rounded-lg border border-sky-200 bg-white p-2 text-[10px] outline-none" />
+                        <input key={field} type={field === "stock" || field === "priceAdjustment" ? "number" : field === "colorCode" ? "color" : "text"} placeholder={{ sku: "کد کالا (اختیاری)", size: "سایز (اختیاری)", color: "رنگ (اختیاری)", colorCode: "رنگ", stock: "موجودی (اختیاری)", priceAdjustment: "اختلاف قیمت" }[field]} value={variant[field]} onChange={(e) => setVariants(variants.map((item, i) => i === index ? { ...item, [field]: field === "stock" || field === "priceAdjustment" ? Number(e.target.value) : e.target.value } : item))} className="rounded-lg border border-sky-200 bg-white p-2 text-[10px] outline-none" />
                       ))}
                     </div>
                   ))}
@@ -288,8 +284,8 @@ export default function AdminProductsPage() {
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4" dir="rtl">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <h4 className="text-xs font-black text-emerald-950">اندازه‌های واقعی لباس</h4>
-                    <p className="mt-1 text-[10px] text-emerald-800">این جدول مستقیماً برای پیشنهاد سایز و دقت پرو استفاده می‌شود.</p>
+                    <h4 className="text-xs font-black text-emerald-950">اندازه‌های واقعی لباس <span className="font-normal text-emerald-700">(اختیاری)</span></h4>
+                    <p className="mt-1 text-[10px] text-emerald-800">فقط اگر اندازه‌گیری واقعی دارید وارد کنید؛ این جدول برای پیشنهاد سایز و دقت پرو استفاده می‌شود و تکمیل آن ضروری نیست.</p>
                   </div>
                   <button type="button" onClick={() => setSizeChart([...sizeChart, { size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }])} className="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-bold text-white">افزودن سایز</button>
                 </div>
@@ -297,7 +293,7 @@ export default function AdminProductsPage() {
                   {sizeChart.map((row, index) => (
                     <div key={index} className="grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
                       {(["size", "ageRange", "heightCm", "chestCm", "waistCm", "hipCm", "shoulderCm", "garmentLengthCm"] as const).map((field) => (
-                        <input key={field} required={field !== "waistCm" && field !== "hipCm" && field !== "shoulderCm"} placeholder={{ size: "سایز", ageRange: "بازه سنی", heightCm: "قد کودک", chestCm: "سینه کودک", waistCm: "کمر", hipCm: "باسن", shoulderCm: "شانه", garmentLengthCm: "قد لباس" }[field]} value={row[field] ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, [field]: e.target.value } : item))} className="rounded-lg border border-emerald-200 bg-white p-2 text-[10px] outline-none" />
+                        <input key={field} placeholder={{ size: "سایز (اختیاری)", ageRange: "بازه سنی (اختیاری)", heightCm: "قد کودک", chestCm: "سینه کودک", waistCm: "کمر", hipCm: "باسن", shoulderCm: "شانه", garmentLengthCm: "قد لباس" }[field]} value={row[field] ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, [field]: e.target.value } : item))} className="rounded-lg border border-emerald-200 bg-white p-2 text-[10px] outline-none" />
                       ))}
                     </div>
                   ))}
@@ -305,7 +301,8 @@ export default function AdminProductsPage() {
               </div>
 
               <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4" dir="rtl">
-                <h4 className="text-xs font-black text-violet-950">پروفایل اختصاصی فیت و پرو محصول</h4>
+                <h4 className="text-xs font-black text-violet-950">پروفایل اختصاصی فیت و پرو محصول <span className="font-normal text-violet-700">(اختیاری)</span></h4>
+                <p className="mt-1 text-[10px] text-violet-800">برای استفاده از پیشنهاد سایز و پرو دقیق‌تر تکمیل کنید؛ برای ثبت ساده محصول لازم نیست.</p>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   <select value={fitProfile.garmentType} onChange={(e) => setFitProfile({ ...fitProfile, garmentType: e.target.value as NonNullable<Product["fitProfile"]>["garmentType"] })} className="rounded-lg border border-violet-200 bg-white p-2 text-xs">
                     <option value="top">بالاپوش</option><option value="bottom">شلوار/دامن</option><option value="dress">پیراهن</option><option value="outerwear">کاپشن</option><option value="set">ست</option><option value="baby">نوزادی</option>

@@ -36,7 +36,7 @@ function validate(input: ProductInput) {
   if (input.status && !allowedStatuses.includes(input.status)) return "وضعیت محصول معتبر نیست.";
   if (input.gender && !allowedGenders.includes(input.gender)) return "جنسیت محصول معتبر نیست.";
   if (input.fitType && !allowedFitTypes.includes(input.fitType)) return "نوع فیت معتبر نیست.";
-  for (const variant of input.variants || []) {
+  for (const variant of (input.variants || []).filter((item) => item.sku?.trim() || item.size?.trim() || item.color?.trim())) {
     if (!variant.sku?.trim() || !variant.size?.trim() || !variant.color?.trim()) return "SKU، سایز و رنگ همهٔ variantها الزامی است.";
     if (!Number.isSafeInteger(variant.stock ?? 0) || (variant.stock ?? 0) < 0) return "موجودی variant معتبر نیست.";
   }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       input.title.trim(), slug, input.sku.trim(), input.shortDesc || null, input.description || null, input.categoryId, input.brandId ?? null, input.supplierId ?? null, input.gender || "unisex", input.ageMinMonth ?? 0, input.ageMaxMonth ?? 144, input.basePrice, input.salePrice ?? null, input.costPrice ?? null, input.isFeatured ? 1 : 0, input.isSpecialOffer ? 1 : 0, input.status || "draft", input.fitType || "normal", input.seoTitle || null, input.seoDesc || null, jsonOrNull(input.faqJson), jsonOrNull(input.sizeChartJson), jsonOrNull(input.features), input.fabricMaterial || null, input.washCare || null, jsonOrNull(input.fitProfile), jsonOrNull(input.tryOnAsset), admin.id,
     ]);
     const productId = productResult.insertId;
-    for (const [index, variant] of (input.variants || []).entries()) await connection.execute("INSERT INTO product_variants (product_id, sku, size, color, color_code, stock, price_adjustment) VALUES (?, ?, ?, ?, ?, ?, ?)", [productId, variant.sku.trim(), variant.size.trim(), variant.color.trim(), variant.colorCode || null, variant.stock ?? 0, variant.priceAdjustment ?? 0]);
+    for (const [index, variant] of (input.variants || []).filter((item) => item.sku?.trim() || item.size?.trim() || item.color?.trim()).entries()) await connection.execute("INSERT INTO product_variants (product_id, sku, size, color, color_code, stock, price_adjustment) VALUES (?, ?, ?, ?, ?, ?, ?)", [productId, variant.sku.trim(), variant.size.trim(), variant.color.trim(), variant.colorCode || null, variant.stock ?? 0, variant.priceAdjustment ?? 0]);
     for (const [index, media] of (input.images || []).entries()) await connection.execute("INSERT INTO product_media (product_id, url, alt, sort_order, is_primary, media_type) VALUES (?, ?, ?, ?, ?, ?)", [productId, media.url, media.alt || input.title, media.sortOrder ?? index, media.isPrimary ?? index === 0 ? 1 : 0, media.mediaType || "image"]);
     for (const [index, media] of (input.mediaAngles || []).entries()) await connection.execute("INSERT INTO product_media_angles (product_id, angle, url, alt, is_ai_optimized, is_tryon_ready, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)", [productId, media.angle, media.url, media.alt || input.title, media.isAiOptimized ? 1 : 0, media.isTryOnReady ? 1 : 0, media.sortOrder ?? index]);
     await replaceProductAttributes(connection, productId, input.attributes);
