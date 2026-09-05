@@ -52,7 +52,16 @@ export default function AdminProductsPage() {
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "دریافت محصولات از دیتابیس انجام نشد.");
-        if (Array.isArray(data.products) && data.products.length) setProducts(data.products.map((product: Product & { short_desc?: string; category_name?: string; size_chart_json?: SizeChartRow[] }) => ({ ...product, shortDesc: product.shortDesc || product.short_desc || "", categoryName: product.categoryName || product.category_name || "", images: Array.isArray(product.images) ? (product.images as Array<string | { url: string }>).map((image) => typeof image === "string" ? image : image.url) : [], variants: Array.isArray(product.variants) ? product.variants : [], sizeChartJson: product.sizeChartJson || product.size_chart_json || [] })));
+        if (Array.isArray(data.products) && data.products.length) setProducts(data.products.map((product: Product & { short_desc?: string; category_name?: string; size_chart_json?: SizeChartRow[] }) => ({
+          ...product,
+          title: String(product.title || "محصول بدون عنوان"),
+          sku: String(product.sku || "بدون SKU"),
+          shortDesc: product.shortDesc || product.short_desc || "",
+          categoryName: String(product.categoryName || product.category_name || "بدون دسته‌بندی"),
+          images: Array.isArray(product.images) ? (product.images as Array<string | { url: string }>).map((image) => typeof image === "string" ? image : image.url).filter(Boolean) : [],
+          variants: Array.isArray(product.variants) ? product.variants : [],
+          sizeChartJson: product.sizeChartJson || product.size_chart_json || [],
+        })));
       })
       .catch((error: unknown) => setApiMessage(error instanceof Error ? error.message : "دریافت محصولات انجام نشد."))
       .finally(() => setLoadingProducts(false));
@@ -66,9 +75,9 @@ export default function AdminProductsPage() {
 
   const filtered = products.filter(
     (p) =>
-      p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+      String(p.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(p.sku || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(p.categoryName || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSaveProduct = async (e: React.FormEvent) => {

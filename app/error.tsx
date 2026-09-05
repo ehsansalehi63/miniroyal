@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { RefreshCw, Home, ShoppingBag } from "lucide-react";
 
@@ -11,15 +10,6 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("Next.js Error Boundary caught:", error);
-    // Auto-retry once on cold start
-    const timer = setTimeout(() => {
-      reset();
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [error, reset]);
-
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center p-6 text-center font-sans dir-rtl">
       <div className="grid size-20 overflow-hidden rounded-3xl bg-violet-100 shadow-lg">
