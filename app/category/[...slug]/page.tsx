@@ -5,6 +5,7 @@ import ProductCard from "../../components/ProductCard";
 import CategoryFilterSidebar from "../../components/CategoryFilterSidebar";
 import { CatalogFilterParams, Gender } from "../../lib/types/catalog";
 import { toPersianDigits } from "../../lib/utils";
+import ManagedBanners from "../../components/ManagedBanners";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   return (
     <div className="mx-auto site-container px-4 py-8">
+      <ManagedBanners placement="category_top" />
       {/* مسیر خرده‌نانی */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
         <Link href="/" className="hover:text-violet-700">خانه</Link>

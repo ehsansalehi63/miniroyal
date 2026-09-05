@@ -40,6 +40,7 @@ const adminNav = [
   { href: "/admin/automation", label: "پایپ‌لاین اتوماسیون", icon: Bot },
   { href: "/admin/settings", label: "تنظیمات سایت و دیپلوی", icon: Settings },
   { href: "/admin/slides", label: "مدیریت اسلایدشو صفحه اصلی", icon: Globe },
+  { href: "/admin/banners", label: "مدیریت بنرهای سایت", icon: Globe },
 ];
 
 function useIsMounted() {

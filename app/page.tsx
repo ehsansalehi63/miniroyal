@@ -9,6 +9,7 @@ import SuggestedSets from "./components/SuggestedSets";
 import { kidsCategories } from "./lib/kidsCategories";
 import { THUMB_IMAGES } from "./lib/imageCatalog";
 import { DEFAULT_HOME_SLIDES } from "./lib/homeConfig";
+import { getActiveBanners } from "./lib/banners";
 import { blogPosts } from "./lib/blogPosts";
 import { ShieldCheck, Truck, RotateCcw, Headset, ArrowLeft, Star } from "lucide-react";
 
@@ -59,6 +60,8 @@ const REVIEWS = [
 
 export default async function HomePage() {
   const featuredProducts = await getFeaturedProducts(8);
+  const banners = await getActiveBanners();
+  const homeBanners = (placement: "home_hero" | "home_after_categories" | "home_before_footer") => banners.filter((banner) => banner.placement === placement);
 
   // ویدیوی سینمایی هیرو: اگر فایل لوکال موجود باشد، همان پخش می‌شود.
   // چون صفحهٔ اصلی استاتیک prerender می‌شود، این بررسی هنگام build انجام می‌شود؛
@@ -114,6 +117,7 @@ export default async function HomePage() {
       />
 
       <CinematicHero slides={DEFAULT_HOME_SLIDES} videoSrc={heroVideoSrc} />
+      {homeBanners("home_hero").map((banner) => <a key={banner.id} href={banner.linkUrl || "#"} className="mx-auto block w-full max-w-7xl overflow-hidden rounded-3xl px-4"><img src={banner.imageUrl} alt={banner.title} className="h-auto max-h-[420px] w-full object-cover" /></a>)}
 
       {/* نوار اعتماد */}
       <section aria-label="خدمات و تضمین‌های مینی رویال" className="mx-auto site-container px-4">
@@ -187,6 +191,8 @@ export default async function HomePage() {
           })}
         </div>
       </section>
+
+      {homeBanners("home_after_categories").map((banner) => <a key={banner.id} href={banner.linkUrl || "#"} className="mx-auto block w-full max-w-7xl overflow-hidden rounded-3xl px-4"><img src={banner.imageUrl} alt={banner.title} className="h-auto max-h-[360px] w-full object-cover" /></a>)}
 
       <SuggestedSets sets={getSuggestedSets(featuredProducts)} />
 

@@ -26,6 +26,9 @@ export default function AdminProductsPage() {
   const [categoryName, setCategoryName] = useState("پسرانه");
   const [basePrice, setBasePrice] = useState(380000);
   const [salePrice, setSalePrice] = useState(295000);
+  const [productStatus, setProductStatus] = useState<Product["status"]>("active");
+  const [isFeatured, setIsFeatured] = useState(true);
+  const [isSpecialOffer, setIsSpecialOffer] = useState(false);
   const [sku, setSku] = useState("KID-BOY-NEW");
   const [variants, setVariants] = useState<Variant[]>([]);
   const [images, setImages] = useState<string[]>([
@@ -85,7 +88,7 @@ export default function AdminProductsPage() {
       shortDesc: editingProduct?.shortDesc || "محصول جدید افزوده شده توسط مدیر سیستم",
       description: editingProduct?.description || "توضیحات کامل محصول در پنل مدیریت ثبت شده است.",
       gender: editingProduct?.gender || "boy", ageMinMonth: editingProduct?.ageMinMonth || 24, ageMaxMonth: editingProduct?.ageMaxMonth || 96,
-      status: editingProduct?.status || "draft", fitType: editingProduct?.fitType || "normal", sizeChartJson: sizeChart.filter((row) => Object.values(row).some((value) => String(value ?? "").trim())), fitProfile, images: finalImages.map((url, index) => ({ url, alt: title, sortOrder: index, isPrimary: index === 0 })),
+      status: productStatus, isFeatured, isSpecialOffer, fitType: editingProduct?.fitType || "normal", sizeChartJson: sizeChart.filter((row) => Object.values(row).some((value) => String(value ?? "").trim())), fitProfile, images: finalImages.map((url, index) => ({ url, alt: title, sortOrder: index, isPrimary: index === 0 })),
       mediaAngles: Object.values(mediaAngles).filter(Boolean), attributes, variants: variants.filter((variant) => variant.sku.trim() || variant.size.trim() || variant.color.trim()).map((variant) => ({ sku: variant.sku, size: variant.size, color: variant.color, colorCode: variant.colorCode, stock: variant.stock, priceAdjustment: variant.priceAdjustment })),
     };
     setSaving(true);
@@ -107,6 +110,9 @@ export default function AdminProductsPage() {
     setCategoryId(p.categoryId);
     setBasePrice(p.basePrice);
     setSalePrice(p.salePrice ?? p.basePrice);
+    setProductStatus(p.status);
+    setIsFeatured(p.isFeatured);
+    setIsSpecialOffer(p.isSpecialOffer);
     setSku(p.sku);
     setVariants(p.variants?.length ? p.variants : []);
             setImages(p.images || []);
@@ -149,6 +155,9 @@ export default function AdminProductsPage() {
           onClick={() => {
             setEditingProduct(null);
             setTitle("");
+            setProductStatus("active");
+            setIsFeatured(true);
+            setIsSpecialOffer(false);
             setImages(["/images/products/boy-hoodie.svg"]);
             setMediaAngles({});
             setAttributes([]);
@@ -349,6 +358,16 @@ export default function AdminProductsPage() {
                       {categories.filter((category) => category.parentId === parent.id).map((child) => <option key={child.id} value={child.id}>↳ {child.name}</option>)}
                     </optgroup>)}
                   </select>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4" dir="rtl">
+                <h4 className="text-sm font-black text-amber-950">نمایش و جایگاه محصول در سایت</h4>
+                <p className="mt-1 text-[11px] leading-5 text-amber-800">محصول فعال بلافاصله در فروشگاه و صفحه اختصاصی خودش قابل مشاهده است. گزینه‌های زیر تعیین می‌کنند محصول در کدام بخش‌های صفحه اصلی هم نمایش داده شود.</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <label className="text-[10px] font-bold text-stone-700">وضعیت انتشار<p className="font-normal text-stone-500">برای نمایش در سایت باید «فعال» باشد.</p><select value={productStatus} onChange={(e) => setProductStatus(e.target.value as Product["status"])} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs"><option value="active">فعال و قابل نمایش در سایت</option><option value="draft">پیش‌نویس؛ فقط مدیر می‌بیند</option><option value="review">در انتظار بررسی</option><option value="archived">بایگانی‌شده</option></select></label>
+                  <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white p-3 text-[11px] font-bold"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="mt-1 size-4 accent-violet-700" /><span>نمایش در صفحه اصلی<p className="mt-1 font-normal text-stone-500">در بخش «جدیدترین محصولات» صفحه اصلی نمایش داده شود.</p></span></label>
+                  <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white p-3 text-[11px] font-bold"><input type="checkbox" checked={isSpecialOffer} onChange={(e) => setIsSpecialOffer(e.target.checked)} className="mt-1 size-4 accent-violet-700" /><span>حراج / پیشنهاد ویژه<p className="mt-1 font-normal text-stone-500">برای بخش تخفیف و پیشنهادهای ویژه علامت‌گذاری شود.</p></span></label>
                 </div>
               </div>
 

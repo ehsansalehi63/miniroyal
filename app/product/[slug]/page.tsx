@@ -10,6 +10,7 @@ import ProductVariantsClient from "./ProductVariantsClient";
 import { getProductBySlug, getRelatedProducts } from "../../lib/catalog";
 import { calculateDiscountPercent, formatToman, toPersianDigits } from "../../lib/utils";
 import { currentCustomer } from "../../lib/customer-auth";
+import ManagedBanners from "../../components/ManagedBanners";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       />
 
       <div className="mx-auto site-container px-4 py-8">
+        <ManagedBanners placement="product_top" />
         {/* مسیر خرده‌نانی */}
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-500">
           <Link href="/" className="hover:text-violet-700">خانه</Link>
