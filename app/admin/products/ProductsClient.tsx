@@ -21,6 +21,8 @@ export default function AdminProductsPage() {
   const [attributes, setAttributes] = useState<ProductAttributeDraft[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveStage, setSaveStage] = useState("");
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+  const [duplicateProduct, setDuplicateProduct] = useState<Partial<Product> | null>(null);
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -73,6 +75,18 @@ export default function AdminProductsPage() {
       .catch((error: unknown) => setApiMessage(error instanceof Error ? error.message : "دریافت دسته‌بندی‌ها انجام نشد."));
   }, []);
 
+  useEffect(() => {
+    const query = title.trim() || sku.trim();
+    if (!showAddModal || query.length < 2) { setSimilarProducts([]); return; }
+    const timer = window.setTimeout(() => {
+      fetch(`/api/admin/products?search=${encodeURIComponent(query)}&limit=5`, { cache: "no-store" })
+        .then((response) => response.json())
+        .then((data) => setSimilarProducts(Array.isArray(data.products) ? data.products.filter((item: Product) => item.id !== editingProduct?.id) : []))
+        .catch(() => setSimilarProducts([]));
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [title, sku, showAddModal, editingProduct?.id]);
+
   const filtered = products.filter(
     (p) =>
       String(p.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,6 +100,7 @@ export default function AdminProductsPage() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiMessage("");
+    setDuplicateProduct(null);
     setSaveStage("در حال آماده‌سازی اطلاعات محصول...");
     const finalImages = images.length > 0 ? images : ["/images/products/boy-hoodie.svg"];
     const payload = {
@@ -101,7 +116,7 @@ export default function AdminProductsPage() {
       setSaveStage("در حال ذخیره محصول، تصاویر و مشخصات در سرور...");
       const response = await fetch(editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products", { method: editingProduct ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: AbortSignal.timeout(60_000) });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.success) { setApiMessage(data.error || `ذخیره محصول ناموفق بود (HTTP ${response.status}).`); setSaveStage(""); return; }
+      if (!response.ok || !data.success) { setApiMessage(data.error || `ذخیره محصول ناموفق بود (HTTP ${response.status}).`); setDuplicateProduct(data.duplicate || null); setSaveStage(""); return; }
       setApiMessage("محصول و مشخصات آن با موفقیت ذخیره شد.");
       setSaveStage("ذخیره انجام شد؛ در حال تازه‌سازی فهرست محصولات...");
       const refreshResponse = await fetch("/api/admin/products?limit=100", { cache: "no-store", signal: AbortSignal.timeout(30_000) });
@@ -291,6 +306,8 @@ export default function AdminProductsPage() {
                 {categoryId > 0 && <p className="mt-2 text-[10px] font-bold text-violet-700">دسته انتخاب‌شده: {categoryName} — مشخصات پیشنهادی در ادامه فرم آماده می‌شود.</p>}
               </div>
 
+              {similarProducts.length > 0 && <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4" dir="rtl"><h4 className="text-xs font-black text-orange-950">محصول مشابه پیدا شد</h4><p className="mt-1 text-[10px] text-orange-800">قبل از ثبت محصول جدید، بررسی کنید این مورد همان محصول قبلی نباشد.</p><div className="mt-2 space-y-2">{similarProducts.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-200 bg-white p-2"><div><p className="text-[11px] font-black">{item.title}</p><p className="text-[10px] text-stone-500">SKU: {item.sku} — وضعیت: {item.status === "active" ? "فعال" : item.status === "draft" ? "پیش‌نویس" : item.status}</p></div><button type="button" onClick={() => handleEdit(item)} className="rounded-lg bg-orange-600 px-3 py-2 text-[10px] font-bold text-white">ویرایش / تغییر موجودی</button></div>)}</div></div>}
+
               {/* آپلود Drag & Drop تصاویر */}
               <DropzoneImageUploader images={images} onChange={setImages} />
               <ProductAngleMediaManager value={mediaAngles} onChange={setMediaAngles} />
@@ -402,6 +419,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
+              {duplicateProduct && <div className="rounded-xl border-2 border-rose-200 bg-rose-50 p-3" dir="rtl"><p className="text-xs font-black text-rose-900">این کد محصول قبلاً ثبت شده است.</p><p className="mt-1 text-[10px] text-rose-800">{duplicateProduct.title} — SKU: {duplicateProduct.sku}</p><div className="mt-2 flex gap-2"><button type="button" onClick={() => { const match = products.find((item) => item.id === duplicateProduct.id); if (match) handleEdit(match); }} className="rounded-lg bg-rose-700 px-3 py-2 text-[10px] font-bold text-white">ویرایش همین محصول</button><button type="button" onClick={() => setDuplicateProduct(null)} className="rounded-lg bg-white px-3 py-2 text-[10px] font-bold text-rose-700">ثبت با کد دیگر</button></div></div>}
               {saveStage && <p className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-[11px] font-bold text-sky-800">{saveStage}</p>}
               <div className="flex gap-2 pt-2">
                 <button
