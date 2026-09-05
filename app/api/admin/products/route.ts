@@ -86,7 +86,19 @@ export async function POST(request: NextRequest) {
   try {
     await connection.execute("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
     await connection.beginTransaction();
-    const slug = slugify(input.slug || input.title);
+    const baseSlug = slugify(input.slug || input.title);
+    let slug = baseSlug;
+    const [sameSlug] = await connection.execute<RowDataPacket[]>("SELECT id FROM products WHERE slug = ? LIMIT 1", [slug]);
+    if (sameSlug.length) {
+      const skuSuffix = slugify(input.sku).slice(0, 50);
+      slug = `${baseSlug}-${skuSuffix}`.slice(0, 255);
+      let suffix = 2;
+      while (true) {
+        const [collision] = await connection.execute<RowDataPacket[]>("SELECT id FROM products WHERE slug = ? LIMIT 1", [slug]);
+        if (!collision.length) break;
+        slug = `${baseSlug}-${skuSuffix}-${suffix++}`.slice(0, 255);
+      }
+    }
     const [productResult] = await connection.execute<ResultSetHeader>(`INSERT INTO products
       (title, slug, sku, short_desc, description, category_id, brand_id, supplier_id, gender, age_min_month, age_max_month, base_price, sale_price, cost_price, is_featured, is_special_offer, status, fit_type, seo_title, seo_desc, faq_json, size_chart_json, features_json, fabric_material, wash_care, fit_profile_json, tryon_asset_json, updated_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
