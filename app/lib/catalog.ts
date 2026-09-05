@@ -112,7 +112,10 @@ export async function getProducts(params: CatalogFilterParams = {}) {
   return { products: list, total, categories, availableSizes: [...sizes], availableColors: [...colors].map(([name, hex]) => ({ name, hex })) };
 }
 
-export async function getProductBySlug(slug: string) { return (await loadProducts("p.status = 'active' AND p.slug = ?", [slug]))[0] || null; }
+export async function getProductBySlug(slug: string) {
+  const normalized = decodeURIComponent(slug).trim();
+  return (await loadProducts("p.status = 'active' AND LOWER(p.slug) = LOWER(?)", [normalized]))[0] || null;
+}
 
 export async function getProductById(id: number) { return (await loadProducts("p.status = 'active' AND p.id = ?", [id]))[0] || null; }
 
