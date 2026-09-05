@@ -87,6 +87,13 @@ async function defaultBoxTypeId() {
   return Number(first?.id || first?.code || first?.boxTypeId || 0);
 }
 
+async function defaultCourierCode() {
+  const data = await postexFetch<unknown>("/api/v1/common/shipping-methods", { method: "GET" });
+  const rows = Array.isArray(data) ? data : (data as { entries?: unknown[]; data?: unknown[] })?.entries || (data as { data?: unknown[] })?.data || [];
+  const first = rows[0] as Record<string, unknown> | undefined;
+  return String(first?.courierCode || first?.courier_code || first?.code || "").trim();
+}
+
 export async function getPostexQuote(input: {
   destinationCity: string;
   paymentType: "SENDER" | "COD" | "FREE_SHIPPING" | "RECEIVER";
@@ -99,7 +106,7 @@ export async function getPostexQuote(input: {
   const fromCityCode = Number(process.env.POSTEX_ORIGIN_CITY_CODE || await cityCode(process.env.POSTEX_ORIGIN_CITY || "اصفهان"));
   const toCityCode = await cityCode(input.destinationCity);
   const boxTypeId = await defaultBoxTypeId();
-  const courierCode = process.env.POSTEX_COURIER_CODE?.trim();
+  const courierCode = process.env.POSTEX_COURIER_CODE?.trim() || await defaultCourierCode();
   console.info("Postex quote request meta", { fromCityCode, toCityCode, boxTypeId, hasCourierCode: Boolean(courierCode) });
   const quoteBody: Record<string, unknown> = {
     collection_type: process.env.POSTEX_COLLECTION_TYPE || "pick_up",
