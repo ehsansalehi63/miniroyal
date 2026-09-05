@@ -145,7 +145,7 @@ export default function AdminProductsPage() {
     setIsSpecialOffer(p.isSpecialOffer);
     setSku(p.sku);
     setVariants(p.variants?.length ? p.variants : []);
-            setImages(p.images || []);
+    setImages(Array.isArray(p.images) ? p.images.map((image) => typeof image === "string" ? image : String((image as { url?: unknown }).url || "")).filter(Boolean) : []);
     setMediaAngles(p.mediaAngles || {});
     setAttributes((p.attributes || []) as ProductAttributeDraft[]);
     setSizeChart(p.sizeChartJson?.length ? p.sizeChartJson : []);
