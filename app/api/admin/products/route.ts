@@ -22,6 +22,7 @@ type ProductInput = {
 };
 
 function jsonOrNull(value: unknown) { return value === undefined || value === null ? null : JSON.stringify(value); }
+function parseJsonArray(value: unknown) { if (Array.isArray(value)) return value; if (typeof value !== "string") return []; try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch { return []; } }
 function slugify(value: string) { return value.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 240); }
 function bad(message: string) { return NextResponse.json({ success: false, error: message }, { status: 400 }); }
 
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
       COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id', a.id, 'definitionId', a.definition_id, 'fieldKey', a.field_key, 'label', a.label, 'value', COALESCE(a.value_json, JSON_QUOTE(a.value_text)), 'unit', a.unit, 'isCustom', a.is_custom, 'sortOrder', a.sort_order)) FROM product_attributes a WHERE a.product_id = p.id), JSON_ARRAY()) AS attributes
       FROM products p LEFT JOIN categories c ON c.id = p.category_id
       ${whereSql} ORDER BY p.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset]);
-  return NextResponse.json({ success: true, products: rows });
+  return NextResponse.json({ success: true, products: rows.map((row) => ({ ...row, variants: parseJsonArray(row.variants), images: parseJsonArray(row.images), attributes: parseJsonArray(row.attributes) })) });
 }
 
 export async function POST(request: NextRequest) {
