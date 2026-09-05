@@ -35,7 +35,11 @@ async function postexFetch<T>(path: string, init: RequestInit = {}) {
     cache: "no-store",
   });
   const data = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.message || `Postex API error ${response.status}`);
+  if (!response.ok) {
+    const providerMessage = data && typeof data === "object" && "message" in data ? String((data as { message?: unknown }).message || "") : "";
+    const providerDetails = data && typeof data === "object" ? JSON.stringify(data).slice(0, 800) : String(data || "");
+    throw new Error(`Postex API error ${response.status}: ${providerMessage || providerDetails || "unknown provider error"}`);
+  }
   return data as T;
 }
 
