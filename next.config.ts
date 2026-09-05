@@ -30,6 +30,22 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // ADMIN_PANEL_PATH is rewritten to /admin by middleware, but the
+        // public custom path must also be protected before that rewrite.
+        source: "/ehsanpaneladmin/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, no-cache, max-age=0, must-revalidate" },
+          { key: "Vary", value: "Cookie" },
+        ],
+      },
+      {
+        source: "/ehsanpaneladmin",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, no-cache, max-age=0, must-revalidate" },
+          { key: "Vary", value: "Cookie" },
+        ],
+      },
+      {
         // دارایی‌های لوکال انگشت‌نامه‌دار نیستند، ولی محتوا به‌ندرت عوض می‌شود؛
         // با ETag و کش یک‌ماهه، بازدیدهای بعدی دیگر ۵۰ مگابایت تصویر دانلود نمی‌کنند.
         source: "/images/:path*",

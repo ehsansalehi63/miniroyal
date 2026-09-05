@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { Category, Product, SizeChartRow, Variant } from "../../lib/types/catalog";
 import { formatToman } from "../../lib/utils";
