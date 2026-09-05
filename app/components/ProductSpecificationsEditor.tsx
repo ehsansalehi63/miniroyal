@@ -16,21 +16,31 @@ export type ProductAttributeDraft = {
 type Definition = { id: number; fieldKey: string; label: string; helpText?: string; inputType: string; unit?: string; options?: string[]; isRequired?: boolean; sortOrder?: number };
 type Suggestion = { fieldKey: string; displayValue: string };
 
-interface Props { categoryId: number; value: ProductAttributeDraft[]; onChange: (value: ProductAttributeDraft[]) => void; }
+interface Props { categoryId: number; categoryName?: string; categorySlug?: string; value: ProductAttributeDraft[]; onChange: (value: ProductAttributeDraft[]) => void; }
 
-export default function ProductSpecificationsEditor({ categoryId, value, onChange }: Props) {
+export default function ProductSpecificationsEditor({ categoryId, categoryName = "", categorySlug = "", value, onChange }: Props) {
   const [definitions, setDefinitions] = useState<Definition[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const fallbackDefinitions = useMemo<Definition[]>(() => {
+    const key = `${categoryName} ${categorySlug}`.toLowerCase();
+    const make = (fieldKey: string, label: string, helpText: string, inputType = "text", unit?: string, options?: string[]): Definition => ({ id: 0, fieldKey, label, helpText, inputType, unit, options, isRequired: false, sortOrder: 0 });
+    if (/اکسسوری|کلاه|عینک|زیور|جوراب|کیف|کفش|پیشبند|دستکش|aksessori|kolah|eynak|zivar|jorab|kif|kafsh/.test(key)) return [make("material", "جنس و متریال", "پارچه، چرم، فلز یا جنس اصلی محصول"), make("color", "رنگ‌بندی", "رنگ‌های موجود محصول", "text", undefined, ["سفید", "مشکی", "صورتی", "آبی", "طلایی"]), make("size", "سایز یا اندازه", "برای کفش شماره پا، برای کلاه دور سر و برای اکسسوری اندازه کلی"), make("season", "فصل استفاده", "فصل یا موقعیت مناسب استفاده", "select", undefined, ["چهارفصل", "بهار و تابستان", "پاییز و زمستان", "مجلسی"]), make("care", "روش نگهداری", "شست‌وشو یا مراقبت از محصول", "textarea")];
+    if (/شلوار|دامن|شلوارک|shalvar|daman/.test(key)) return [make("material", "جنس پارچه", "مثال: کتان، جین، نخ پنبه"), make("fit", "فرم لباس", "برش و حالت ایستایی لباس", "select", undefined, ["راسته", "اسلیم", "مام‌فیت", "گشاد", "کمرکش"]), make("waistType", "نوع کمر", "کمرکش، دکمه‌ای یا کش و بند", "select", undefined, ["کمرکش", "دکمه‌ای", "کش و بند", "زیپ‌دار"]), make("pockets", "جیب", "تعداد یا نوع جیب"), make("season", "فصل استفاده", "فصل مناسب استفاده", "select", undefined, ["چهارفصل", "بهار و تابستان", "پاییز و زمستان"]), make("care", "روش نگهداری", "دستور شست‌وشو", "textarea")];
+    if (/کاپشن|پالتو|هودی|سویشرت|jacket|hoodie|kapshan/.test(key)) return [make("material", "جنس و لایه لباس", "مثال: دورس، پافر، مموری یا پشم"), make("warmth", "میزان گرما", "مناسب چه دمایی یا فصلی است؟", "select", undefined, ["سبک", "متوسط", "گرم"]), make("fit", "فرم لباس", "راسته، آزاد یا جذب", "select", undefined, ["راسته", "آزاد", "اسلیم"]), make("closure", "نوع بسته‌شدن", "زیپ، دکمه یا بدون بست", "select", undefined, ["زیپ", "دکمه", "زیپ و دکمه", "بدون بست"]), make("care", "روش نگهداری", "دستور شست‌وشو", "textarea")];
+    if (/پیراهن|سارافون|dress|pirahan/.test(key)) return [make("material", "جنس پارچه", "مثال: نخ، لینن، مخمل یا تور"), make("fit", "فرم پیراهن", "راسته، فون، چین‌دار یا آزاد", "select", undefined, ["راسته", "فون", "چین‌دار", "آزاد"]), make("sleeve", "آستین", "نوع و قد آستین"), make("occasion", "مناسبت", "روزمره، مجلسی یا مهمانی", "select", undefined, ["روزمره", "مجلسی", "مهمانی"]), make("care", "روش نگهداری", "دستور شست‌وشو", "textarea")];
+    return [make("material", "جنس پارچه", "مثال: نخ پنبه، دورس یا لینن"), make("fit", "فرم لباس", "راسته، آزاد یا جذب", "select", undefined, ["راسته", "آزاد", "اسلیم"]), make("sleeve", "آستین", "نوع آستین یا بدون آستین"), make("season", "فصل استفاده", "فصل مناسب استفاده", "select", undefined, ["چهارفصل", "بهار و تابستان", "پاییز و زمستان"]), make("care", "روش نگهداری", "دستور شست‌وشو", "textarea")];
+  }, [categoryName, categorySlug]);
 
   useEffect(() => {
     if (!categoryId) { setDefinitions([]); setSuggestions([]); return; }
     setLoading(true);
     fetch(`/api/admin/attribute-definitions?categoryId=${categoryId}`, { cache: "no-store" })
-      .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "دریافت مشخصات دسته‌بندی انجام نشد."); setDefinitions(data.definitions || []); setSuggestions(data.suggestions || []); })
-      .catch(() => { setDefinitions([]); setSuggestions([]); })
+      .then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error || "دریافت مشخصات دسته‌بندی انجام نشد."); setDefinitions(data.definitions?.length ? data.definitions : fallbackDefinitions); setSuggestions(data.suggestions || []); })
+      .catch(() => { setDefinitions(fallbackDefinitions); setSuggestions([]); })
       .finally(() => setLoading(false));
-  }, [categoryId]);
+  }, [categoryId, fallbackDefinitions]);
 
   useEffect(() => {
     if (!definitions.length || value.length) return;

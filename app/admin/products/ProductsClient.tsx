@@ -78,6 +78,9 @@ export default function AdminProductsPage() {
       String(p.sku || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(p.categoryName || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const categoryKey = `${categoryName} ${categories.find((category) => category.id === (categoryId || editingProduct?.categoryId))?.slug || ""}`.toLowerCase();
+  const isAccessoryCategory = /اکسسوری|کلاه|عینک|زیور|جوراب|کیف|کفش|پیشبند|دستکش|aksessori|kolah|eynak|zivar|jorab|kif|kafsh/.test(categoryKey);
+  const isBottomCategory = /شلوار|دامن|شلوارک|shalvar|daman/.test(categoryKey);
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -270,6 +273,19 @@ export default function AdminProductsPage() {
                 />
               </div>
 
+              <div className="rounded-2xl border-2 border-violet-200 bg-violet-50 p-4" dir="rtl">
+                <label className="block text-sm font-black text-violet-950">۱) ابتدا دسته‌بندی محصول را انتخاب کنید *</label>
+                <p className="mt-1 text-[11px] leading-5 text-violet-800">بعد از انتخاب دسته‌بندی، مشخصات پیشنهادی همان کالا نمایش داده می‌شود؛ مثلاً برای اکسسوری فیلدهای دور سینه و کمر نشان داده نمی‌شود.</p>
+                <select value={categoryId || editingProduct?.categoryId || ""} onChange={(e) => { const id = Number(e.target.value); setCategoryId(id); setCategoryName(categories.find((category) => category.id === id)?.name || ""); setAttributes([]); setSizeChart([]); }} className="mt-3 w-full rounded-xl border border-violet-300 bg-white p-3 text-sm outline-none focus:border-violet-600" required>
+                  <option value="">انتخاب دسته‌بندی اصلی یا زیر‌دسته</option>
+                  {categories.filter((category) => !category.parentId).map((parent) => <optgroup key={parent.id} label={`${parent.icon || ""} ${parent.name}`}>
+                    <option value={parent.id}>{parent.name} (دسته اصلی)</option>
+                    {categories.filter((category) => category.parentId === parent.id).map((child) => <option key={child.id} value={child.id}>↳ {child.name}</option>)}
+                  </optgroup>)}
+                </select>
+                {categoryId > 0 && <p className="mt-2 text-[10px] font-bold text-violet-700">دسته انتخاب‌شده: {categoryName} — مشخصات پیشنهادی در ادامه فرم آماده می‌شود.</p>}
+              </div>
+
               {/* آپلود Drag & Drop تصاویر */}
               <DropzoneImageUploader images={images} onChange={setImages} />
               <ProductAngleMediaManager value={mediaAngles} onChange={setMediaAngles} />
@@ -297,7 +313,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4" dir="rtl">
+              {!isAccessoryCategory && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4" dir="rtl">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div><h4 className="text-sm font-black text-emerald-950">اندازه‌های واقعی لباس <span className="font-normal text-emerald-700">(اختیاری)</span></h4><p className="mt-1 text-[11px] leading-5 text-emerald-800">این جدول اندازه‌ای است که با متر از لباس یا بدن گرفته‌اید، نه شماره سایز فروشگاه. واحد همه فیلدها سانتی‌متر است و برای پیشنهاد سایز و پرو استفاده می‌شود.</p></div>
                   <button type="button" onClick={() => setSizeChart([...sizeChart, { size: "", ageRange: "", heightCm: "", chestCm: "", lengthCm: "" }])} className="rounded-lg bg-emerald-700 px-3 py-2 text-[10px] font-bold text-white">+ افزودن ردیف اندازه</button>
@@ -308,18 +324,18 @@ export default function AdminProductsPage() {
                       <label className="text-[10px] font-bold text-stone-700">نام سایز<p className="font-normal text-stone-400">مثال: ۴ سال یا M</p><input value={row.size ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, size: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
                       <label className="text-[10px] font-bold text-stone-700">بازه سنی<p className="font-normal text-stone-400">مثال: ۳ تا ۴ سال</p><input value={row.ageRange ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, ageRange: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
                       <label className="text-[10px] font-bold text-stone-700">قد کودک (cm)<p className="font-normal text-stone-400">قد کودک، مثال: ۹۸ تا ۱۰۴</p><input value={row.heightCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, heightCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
-                      <label className="text-[10px] font-bold text-stone-700">دور سینه کودک (cm)<p className="font-normal text-stone-400">محیط سینه، نه عرض یک‌طرف لباس</p><input value={row.chestCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, chestCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
+                      {!isBottomCategory && <label className="text-[10px] font-bold text-stone-700">دور سینه کودک (cm)<p className="font-normal text-stone-400">محیط سینه، نه عرض یک‌طرف لباس</p><input value={row.chestCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, chestCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>}
                       <label className="text-[10px] font-bold text-stone-700">دور کمر (cm)<p className="font-normal text-stone-400">محیط کامل کمر</p><input value={row.waistCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, waistCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
                       <label className="text-[10px] font-bold text-stone-700">دور باسن (cm)<p className="font-normal text-stone-400">محیط کامل باسن</p><input value={row.hipCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, hipCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
-                      <label className="text-[10px] font-bold text-stone-700">عرض شانه (cm)<p className="font-normal text-stone-400">فاصله دو سر شانه</p><input value={row.shoulderCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, shoulderCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
+                      {!isBottomCategory && <label className="text-[10px] font-bold text-stone-700">عرض شانه (cm)<p className="font-normal text-stone-400">فاصله دو سر شانه</p><input value={row.shoulderCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, shoulderCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>}
                       <label className="text-[10px] font-bold text-stone-700">قد لباس (cm)<p className="font-normal text-stone-400">از سرشانه تا پایین لباس</p><input value={row.garmentLengthCm ?? row.lengthCm ?? ""} onChange={(e) => setSizeChart(sizeChart.map((item, i) => i === index ? { ...item, garmentLengthCm: e.target.value, lengthCm: e.target.value } : item))} className="mt-1 w-full rounded-lg border border-emerald-200 p-2 text-xs outline-none" /></label>
                     </div></div>
                   ))}
                   {!sizeChart.length && <p className="rounded-xl border border-dashed border-emerald-300 p-4 text-center text-[11px] text-emerald-700">هنوز جدول اندازه‌ای ثبت نشده است. برای ثبت ساده محصول می‌توانید این بخش را خالی بگذارید.</p>}
                 </div>
-              </div>
+              </div>}
 
-              <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4" dir="rtl">
+              {!isAccessoryCategory && <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4" dir="rtl">
                 <h4 className="text-sm font-black text-violet-950">پروفایل فیت و پرو محصول <span className="font-normal text-violet-700">(اختیاری)</span></h4>
                 <p className="mt-1 text-[11px] leading-5 text-violet-800">این تنظیمات به سیستم می‌گوید لباس چه نوعی است، اندازه‌گیری از کجا انجام شده و لباس چقدر آزاد یا کشسان است. اگر فقط می‌خواهید محصول را ثبت کنید، می‌توانید مقادیر پیش‌فرض را دست‌نخورده بگذارید.</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -330,7 +346,7 @@ export default function AdminProductsPage() {
                   <label className="text-[10px] font-bold text-stone-700">لنگر شانه (%)<p className="font-normal text-stone-500">جای شانه در تصویر پرو؛ معمولاً ۵۰</p><input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.shoulder} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, shoulder: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
                   <label className="text-[10px] font-bold text-stone-700">لنگر کمر (%)<p className="font-normal text-stone-500">جای کمر در تصویر پرو؛ معمولاً ۵۲</p><input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.waist} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, waist: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
                 </div>
-              </div>
+              </div>}
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -344,21 +360,6 @@ export default function AdminProductsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-stone-700">دسته‌بندی *</label>
-                  <select
-                    value={categoryId || editingProduct?.categoryId || ""}
-                    onChange={(e) => { const id = Number(e.target.value); setCategoryId(id); setCategoryName(categories.find((category) => category.id === id)?.name || ""); setAttributes([]); }}
-                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
-                    required
-                  >
-                    <option value="">انتخاب دسته‌بندی</option>
-                    {categories.filter((category) => !category.parentId).map((parent) => <optgroup key={parent.id} label={`${parent.icon || ""} ${parent.name}`}>
-                      <option value={parent.id}>{parent.name}</option>
-                      {categories.filter((category) => category.parentId === parent.id).map((child) => <option key={child.id} value={child.id}>↳ {child.name}</option>)}
-                    </optgroup>)}
-                  </select>
-                </div>
               </div>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4" dir="rtl">
@@ -371,7 +372,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              <ProductSpecificationsEditor categoryId={categoryId || editingProduct?.categoryId || 0} value={attributes} onChange={setAttributes} />
+              <ProductSpecificationsEditor categoryId={categoryId || editingProduct?.categoryId || 0} categoryName={categoryName} categorySlug={categories.find((category) => category.id === (categoryId || editingProduct?.categoryId))?.slug} value={attributes} onChange={setAttributes} />
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
