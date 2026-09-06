@@ -110,7 +110,7 @@ export default function OrderSuccessPage() {
             <h4 className="font-bold text-stone-900 border-b border-stone-200 pb-2 mb-2">صورت‌حساب</h4>
             <p><strong>مبلغ نهایی:</strong> {formatToman(order.finalTotal)}</p>
             <p><strong>روش پرداخت:</strong> {order.paymentMethod === "zarinpal" ? "پرداخت آنلاین زرین‌پال" : "پرداخت در محل"}</p>
-            <p><strong>روش ارسال:</strong> {order.shippingProvider === "tipax" ? "تیپاکس" : "پست پیشتاز"}</p>
+            <p><strong>روش ارسال:</strong> {order.shippingProvider === "tipax" ? "تیپاکس" : order.shippingProvider === "postex" ? "پستکس" : order.shippingProvider === "post" ? "پست پیشتاز" : "پیک"}</p>
           </div>
         </div>
 

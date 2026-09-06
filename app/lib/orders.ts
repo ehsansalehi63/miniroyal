@@ -28,8 +28,10 @@ export type CreateOrderInput = {
   postalCode: string;
   shippingProvider: "postex" | "tipax" | "post" | "peyk";
   paymentMethod: "zarinpal" | "cod";
-  shippingCost?: number;
+  subtotal?: number;
   discount?: number;
+  shippingCost?: number;
+  finalTotal?: number;
   latitude?: number | null;
   longitude?: number | null;
   items: OrderItemInput[];
@@ -68,10 +70,18 @@ export async function createOrder(input: CreateOrderInput) {
       const unitPrice = (item.product.salePrice ?? item.product.basePrice) + item.variant.priceAdjustment;
       return sum + unitPrice * item.quantity;
     }, 0);
-    const discount = Number.isFinite(Number(input.discount)) ? Math.max(0, Number(input.discount)) : 0;
+    // کوپن اعمال‌شده سمت کلاینت را با سقف امن سمت سرور محدود می‌کنیم.
+    const requestedDiscount = Number(input.discount);
+    const discount = Number.isFinite(requestedDiscount) ? Math.max(0, Math.min(requestedDiscount, subtotal)) : 0;
+    // ارسال رایگان مثل سبد خرید بر اساس مبلغ کالاها (قبل از تخفیف) محاسبه می‌شود.
+    // اگر کاربر روش پستکس را انتخاب کرده باشد، هزینه واقعی استعلامی همان لحظه ثبت شده است.
+    const freeShippingThreshold = 500000;
+    const baseShippingCost = subtotal >= freeShippingThreshold ? 0 : 45000;
     const requestedShippingCost = Number(input.shippingCost);
-    const shippingCost = Number.isFinite(requestedShippingCost) && requestedShippingCost >= 0 ? requestedShippingCost : subtotal >= 500000 ? 0 : 45000;
-    const finalTotal = subtotal - discount + shippingCost;
+    const shippingCost = input.shippingProvider === "postex"
+      ? (Number.isFinite(requestedShippingCost) && requestedShippingCost >= 0 ? Math.round(requestedShippingCost) : baseShippingCost)
+      : baseShippingCost;
+    const finalTotal = Math.max(0, subtotal - discount) + shippingCost;
     const orderNumber = `MR-${Date.now().toString().slice(-8)}`;
     const shippingAddress = JSON.stringify({
       recipientName: input.recipientName.trim(),

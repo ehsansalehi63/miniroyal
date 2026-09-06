@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { formatToman } from "../../lib/utils";
-import { Search } from "lucide-react";
+import { formatToman, toPersianDigits } from "../../lib/utils";
+import { Search, Package, Truck, CheckCircle2, Clock, XCircle } from "lucide-react";
 
 interface TrackedOrder {
   orderNumber: string;
@@ -13,22 +13,83 @@ interface TrackedOrder {
   address: string;
   finalTotal: number;
   shippingProvider: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  postexParcelNo: string | null;
+  trackingCode: string | null;
+  trackingStatus: string | null;
   createdAt: string;
 }
+
+const ORDER_STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  pending: { label: "در انتظار پردازش", className: "bg-amber-100 text-amber-800" },
+  processing: { label: "در حال پردازش انبار", className: "bg-violet-100 text-violet-800" },
+  shipped: { label: "تحویل به شرکت حمل", className: "bg-sky-100 text-sky-800" },
+  delivered: { label: "تحویل داده شد", className: "bg-emerald-100 text-emerald-800" },
+  cancelled: { label: "لغو شده", className: "bg-rose-100 text-rose-800" },
+};
+
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  paid: "پرداخت شده",
+  unpaid: "در انتظار پرداخت",
+  failed: "پرداخت ناموفق",
+  cancelled: "پرداخت لغو شد",
+  refunded: "بازپرداخت شده",
+};
+
+const SHIPPING_LABELS: Record<string, string> = {
+  postex: "پستکس",
+  tipax: "تیپاکس",
+  post: "پست پیشتاز",
+  peyk: "پیک",
+};
 
 export default function OrderTrackPage() {
   const [query, setQuery] = useState("");
   const [foundOrder, setFoundOrder] = useState<TrackedOrder | null>(null);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [postexEvents, setPostexEvents] = useState<{ title: string; time: string }[] | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setSearched(true);
-    fetch(`/api/orders?identifier=${encodeURIComponent(query.trim())}`)
-      .then((response) => response.json())
-      .then((result) => setFoundOrder(result.success ? result.order : null))
-      .catch(() => setFoundOrder(null));
+    setLoading(true);
+    setPostexEvents(null);
+    try {
+      const response = await fetch(`/api/orders?identifier=${encodeURIComponent(query.trim())}`);
+      const result = await response.json();
+      const order = result.success ? result.order : null;
+      setFoundOrder(order);
+      if (order?.postexParcelNo) {
+        try {
+          const trackingResponse = await fetch(`/api/orders/tracking?identifier=${encodeURIComponent(query.trim())}`);
+          const trackingResult = await trackingResponse.json();
+          if (trackingResult.success && Array.isArray(trackingResult.tracking?.entries)) {
+            setPostexEvents(
+              trackingResult.tracking.entries
+                .map((entry: { title?: string; time?: string }) => ({ title: String(entry.title || ""), time: String(entry.time || "") }))
+                .slice(0, 12)
+            );
+          }
+        } catch { /* رهگیری پستکس اختیاری است */ }
+      }
+    } catch {
+      setFoundOrder(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const statusInfo = foundOrder ? ORDER_STATUS_LABELS[foundOrder.status] || { label: foundOrder.status, className: "bg-stone-100 text-stone-800" } : null;
+
+  const timelineSteps = [
+    { label: "ثبت سفارش", done: true },
+    { label: "پردازش انبار", done: ["processing", "shipped", "delivered"].includes(foundOrder?.status || "") },
+    { label: "تحویل به شرکت حمل", done: ["shipped", "delivered"].includes(foundOrder?.status || "") },
+    { label: "تحویل درب منزل", done: foundOrder?.status === "delivered" },
+  ];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
@@ -38,7 +99,7 @@ export default function OrderTrackPage() {
         </span>
         <h1 className="mt-4 text-3xl font-black text-stone-900">رهگیری مرسوله مینی رویال</h1>
         <p className="mt-2 text-xs text-stone-600 sm:text-sm">
-          شماره سفارش (مثلاً MR-123456) یا شماره موبایل ثبت‌شده هنگام خرید را وارد کنید.
+          شماره سفارش (مثلاً MR-12345678) یا شماره موبایل ثبت‌شده هنگام خرید را وارد کنید.
         </p>
       </div>
 
@@ -53,44 +114,90 @@ export default function OrderTrackPage() {
         />
         <button
           type="submit"
-          className="flex items-center gap-1.5 rounded-full bg-violet-700 px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+          disabled={loading}
+          className="flex items-center gap-1.5 rounded-full bg-violet-700 px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-violet-800 disabled:opacity-50"
         >
           <Search className="size-4" />
-          <span>جستجو</span>
+          <span>{loading ? "..." : "جستجو"}</span>
         </button>
       </form>
 
       {searched && (
         <div className="mt-10">
-          {foundOrder ? (
+          {loading ? (
+            <div className="mx-auto size-10 animate-spin rounded-full border-4 border-violet-200 border-t-violet-700" />
+          ) : foundOrder ? (
             <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-lg">
-              <div className="flex items-center justify-between border-b border-stone-100 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 pb-4">
                 <div>
                   <h3 className="text-base font-black text-stone-900">
                     شماره سفارش: {foundOrder.orderNumber}
                   </h3>
-                  <span className="text-xs text-stone-500">تاریخ ثبت: {foundOrder.createdAt?.split("T")[0]}</span>
+                  <span className="text-xs text-stone-500">
+                    تاریخ ثبت: {foundOrder.createdAt ? toPersianDigits(foundOrder.createdAt.split("T")[0].replace(/-/g, "/")) : "—"}
+                  </span>
                 </div>
-                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">
-                  وضعیت: در حال پردازش انبار
-                </span>
+                {statusInfo && (
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusInfo.className}`}>
+                    وضعیت: {statusInfo.label}
+                  </span>
+                )}
               </div>
 
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 text-xs leading-6 text-stone-700">
+              <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 text-center text-[10px] font-bold">
+                {timelineSteps.map((step, index) => (
+                  <div key={step.label} className={step.done ? "text-emerald-700" : "text-stone-400"}>
+                    <span className={`mx-auto grid size-8 place-items-center rounded-full mb-1 text-white ${step.done ? "bg-emerald-500" : "bg-stone-200"}`}>
+                      {step.done ? <CheckCircle2 className="size-4" /> : toPersianDigits(index + 1)}
+                    </span>
+                    {step.label}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 text-xs leading-6 text-stone-700">
                 <div>
                   <p><strong>گیرنده:</strong> {foundOrder.recipientName}</p>
-                  <p><strong>تلفن:</strong> {foundOrder.phone}</p>
+                  <p><strong>تلفن:</strong> {toPersianDigits(foundOrder.phone)}</p>
                   <p><strong>آدرس:</strong> {foundOrder.province}، {foundOrder.city}، {foundOrder.address}</p>
                 </div>
                 <div>
-                  <p><strong>مبلغ نهایی:</strong> {formatToman(foundOrder.finalTotal)}</p>
-                  <p><strong>روش ارسال:</strong> {foundOrder.shippingProvider}</p>
-                  <p><strong>کد رهگیری پستی:</strong> در انتظار صدور بارنامه</p>
+                  <p><strong>مبلغ نهایی:</strong> {formatToman(Number(foundOrder.finalTotal))}</p>
+                  <p><strong>روش ارسال:</strong> {SHIPPING_LABELS[foundOrder.shippingProvider] || foundOrder.shippingProvider}</p>
+                  <p>
+                    <strong>وضعیت پرداخت:</strong>{" "}
+                    <span className={foundOrder.paymentStatus === "paid" ? "font-bold text-emerald-700" : foundOrder.paymentStatus === "unpaid" ? "text-amber-700" : "text-rose-700"}>
+                      {PAYMENT_STATUS_LABELS[foundOrder.paymentStatus] || foundOrder.paymentStatus}
+                    </span>
+                  </p>
+                  {foundOrder.postexParcelNo ? (
+                    <p><strong>شماره مرسوله پستکس:</strong> {toPersianDigits(foundOrder.postexParcelNo)}</p>
+                  ) : (
+                    <p className="flex items-center gap-1"><Clock className="size-3.5 text-amber-600" /> کد رهگیری: در انتظار صدور بارنامه</p>
+                  )}
                 </div>
               </div>
+
+              {postexEvents && postexEvents.length > 0 && (
+                <div className="mt-6 rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                  <h4 className="flex items-center gap-1.5 text-xs font-bold text-stone-800">
+                    <Truck className="size-4 text-violet-600" /> آخرین رویدادهای حمل‌ونقل پستکس:
+                  </h4>
+                  <ul className="mt-3 space-y-2 text-[11px] text-stone-600">
+                    {postexEvents.map((event, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <Package className="size-3.5 shrink-0 text-violet-500" />
+                        <span className="font-semibold text-stone-800">{event.title || "رویداد حمل"}</span>
+                        {event.time && <span className="text-stone-400">({event.time})</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center text-xs text-stone-500">
+            <div className="flex items-center justify-center gap-2 rounded-3xl border border-stone-200 bg-white p-8 text-center text-xs text-stone-500">
+              <XCircle className="size-5 text-rose-400" />
               سفارشی با این مشخصات یافت نشد. لطفاً شماره سفارش را بررسی کرده یا با پشتیبانی تماس بگیرید.
             </div>
           )}

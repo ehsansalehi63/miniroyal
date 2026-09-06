@@ -186,8 +186,20 @@ export async function registerPostexOrder(order: Record<string, unknown>) {
     rawItems = order.items_json.split("||").map((item) => { try { return JSON.parse(item); } catch { return null; } }).filter(Boolean);
   }
   const items = rawItems.map((item) => {
-    const value = item as { title?: string; quantity?: number; unitPrice?: number; sku?: string };
-    return { title: String(value.title || "لباس کودک"), sku: value.sku, quantity: Number(value.quantity || 1), price: Number(value.unitPrice || 0) * 10, weight: Number(process.env.POSTEX_DEFAULT_ITEM_WEIGHT_GRAMS || 500) };
+    const value = item as { title?: string; quantity?: number; unitPrice?: number; sku?: string; variantInfo?: string };
+    let sku = value.sku;
+    let size = "";
+    let color = "";
+    if (!sku && typeof value.variantInfo === "string") {
+      try {
+        const info = JSON.parse(value.variantInfo) as { sku?: string; size?: string; color?: string };
+        sku = info.sku;
+        size = info.size || "";
+        color = info.color || "";
+      } catch { /* variantInfo معتبر نیست */ }
+    }
+    const descriptionParts = [value.title || "لباس کودک", size && `سایز ${size}`, color].filter(Boolean).join(" - ");
+    return { title: descriptionParts, sku, quantity: Number(value.quantity || 1), price: Number(value.unitPrice || 0) * 10, weight: Number(process.env.POSTEX_DEFAULT_ITEM_WEIGHT_GRAMS || 500) };
   });
   return createPostexParcel({ orderNumber: String(order.orderNumber), recipient: address, items, paymentType: order.paymentMethod === "cod" ? "COD" : "SENDER", totalValue: Number(order.finalTotal || 0) * 10 });
 }

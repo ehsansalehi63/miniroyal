@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { useCart } from "../lib/cart";
 import { formatToman, toPersianDigits } from "../lib/utils";
+import { PRODUCT_FALLBACKS } from "../lib/imageCatalog";
 import { Trash2, ShoppingBag, ArrowRight, Tag } from "lucide-react";
 
 function useIsMounted() {
@@ -117,6 +118,8 @@ export default function CartPage() {
           {items.map((item) => {
             const unitPrice = (item.product.salePrice ?? item.product.basePrice) + item.variant.priceAdjustment;
             const totalPrice = unitPrice * item.quantity;
+            const fallback = item.product.gender === "girl" ? PRODUCT_FALLBACKS.girl : item.product.categorySlug === "nozad" ? PRODUCT_FALLBACKS.baby : PRODUCT_FALLBACKS.boy;
+            const itemImage = item.product.images[0] || fallback;
 
             return (
               <div
@@ -125,7 +128,7 @@ export default function CartPage() {
               >
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                   <img
-                    src={item.product.images[0]}
+                    src={itemImage}
                     alt={item.product.title}
                     className="size-20 rounded-2xl object-cover"
                   />
@@ -219,7 +222,7 @@ export default function CartPage() {
               )}
 
               <div className="flex justify-between text-stone-600 font-medium">
-                <span>هزینه ارسال (پست/تیپاکس):</span>
+                <span>هزینه ارسال (پستکس/تیپاکس):</span>
                 <span className="font-bold text-stone-900">
                   {remainingForFreeShipping === 0 ? "رایگان 🎉" : formatToman(45000)}
                 </span>

@@ -52,7 +52,7 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (!city.trim() || !items.length) return;
+    if (shippingProvider !== "postex" || !city.trim() || !items.length) return;
     const controller = new AbortController();
     setPostexQuoteLoading(true);
     setPostexQuoteError("");
@@ -78,7 +78,7 @@ export default function CheckoutPage() {
       setPostexShippingCost(Math.ceil(rialAmount / 10));
     }).catch((error) => { if (error.name !== "AbortError") { setPostexShippingCost(null); setPostexQuoteError(error instanceof Error ? error.message : "استعلام هزینه ارسال انجام نشد."); } }).finally(() => setPostexQuoteLoading(false));
     return () => controller.abort();
-  }, [city, paymentMethod, items, getFinalTotal]);
+  }, [city, paymentMethod, shippingProvider, items, getFinalTotal]);
 
   useEffect(() => {
     if (!city.trim().replace(/ي/g, "ی").includes("اصفهان") && paymentMethod === "cod") setPaymentMethod("zarinpal");
@@ -99,13 +99,36 @@ export default function CheckoutPage() {
 
   const subtotal = getRawSubtotal();
   const discount = getDiscountAmount();
-  const shippingCost = shippingProvider === "postex" && postexShippingCost !== null ? postexShippingCost : subtotal >= 500000 ? 0 : 45000;
+  const freeShipping = subtotal >= 500000;
+  const shippingCost =
+    shippingProvider === "postex"
+      ? (postexShippingCost !== null ? postexShippingCost : freeShipping ? 0 : 45000)
+      : freeShipping
+        ? 0
+        : 45000;
   const finalTotal = getFinalTotal() + shippingCost;
+
+  const normalizeDigits = (value: string) =>
+    value.replace(/[۰-۹]/g, (char) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(char))).replace(/[٠-٩]/g, (char) => String("٠١٢٣٤٥٦٧٨٩".indexOf(char)));
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientName || !phone || !address || !postalCode) {
-      alert("لطفاً تمام اطلاعات آدرس و گیرنده را تکمیل کنید.");
+    const cleanPhone = normalizeDigits(phone).replace(/\D/g, "");
+    const cleanPostalCode = normalizeDigits(postalCode).replace(/\D/g, "");
+    if (!recipientName || !address) {
+      alert("لطفاً نام گیرنده و آدرس را تکمیل کنید.");
+      return;
+    }
+    if (!/^09\d{9}$/.test(cleanPhone)) {
+      alert("شماره موبایل معتبر نیست. مثال: ۰۹۱۲۳۴۵۶۷۸۹");
+      return;
+    }
+    if (!/^\d{10}$/.test(cleanPostalCode)) {
+      alert("کد پستی باید دقیقاً ۱۰ رقم باشد.");
+      return;
+    }
+    if (shippingProvider === "postex" && postexQuoteLoading) {
+      alert("لطفاً تا پایان استعلام هزینه ارسال پستکس صبر کنید.");
       return;
     }
 
@@ -116,7 +139,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipientName, phone, province, city, address, postalCode, latitude, longitude,
+          recipientName, phone: cleanPhone, province, city, address, postalCode: cleanPostalCode, latitude, longitude,
           shippingProvider, paymentMethod, subtotal, discount, shippingCost, finalTotal,
           items,
         }),
@@ -248,7 +271,13 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <span className="text-xs font-bold text-violet-700">
-                    {shippingProvider === "postex" && postexQuoteLoading ? "در حال بررسی" : shippingCost === 0 ? "رایگان" : formatToman(shippingCost)}
+                    {m.id === "postex" && postexQuoteLoading && shippingProvider === "postex"
+                      ? "در حال بررسی"
+                      : shippingProvider === m.id
+                        ? (shippingCost === 0 ? "رایگان" : formatToman(shippingCost))
+                        : freeShipping
+                          ? "رایگان"
+                          : formatToman(45000)}
                   </span>
                 </label>
               ))}

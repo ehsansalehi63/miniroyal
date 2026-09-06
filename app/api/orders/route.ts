@@ -10,12 +10,30 @@ function codAllowedForCity(city: unknown) {
   return process.env.POSTEX_COD_ENABLED === "true" && allowed.some((item) => normalized === item);
 }
 
+function normalizeDigits(value: string) {
+  const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+  const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
+  return value.replace(/[۰-۹٠-٩]/g, (char) => {
+    const persianIndex = persianDigits.indexOf(char);
+    if (persianIndex > -1) return String(persianIndex);
+    return String(arabicDigits.indexOf(char));
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     if (!body.recipientName || !body.phone || !body.address || !body.postalCode ||
         !Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ success: false, error: "اطلاعات سفارش کامل نیست." }, { status: 400 });
+    }
+    const phone = normalizeDigits(String(body.phone)).replace(/\D/g, "");
+    const postalCode = normalizeDigits(String(body.postalCode)).replace(/\D/g, "");
+    if (!/^09\d{9}$/.test(phone)) {
+      return NextResponse.json({ success: false, error: "شماره موبایل معتبر نیست. (مثال: ۰۹۱۲۳۴۵۶۷۸۹)" }, { status: 400 });
+    }
+    if (!/^\d{10}$/.test(postalCode)) {
+      return NextResponse.json({ success: false, error: "کد پستی باید ۱۰ رقم باشد." }, { status: 400 });
     }
     if (body.paymentMethod === "cod" && !codAllowedForCity(body.city)) {
       return NextResponse.json({ success: false, error: "پرداخت در محل فعلاً فقط برای شهرهای فعال پستکس (اصفهان) قابل استفاده است." }, { status: 400 });
@@ -30,7 +48,16 @@ export async function POST(request: NextRequest) {
       }
       return { product, variant, quantity };
     }));
-    const result = await createOrder({ ...body, items });
+    const result = await createOrder({
+      ...body,
+      phone,
+      postalCode,
+      items,
+      subtotal: Number(body.subtotal),
+      discount: Number(body.discount),
+      shippingCost: Number(body.shippingCost),
+      finalTotal: Number(body.finalTotal),
+    });
     if (body.paymentMethod === "cod" && postexConfigured()) {
       try {
         const savedOrder = await findOrder(result.orderNumber);
