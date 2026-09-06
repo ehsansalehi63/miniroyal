@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrder, findOrder } from "@/app/lib/orders";
 import { getProductById } from "@/app/lib/catalog";
-import { extractPostexIdentifiers, postexConfigured, registerPostexOrder } from "@/app/lib/postex";
-import { updatePostexShipment } from "@/app/lib/orders";
 
 function codAllowedForCity(city: unknown) {
   const normalized = String(city || "").trim().replace(/ي/g, "ی").replace(/ك/g, "ک");
-  const allowed = (process.env.POSTEX_COD_CITIES || "اصفهان").split(",").map((item) => item.trim().replace(/ي/g, "ی").replace(/ك/g, "ک")).filter(Boolean);
-  return process.env.POSTEX_COD_ENABLED === "true" && allowed.some((item) => normalized === item);
+  const allowed = (process.env.COD_CITIES || "اصفهان").split(",").map((item) => item.trim().replace(/ي/g, "ی").replace(/ك/g, "ک")).filter(Boolean);
+  return process.env.COD_ENABLED === "true" && allowed.some((item) => normalized === item);
 }
 
 function normalizeDigits(value: string) {
@@ -36,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "کد پستی باید ۱۰ رقم باشد." }, { status: 400 });
     }
     if (body.paymentMethod === "cod" && !codAllowedForCity(body.city)) {
-      return NextResponse.json({ success: false, error: "پرداخت در محل فعلاً فقط برای شهرهای فعال پستکس (اصفهان) قابل استفاده است." }, { status: 400 });
+      return NextResponse.json({ success: false, error: "پرداخت در محل فعلاً فقط برای اصفهان قابل استفاده است." }, { status: 400 });
     }
     const items = await Promise.all(body.items.map(async (item: unknown) => {
       const raw = item as { product?: { id?: unknown }; variant?: { id?: unknown }; quantity?: unknown };
@@ -58,17 +56,6 @@ export async function POST(request: NextRequest) {
       shippingCost: Number(body.shippingCost),
       finalTotal: Number(body.finalTotal),
     });
-    if (body.paymentMethod === "cod" && postexConfigured()) {
-      try {
-        const savedOrder = await findOrder(result.orderNumber);
-        const postexResult = savedOrder ? await registerPostexOrder(savedOrder as Record<string, unknown>) : null;
-        if (!postexResult) throw new Error("Saved order was not found for Postex registration.");
-        const identifiers = extractPostexIdentifiers(postexResult);
-        await updatePostexShipment(result.orderNumber, identifiers);
-      } catch (shippingError) {
-        console.error("Automatic Postex registration failed:", shippingError);
-      }
-    }
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     console.error("Create order failed:", error);

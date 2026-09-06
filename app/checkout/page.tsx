@@ -27,10 +27,7 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [shippingProvider, setShippingProvider] = useState<"postex" | "tipax" | "post" | "peyk">("postex");
-  const [postexShippingCost, setPostexShippingCost] = useState<number | null>(null);
-  const [postexQuoteLoading, setPostexQuoteLoading] = useState(false);
-  const [postexQuoteError, setPostexQuoteError] = useState("");
+  const [shippingProvider, setShippingProvider] = useState<"tipax" | "post" | "peyk">("tipax");
   const [paymentMethod, setPaymentMethod] = useState<"zarinpal" | "cod">("zarinpal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cities, setCities] = useState<Array<{ id: number; name: string; province: string }>>([]);
@@ -40,7 +37,7 @@ export default function CheckoutPage() {
   const [locationMessage, setLocationMessage] = useState("");
 
   useEffect(() => {
-    fetch("/api/shipping/postex/cities", { cache: "force-cache" })
+    fetch("/api/shipping/tipax/cities", { cache: "force-cache" })
       .then(async (response) => { const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست."); const nextCities = Array.isArray(data.cities) ? data.cities : []; setCities(nextCities); if (!nextCities.some((item: { province?: string }) => item.province)) { setProvince(""); setCity(""); } })
       .catch((error) => setCitiesError(error instanceof Error ? error.message : "فهرست شهرها در دسترس نیست."));
   }, []);
@@ -50,35 +47,6 @@ export default function CheckoutPage() {
     setLocationMessage("در حال دریافت موقعیت شما...");
     navigator.geolocation.getCurrentPosition((position) => { setLatitude(position.coords.latitude); setLongitude(position.coords.longitude); setLocationMessage("موقعیت فعلی ثبت شد؛ آدرس پستی را هم کامل وارد کنید."); }, () => setLocationMessage("دسترسی به موقعیت ممکن نشد؛ مجوز مرورگر را فعال کنید."), { enableHighAccuracy: true, timeout: 10000 });
   };
-
-  useEffect(() => {
-    if (shippingProvider !== "postex" || !city.trim() || !items.length) return;
-    const controller = new AbortController();
-    setPostexQuoteLoading(true);
-    setPostexQuoteError("");
-    fetch("/api/shipping/postex/quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({ city, totalValue: getFinalTotal(), totalWeight: items.reduce((sum, item) => sum + item.quantity * 500, 0), paymentType: paymentMethod === "cod" ? "COD" : "SENDER" }),
-    }).then(async (response) => {
-      const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.error || "استعلام هزینه ارسال انجام نشد.");
-      const numbers: number[] = [];
-      const collect = (value: unknown) => {
-        if (!value || typeof value !== "object") return;
-        for (const [key, child] of Object.entries(value)) {
-          if (typeof child === "number" && /(price|amount|cost|total|fee|tariff)/i.test(key) && child > 0) numbers.push(child);
-          else if (typeof child === "object") collect(child);
-        }
-      };
-      collect(result.data);
-      const rialAmount = Math.min(...numbers.filter((value) => value > 1000));
-      if (!Number.isFinite(rialAmount)) throw new Error("هزینه ارسال از پاسخ پستکس قابل تشخیص نیست.");
-      setPostexShippingCost(Math.ceil(rialAmount / 10));
-    }).catch((error) => { if (error.name !== "AbortError") { setPostexShippingCost(null); setPostexQuoteError(error instanceof Error ? error.message : "استعلام هزینه ارسال انجام نشد."); } }).finally(() => setPostexQuoteLoading(false));
-    return () => controller.abort();
-  }, [city, paymentMethod, shippingProvider, items, getFinalTotal]);
 
   useEffect(() => {
     if (!city.trim().replace(/ي/g, "ی").includes("اصفهان") && paymentMethod === "cod") setPaymentMethod("zarinpal");
@@ -100,12 +68,7 @@ export default function CheckoutPage() {
   const subtotal = getRawSubtotal();
   const discount = getDiscountAmount();
   const freeShipping = subtotal >= 500000;
-  const shippingCost =
-    shippingProvider === "postex"
-      ? (postexShippingCost !== null ? postexShippingCost : freeShipping ? 0 : 45000)
-      : freeShipping
-        ? 0
-        : 45000;
+  const shippingCost = freeShipping ? 0 : 45000;
   const finalTotal = getFinalTotal() + shippingCost;
 
   const normalizeDigits = (value: string) =>
@@ -123,12 +86,8 @@ export default function CheckoutPage() {
       alert("شماره موبایل معتبر نیست. مثال: ۰۹۱۲۳۴۵۶۷۸۹");
       return;
     }
-    if (!/^\d{10}$/.test(cleanPostalCode)) {
+    if (/^\d{10}$/.test(cleanPostalCode) === false) {
       alert("کد پستی باید دقیقاً ۱۰ رقم باشد.");
-      return;
-    }
-    if (shippingProvider === "postex" && postexQuoteLoading) {
-      alert("لطفاً تا پایان استعلام هزینه ارسال پستکس صبر کنید.");
       return;
     }
 
@@ -245,7 +204,6 @@ export default function CheckoutPage() {
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[
-                { id: "postex" as const, title: "ارسال هوشمند پستکس", time: postexQuoteLoading ? "در حال استعلام هزینه..." : "محاسبه آنلاین هزینه و رهگیری" },
                 { id: "tipax" as const, title: "تیپاکس (ارسال سریع)", time: "۱ الی ۲ روز کاری" },
                 { id: "post" as const, title: "پست پیشتاز", time: "۲ الی ۴ روز کاری" },
               ].map((m) => (
@@ -271,18 +229,15 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <span className="text-xs font-bold text-violet-700">
-                    {m.id === "postex" && postexQuoteLoading && shippingProvider === "postex"
-                      ? "در حال بررسی"
-                      : shippingProvider === m.id
-                        ? (shippingCost === 0 ? "رایگان" : formatToman(shippingCost))
-                        : freeShipping
-                          ? "رایگان"
-                          : formatToman(45000)}
+                    {shippingProvider === m.id
+                      ? (shippingCost === 0 ? "رایگان" : formatToman(shippingCost))
+                      : freeShipping
+                        ? "رایگان"
+                        : formatToman(45000)}
                   </span>
                 </label>
               ))}
             </div>
-            {postexQuoteError && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-[11px] font-semibold leading-5 text-amber-800">{postexQuoteError} هزینه پایه موقتاً نمایش داده شد.</p>}
           </div>
 
           {/* روش پرداخت */}
