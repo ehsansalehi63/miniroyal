@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const items = await Promise.all(body.items.map(async (item: unknown) => {
       const raw = item as { product?: { id?: unknown }; variant?: { id?: unknown }; quantity?: unknown };
       const product = await getProductById(Number(raw.product?.id));
-      const variant = product?.variants.find((candidate) => candidate.id === Number(raw.variant?.id));
+      const variant = product?.variants.find((candidate: { id: number }) => candidate.id === Number(raw.variant?.id));
       const quantity = Number(raw.quantity);
       if (!product || !variant || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
         throw new Error("کالا یا تنوع سفارش معتبر نیست.");

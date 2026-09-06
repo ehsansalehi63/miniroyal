@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authorizeTryon } from "@/app/lib/tryon-usage";
+import { authorizeTryon, recordTryonSuccess } from "@/app/lib/tryon-usage";
 
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
 const MAX_DATA_URI_LENGTH = 11_000_000;
@@ -284,7 +284,11 @@ export async function POST(request: NextRequest) {
 
     const aihubmixImage = await callAihubmix(personImage, garmentImage, prompt);
     if (aihubmixImage) {
-      return NextResponse.json({ success: true, imageUrl: aihubmixImage, provider: "aihubmix" });
+      if (!access.unlimited && access.customer?.id) {
+        await recordTryonSuccess(access.customer.id, productId);
+      }
+      const newRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+      return NextResponse.json({ success: true, imageUrl: aihubmixImage, provider: "aihubmix", remaining: newRemaining, unlimited: access.unlimited });
     }
 
     const form = new FormData();
@@ -311,7 +315,7 @@ export async function POST(request: NextRequest) {
       body: form,
       cache: "no-store",
       signal: AbortSignal.timeout(
-        Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, 8_000)
+        Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
       ),
     });
     const result = await response.json().catch(() => null);
@@ -332,7 +336,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, imageUrl, remaining: access.remaining, unlimited: access.unlimited });
+    if (!access.unlimited && access.customer?.id) {
+      await recordTryonSuccess(access.customer.id, productId);
+    }
+    const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+    return NextResponse.json({ success: true, imageUrl, remaining: finalRemaining, unlimited: access.unlimited });
   } catch (error) {
     console.error("AI try-on error:", error);
     const message = error instanceof Error && error.name === "TimeoutError"

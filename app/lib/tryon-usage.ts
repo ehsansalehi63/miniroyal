@@ -22,10 +22,10 @@ function isAdmin(customer: { role?: string; phone?: string }) {
   return Boolean(customer.phone && phones.includes(customer.phone.replace(/\D/g, "")));
 }
 
-export async function authorizeTryon(productId?: number) {
+export async function checkTryonQuota() {
   const customer = await currentCustomer();
   if (!customer) return { ok: false as const, status: 401, error: "برای استفاده از پرو آنلاین ابتدا وارد حساب مشتری شوید." };
-  if (isAdmin(customer)) return { ok: true as const, customer, unlimited: true, remaining: null };
+  if (isAdmin(customer)) return { ok: true as const, customer, unlimited: true, remaining: null, limit: 999, windowDays: DEFAULT_WINDOW_DAYS };
 
   await ensureTryonUsageSchema();
   const limit = Math.max(1, Number(process.env.TRYON_FREE_LIMIT) || DEFAULT_LIMIT);
@@ -35,14 +35,34 @@ export async function authorizeTryon(productId?: number) {
     [customer.id, windowDays]
   ) as unknown as [Array<{ used: number }>];
   const used = Number(rows[0]?.used || 0);
+  const remaining = Math.max(0, limit - used);
+
   if (used >= limit) {
     return {
       ok: false as const,
       status: 429,
       error: `سهمیه پرو آنلاین شما تکمیل شده است. سهمیه هر ${windowDays} روز ${limit} بار است.`,
       remaining: 0,
+      limit,
+      windowDays,
+      customer,
     };
   }
-  await pool.execute("INSERT INTO tryon_usage (customer_id, product_id) VALUES (?, ?)", [customer.id, productId || null]);
-  return { ok: true as const, customer, unlimited: false, remaining: limit - used - 1 };
+  return { ok: true as const, customer, unlimited: false, remaining, limit, windowDays };
+}
+
+export async function recordTryonSuccess(customerId: number, productId?: number) {
+  try {
+    await ensureTryonUsageSchema();
+    await pool.execute("INSERT INTO tryon_usage (customer_id, product_id) VALUES (?, ?)", [customerId, productId || null]);
+    return true;
+  } catch (err) {
+    console.warn("Failed to record tryon usage:", err);
+    return false;
+  }
+}
+
+export async function authorizeTryon(_productId?: number) {
+  const quota = await checkTryonQuota();
+  return quota;
 }

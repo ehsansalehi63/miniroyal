@@ -172,13 +172,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
         {/* بخش پرو آنلاین هوشمند */}
         <div className="mt-12" id="tryon-section">
-          {customer ? <VirtualTryonBox product={product} /> : (
-            <div dir="rtl" className="rounded-3xl border border-violet-200 bg-violet-50 p-8 text-center">
-              <h2 className="text-xl font-black text-stone-950">برای پرو آنلاین وارد شوید</h2>
-              <p className="mt-2 text-sm text-stone-600">ثبت‌نام و ورود مشتری برای استفاده از این قابلیت الزامی است.</p>
-              <Link href={`/account?next=%2Fproduct%2F${product.slug}%23tryon-section`} className="mt-5 inline-flex rounded-full bg-violet-700 px-6 py-3 text-sm font-black text-white">ورود یا ثبت‌نام</Link>
-            </div>
-          )}
+          <VirtualTryonBox product={product} customer={customer} />
         </div>
 
         {/* جدول سایز سانتی‌متری */}

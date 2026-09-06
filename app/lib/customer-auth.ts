@@ -140,7 +140,17 @@ export async function loginCustomer(phone: string, password: string) {
   return { id: customer.id, fullName: customer.full_name, phone: customer.phone, email: customer.email };
 }
 
-export async function currentCustomer() {
+export interface CustomerSession {
+  id: number;
+  fullName: string;
+  phone: string;
+  email: string | null;
+  role: string;
+  clubPoints: number;
+  clubTier: string;
+}
+
+export async function currentCustomer(): Promise<CustomerSession | null> {
   const session = (await cookies()).get(COOKIE_NAME)?.value;
   const customerId = readSession(session);
   if (!customerId) return null;

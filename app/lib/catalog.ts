@@ -1,7 +1,7 @@
 import type { RowDataPacket } from "mysql2";
 import pool from "./mysql";
 import { CatalogFilterParams, Category, Product, Variant } from "./types/catalog";
-import { mockCategories } from "./data/mockProducts";
+import { mockCategories, mockProducts } from "./data/mockProducts";
 import { kidsCategories } from "./kidsCategories";
 
 const staticCategories = [...mockCategories, ...kidsCategories];
@@ -28,48 +28,61 @@ function parseJson<T>(value: unknown, fallback: T): T {
 }
 
 async function loadCategories() {
-  const [rows] = await pool.execute<CategoryRow[]>("SELECT id, parent_id, name, slug, description, icon, image_url, sort_order FROM categories WHERE is_active = 1 ORDER BY sort_order, id");
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  return rows.map((row): Category => ({
-    id: row.id, parentId: row.parent_id, parentSlug: row.parent_id ? byId.get(row.parent_id)?.slug : undefined,
-    name: row.name, slug: row.slug, description: row.description || undefined, icon: row.icon || undefined,
-    imageUrl: row.image_url || undefined, sortOrder: row.sort_order,
-  }));
+  try {
+    const [rows] = await pool.execute<CategoryRow[]>("SELECT id, parent_id, name, slug, description, icon, image_url, sort_order FROM categories WHERE is_active = 1 ORDER BY sort_order, id");
+    if (rows && rows.length > 0) {
+      const byId = new Map(rows.map((row) => [row.id, row]));
+      return rows.map((row): Category => ({
+        id: row.id, parentId: row.parent_id, parentSlug: row.parent_id ? byId.get(row.parent_id)?.slug : undefined,
+        name: row.name, slug: row.slug, description: row.description || undefined, icon: row.icon || undefined,
+        imageUrl: row.image_url || undefined, sortOrder: row.sort_order,
+      }));
+    }
+  } catch (err) {
+    console.warn("Categories query error, using static categories fallback:", err);
+  }
+  return staticCategories;
 }
 
-async function loadProducts(where = "p.status = 'active'", params: (string | number)[] = []) {
-  const [productRows] = await pool.execute<ProductRow[]>(
-    `SELECT p.id, p.title, p.slug, p.sku, p.short_desc, p.description, p.category_id,
-      c.slug AS category_slug, c.name AS category_name, b.name AS brand_name, p.gender,
-      p.age_min_month, p.age_max_month, p.base_price, p.sale_price, p.is_featured,
-      p.is_special_offer, p.sales_count, p.views_count, p.rating_avg, p.rating_count,
-      p.status, p.fit_type, p.seo_title, p.seo_desc, p.faq_json, p.size_chart_json, p.published_at
-     FROM products p JOIN categories c ON c.id = p.category_id
-     LEFT JOIN brands b ON b.id = p.brand_id
-     WHERE ${where} ORDER BY p.id`, params
-  );
-  if (!productRows.length) return [] as Product[];
-  const ids = productRows.map((row) => row.id);
-  const placeholders = ids.map(() => "?").join(",");
-  const [variantRows] = await pool.execute<VariantRow[]>(`SELECT id, product_id, sku, size, color, color_code, stock, price_adjustment FROM product_variants WHERE product_id IN (${placeholders}) ORDER BY id`, ids);
-  const [mediaRows] = await pool.execute<MediaRow[]>(`SELECT id, product_id, url, alt, sort_order, is_primary FROM product_media WHERE product_id IN (${placeholders}) ORDER BY sort_order, id`, ids);
-  const variantsByProduct = new Map<number, Variant[]>();
-  for (const row of variantRows) {
-    const variants = variantsByProduct.get(row.product_id) || [];
-    variants.push({ id: row.id, productId: row.product_id, sku: row.sku, size: row.size, color: row.color, colorCode: row.color_code || undefined, stock: Number(row.stock), priceAdjustment: Number(row.price_adjustment) });
-    variantsByProduct.set(row.product_id, variants);
+async function loadProducts(where = "p.status = 'active'", params: (string | number)[] = []): Promise<Product[]> {
+  try {
+    const [productRows] = await pool.execute<ProductRow[]>(
+      `SELECT p.id, p.title, p.slug, p.sku, p.short_desc, p.description, p.category_id,
+        c.slug AS category_slug, c.name AS category_name, b.name AS brand_name, p.gender,
+        p.age_min_month, p.age_max_month, p.base_price, p.sale_price, p.is_featured,
+        p.is_special_offer, p.sales_count, p.views_count, p.rating_avg, p.rating_count,
+        p.status, p.fit_type, p.seo_title, p.seo_desc, p.faq_json, p.size_chart_json, p.published_at
+       FROM products p JOIN categories c ON c.id = p.category_id
+       LEFT JOIN brands b ON b.id = p.brand_id
+       WHERE ${where} ORDER BY p.id`, params
+    );
+    if (productRows && productRows.length > 0) {
+      const ids = productRows.map((row) => row.id);
+      const placeholders = ids.map(() => "?").join(",");
+      const [variantRows] = await pool.execute<VariantRow[]>(`SELECT id, product_id, sku, size, color, color_code, stock, price_adjustment FROM product_variants WHERE product_id IN (${placeholders}) ORDER BY id`, ids);
+      const [mediaRows] = await pool.execute<MediaRow[]>(`SELECT id, product_id, url, alt, sort_order, is_primary FROM product_media WHERE product_id IN (${placeholders}) ORDER BY sort_order, id`, ids);
+      const variantsByProduct = new Map<number, Variant[]>();
+      for (const row of variantRows || []) {
+        const variants = variantsByProduct.get(row.product_id) || [];
+        variants.push({ id: row.id, productId: row.product_id, sku: row.sku, size: row.size, color: row.color, colorCode: row.color_code || undefined, stock: Number(row.stock), priceAdjustment: Number(row.price_adjustment) });
+        variantsByProduct.set(row.product_id, variants);
+      }
+      const mediaByProduct = new Map<number, MediaRow[]>();
+      for (const row of mediaRows || []) mediaByProduct.set(row.product_id, [...(mediaByProduct.get(row.product_id) || []), row]);
+      return productRows.map((row): Product => ({
+        id: row.id, title: row.title, slug: row.slug, sku: row.sku, shortDesc: row.short_desc || "", description: row.description || "",
+        categoryId: row.category_id, categorySlug: row.category_slug, categoryName: row.category_name, brandName: row.brand_name || undefined,
+        gender: row.gender, ageMinMonth: row.age_min_month, ageMaxMonth: row.age_max_month, basePrice: Number(row.base_price), salePrice: row.sale_price === null ? undefined : Number(row.sale_price),
+        isFeatured: Boolean(row.is_featured), isSpecialOffer: Boolean(row.is_special_offer), salesCount: Number(row.sales_count), viewsCount: Number(row.views_count), ratingAvg: Number(row.rating_avg), ratingCount: Number(row.rating_count),
+        status: row.status, fitType: row.fit_type, seoTitle: row.seo_title || undefined, seoDesc: row.seo_desc || undefined,
+        faqJson: parseJson(row.faq_json, []), sizeChartJson: parseJson(row.size_chart_json, []), images: (mediaByProduct.get(row.id) || []).map((media) => media.url),
+        variants: variantsByProduct.get(row.id) || [], publishedAt: new Date(row.published_at).toISOString(),
+      }));
+    }
+  } catch (err) {
+    console.warn("Products query error, using mock fallback:", err);
   }
-  const mediaByProduct = new Map<number, MediaRow[]>();
-  for (const row of mediaRows) mediaByProduct.set(row.product_id, [...(mediaByProduct.get(row.product_id) || []), row]);
-  return productRows.map((row): Product => ({
-    id: row.id, title: row.title, slug: row.slug, sku: row.sku, shortDesc: row.short_desc || "", description: row.description || "",
-    categoryId: row.category_id, categorySlug: row.category_slug, categoryName: row.category_name, brandName: row.brand_name || undefined,
-    gender: row.gender, ageMinMonth: row.age_min_month, ageMaxMonth: row.age_max_month, basePrice: Number(row.base_price), salePrice: row.sale_price === null ? undefined : Number(row.sale_price),
-    isFeatured: Boolean(row.is_featured), isSpecialOffer: Boolean(row.is_special_offer), salesCount: Number(row.sales_count), viewsCount: Number(row.views_count), ratingAvg: Number(row.rating_avg), ratingCount: Number(row.rating_count),
-    status: row.status, fitType: row.fit_type, seoTitle: row.seo_title || undefined, seoDesc: row.seo_desc || undefined,
-    faqJson: parseJson(row.faq_json, []), sizeChartJson: parseJson(row.size_chart_json, []), images: (mediaByProduct.get(row.id) || []).map((media) => media.url),
-    variants: variantsByProduct.get(row.id) || [], publishedAt: new Date(row.published_at).toISOString(),
-  }));
+  return mockProducts;
 }
 
 export async function getCategories(): Promise<Category[]> { return loadCategories(); }
@@ -80,9 +93,15 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
   return categories.find((category) => category.slug === slug) || staticCategories.find((category) => category.slug === slug) || null;
 }
 
-export async function getProducts(params: CatalogFilterParams = {}) {
+export async function getProducts(params: CatalogFilterParams = {}): Promise<{
+  products: Product[];
+  total: number;
+  categories: Category[];
+  availableSizes: string[];
+  availableColors: { name: string; hex: string }[];
+}> {
   const categories = await loadCategories();
-  let list = await loadProducts();
+  let list: Product[] = await loadProducts();
   const category = params.categorySlug && params.categorySlug !== "all" ? categories.find((item) => item.slug === params.categorySlug) : null;
   if (params.categorySlug && params.categorySlug !== "all" && params.categorySlug !== "shop") {
     const allowed = new Set([params.categorySlug, ...(category ? categories.filter((item) => item.parentId === category.id).map((item) => item.slug) : [])]);
@@ -112,18 +131,22 @@ export async function getProducts(params: CatalogFilterParams = {}) {
   return { products: list, total, categories, availableSizes: [...sizes], availableColors: [...colors].map(([name, hex]) => ({ name, hex })) };
 }
 
-export async function getProductBySlug(slug: string) {
-  const normalized = decodeURIComponent(slug).trim();
-  return (await loadProducts("p.status = 'active' AND LOWER(p.slug) = LOWER(?)", [normalized]))[0] || null;
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const normalized = decodeURIComponent(slug).trim().toLowerCase();
+  const products = await loadProducts("p.status = 'active' AND LOWER(p.slug) = LOWER(?)", [normalized]);
+  return products.find((p) => p.slug.toLowerCase() === normalized) || mockProducts.find((p) => p.slug.toLowerCase() === normalized) || null;
 }
 
-export async function getProductById(id: number) { return (await loadProducts("p.status = 'active' AND p.id = ?", [id]))[0] || null; }
+export async function getProductById(id: number): Promise<Product | null> {
+  const products = await loadProducts("p.status = 'active' AND p.id = ?", [id]);
+  return products.find((p) => p.id === id) || mockProducts.find((p) => p.id === id) || null;
+}
 
-export async function getFeaturedProducts(limit = 8) { return (await getProducts({ sort: "recommended", limit })).products.filter((product) => product.isFeatured); }
-export async function getSpecialOfferProducts(limit = 8) { return (await getProducts({ isSpecialOffer: true, limit })).products; }
-export async function getLatestProducts(limit = 8) { return (await getProducts({ sort: "newest", limit })).products; }
-export async function getBestSellerProducts(limit = 8) { return (await getProducts({ sort: "bestselling", limit })).products; }
-export async function getRelatedProducts(productId: number, categoryId: number, limit = 4) { return (await getProducts({ limit: 1000 })).products.filter((product) => product.id !== productId && product.categoryId === categoryId).slice(0, limit); }
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> { return (await getProducts({ sort: "recommended", limit })).products.filter((product) => product.isFeatured); }
+export async function getSpecialOfferProducts(limit = 8): Promise<Product[]> { return (await getProducts({ isSpecialOffer: true, limit })).products; }
+export async function getLatestProducts(limit = 8): Promise<Product[]> { return (await getProducts({ sort: "newest", limit })).products; }
+export async function getBestSellerProducts(limit = 8): Promise<Product[]> { return (await getProducts({ sort: "bestselling", limit })).products; }
+export async function getRelatedProducts(productId: number, categoryId: number, limit = 4): Promise<Product[]> { return (await getProducts({ limit: 1000 })).products.filter((product) => product.id !== productId && product.categoryId === categoryId).slice(0, limit); }
 
 export async function searchAutocomplete(query: string) {
   if (!query.trim()) return { products: [], categories: [] };

@@ -1,0 +1,6 @@
+{
+  "name": "Mini Royal",
+  "description": "فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین و هوش مصنوعی توصیه سایز",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

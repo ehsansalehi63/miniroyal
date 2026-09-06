@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { Product } from "../lib/types/catalog";
+import { CustomerSession } from "../lib/customer-auth";
 import VirtualTryonBox from "./VirtualTryonBox";
 
 interface Props {
   products: Product[];
   initialProductSlug?: string;
+  customer?: CustomerSession | null;
 }
 
-export default function VirtualTryonSelector({ products, initialProductSlug }: Props) {
+export default function VirtualTryonSelector({ products, initialProductSlug, customer }: Props) {
   const initialProduct = products.find((item) => item.slug === initialProductSlug);
   const [selectedId, setSelectedId] = useState<number | null>(initialProduct?.id ?? products[0]?.id ?? null);
   const product = selectedId === null ? undefined : products.find((item) => item.id === selectedId);
@@ -35,7 +37,7 @@ export default function VirtualTryonSelector({ products, initialProductSlug }: P
         </span>
       </label>
       {product ? (
-        <VirtualTryonBox key={product.id} product={product} />
+        <VirtualTryonBox key={product.id} product={product} customer={customer} />
       ) : (
         <div className="rounded-3xl border border-dashed border-violet-300 bg-violet-50 p-10 text-center text-sm font-bold text-violet-900">
           برای فعال‌شدن آپلود عکس و پیشنهاد سایز، ابتدا یک محصول را انتخاب کنید.

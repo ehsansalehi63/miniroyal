@@ -1,3 +1,2 @@
-// Hostinger Node.js Application Manager entry point alias
-/* eslint-disable @typescript-eslint/no-require-imports */
+// Hostinger CloudLinux / Phusion Passenger entry point alias
 require("./server.js");

@@ -17,15 +17,6 @@ interface VirtualTryonPageProps {
 export default async function VirtualTryonPage({ searchParams }: VirtualTryonPageProps) {
   const customer = await currentCustomer();
   const { product: initialProductSlug } = await searchParams;
-  if (!customer) {
-    return (
-      <main dir="rtl" className="mx-auto max-w-lg px-4 py-24 text-center">
-        <h1 className="text-3xl font-black text-stone-950">ورود به پرو آنلاین</h1>
-        <p className="mt-4 text-sm leading-7 text-stone-600">برای حفظ حریم خصوصی تصاویر و مدیریت سهمیه، ابتدا در حساب مشتری عضو شوید و وارد شوید.</p>
-        <Link href={`/account?next=${encodeURIComponent(`/virtual-tryon${initialProductSlug ? `?product=${initialProductSlug}` : ""}`)}`} className="mt-7 inline-flex rounded-full bg-violet-700 px-7 py-3 font-black text-white">ورود یا ثبت‌نام</Link>
-      </main>
-    );
-  }
   const { products } = await getProducts({ sort: "recommended" });
   const tryOnProducts = products.filter(
     (product) =>
@@ -49,7 +40,11 @@ export default async function VirtualTryonPage({ searchParams }: VirtualTryonPag
       </div>
 
       <div className="mt-10">
-        <VirtualTryonSelector products={tryOnProducts} initialProductSlug={initialProductSlug} />
+        <VirtualTryonSelector
+          products={tryOnProducts}
+          initialProductSlug={initialProductSlug}
+          customer={customer}
+        />
       </div>
 
       <div dir="rtl" className="mt-12 rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm">
