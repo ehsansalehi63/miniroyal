@@ -1,4 +1,15 @@
 const POSTEX_BASE_URL = process.env.POSTEX_BASE_URL || "https://api.postex.ir";
+// رله ایرانی اختیاری: سرور هاستینگر (آلمان) به سرویس‌های ایرانی (IR Access)
+// مستقیماً دسترسی ندارد. اگر POSTEX_RELAY_URL تنظیم شده باشد، درخواست‌ها
+// از طریق رله روی هاست میزبان‌فا (IP ایران) ارسال می‌شوند.
+const POSTEX_RELAY_URL = process.env.POSTEX_RELAY_URL?.trim().replace(/\/$/, "") || "";
+const POSTEX_RELAY_SECRET = process.env.POSTEX_RELAY_SECRET?.trim() || "";
+
+function resolvePostexUrl(path: string): string {
+  if (!POSTEX_RELAY_URL) return `${POSTEX_BASE_URL}${path}`;
+  const separator = POSTEX_RELAY_URL.includes("?") ? "&" : "?";
+  return `${POSTEX_RELAY_URL}${separator}service=postex&path=${encodeURIComponent(path)}`;
+}
 
 export type PostexAddress = {
   name: string;
@@ -24,12 +35,13 @@ function apiKey() {
 }
 
 async function postexFetch<T>(path: string, init: RequestInit = {}) {
-  const response = await fetch(`${POSTEX_BASE_URL}${path}`, {
+  const response = await fetch(resolvePostexUrl(path), {
     ...init,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
       "x-api-key": apiKey(),
+      ...(POSTEX_RELAY_SECRET ? { "X-Relay-Secret": POSTEX_RELAY_SECRET } : {}),
       ...(init.headers || {}),
     },
     cache: "no-store",

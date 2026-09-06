@@ -1,4 +1,14 @@
 const TIPAX_BASE_URL = (process.env.TIPAX_BASE_URL || "https://omapi.tipax.ir").replace(/\/$/, "");
+// رله ایرانی اختیاری: سایت از آلمان مستقیماً به تیپاکس (IR Access) دسترسی ندارد.
+// اگر TIPAX_RELAY_URL تنظیم شده باشد، همه درخواست‌ها از طریق رله (میزبان‌فا) ارسال می‌شوند.
+const TIPAX_RELAY_URL = process.env.TIPAX_RELAY_URL?.trim().replace(/\/$/, "") || "";
+const TIPAX_RELAY_SECRET = process.env.TIPAX_RELAY_SECRET?.trim() || "";
+
+function resolveUrl(path: string): string {
+  if (!TIPAX_RELAY_URL) return `${TIPAX_BASE_URL}${path}`;
+  const separator = TIPAX_RELAY_URL.includes("?") ? "&" : "?";
+  return `${TIPAX_RELAY_URL}${separator}service=tipax&path=${encodeURIComponent(path)}`;
+}
 
 let tokenCache: { accessToken: string; refreshToken?: string; expiresAt: number } | null = null;
 
@@ -14,13 +24,14 @@ async function tipaxFetch<T>(path: string, init: RequestInit = {}, accessToken?:
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(`${TIPAX_BASE_URL}${path}`, {
+    const response = await fetch(resolveUrl(path), {
       ...init,
       signal: controller.signal,
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(TIPAX_RELAY_SECRET ? { "X-Relay-Secret": TIPAX_RELAY_SECRET } : {}),
         ...(init.headers || {}),
       },
       cache: "no-store",
