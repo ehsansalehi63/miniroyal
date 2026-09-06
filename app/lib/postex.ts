@@ -5,10 +5,9 @@ const POSTEX_BASE_URL = process.env.POSTEX_BASE_URL || "https://api.postex.ir";
 const POSTEX_RELAY_URL = process.env.POSTEX_RELAY_URL?.trim().replace(/\/$/, "") || "";
 const POSTEX_RELAY_SECRET = process.env.POSTEX_RELAY_SECRET?.trim() || "";
 
-function resolvePostexUrl(path: string): string {
-  if (!POSTEX_RELAY_URL) return `${POSTEX_BASE_URL}${path}`;
-  const separator = POSTEX_RELAY_URL.includes("?") ? "&" : "?";
-  return `${POSTEX_RELAY_URL}${separator}service=postex&path=${encodeURIComponent(path)}`;
+function resolvePostexUrl(path: string): { url: string; headersPath?: string } {
+  if (!POSTEX_RELAY_URL) return { url: `${POSTEX_BASE_URL}${path}` };
+  return { url: `${POSTEX_RELAY_URL}?service=postex`, headersPath: path };
 }
 
 export type PostexAddress = {
@@ -35,11 +34,14 @@ function apiKey() {
 }
 
 async function postexFetch<T>(path: string, init: RequestInit = {}) {
-  const response = await fetch(resolvePostexUrl(path), {
+  const { url, headersPath } = resolvePostexUrl(path);
+  const response = await fetch(url, {
     ...init,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+      ...(headersPath ? { "X-Relay-Path": headersPath } : {}),
       "x-api-key": apiKey(),
       ...(POSTEX_RELAY_SECRET ? { "X-Relay-Secret": POSTEX_RELAY_SECRET } : {}),
       ...(init.headers || {}),

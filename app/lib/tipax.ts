@@ -4,10 +4,11 @@ const TIPAX_BASE_URL = (process.env.TIPAX_BASE_URL || "https://omapi.tipax.ir").
 const TIPAX_RELAY_URL = process.env.TIPAX_RELAY_URL?.trim().replace(/\/$/, "") || "";
 const TIPAX_RELAY_SECRET = process.env.TIPAX_RELAY_SECRET?.trim() || "";
 
-function resolveUrl(path: string): string {
-  if (!TIPAX_RELAY_URL) return `${TIPAX_BASE_URL}${path}`;
-  const separator = TIPAX_RELAY_URL.includes("?") ? "&" : "?";
-  return `${TIPAX_RELAY_URL}${separator}service=tipax&path=${encodeURIComponent(path)}`;
+function resolveUrl(path: string): { url: string; headersPath?: string } {
+  if (!TIPAX_RELAY_URL) return { url: `${TIPAX_BASE_URL}${path}` };
+  // مسیر از طریق هدر ارسال می‌شود تا فایروال هاست اشتراکی، کوئری‌استرینگ
+  // حاوی «/api/...» را به عنوان الگوی مشکوک بلاک نکند.
+  return { url: `${TIPAX_RELAY_URL}?service=tipax`, headersPath: path };
 }
 
 let tokenCache: { accessToken: string; refreshToken?: string; expiresAt: number } | null = null;
@@ -24,12 +25,15 @@ async function tipaxFetch<T>(path: string, init: RequestInit = {}, accessToken?:
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(resolveUrl(path), {
+    const { url, headersPath } = resolveUrl(path);
+    const response = await fetch(url, {
       ...init,
       signal: controller.signal,
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+        ...(headersPath ? { "X-Relay-Path": headersPath } : {}),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...(TIPAX_RELAY_SECRET ? { "X-Relay-Secret": TIPAX_RELAY_SECRET } : {}),
         ...(init.headers || {}),

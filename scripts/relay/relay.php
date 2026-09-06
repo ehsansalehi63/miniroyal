@@ -44,22 +44,35 @@ function relayRequest(string $upstreamBase, string $path): void {
 
     $url = $upstreamBase . $path;
 
-    // هدرهای اصلی را بازخوانی می‌کنیم (Authorization و Content-Type حیاتی‌اند)
-    $headers = [
-        'Accept: application/json',
-        'User-Agent: MiniRoyalRelay/1.0',
-    ];
-    foreach (['Authorization', 'Content-Type', 'X-Api-Key'] as $key) {
-        $value = $_SERVER['HTTP_' . strtoupper(str_replace('-', '_', $key))] ?? null;
-        if ($value !== null) {
-            $headers[] = $key . ': ' . $value;
-        }
-    }
-
     $body = null;
     if ($method === 'POST') {
         $body = file_get_contents('php://input');
         if ($body === '' || $body === false) $body = null;
+    }
+
+    // هدرهای اصلی را بازخوانی می‌کنیم (Authorization و Content-Type حیاتی‌اند)
+    // نکته: UA مرورگر واقعی می‌گذاریم؛ فایروال میزبندا UA های غیرمعروف را
+    // با 406 رد می‌کند.
+    $headers = [
+        'Accept: application/json',
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+    ];
+
+    // Authorization از هدر استاندارد
+    $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+    if ($auth !== null) {
+        $headers[] = 'Authorization: ' . $auth;
+    }
+    // X-Api-Key پستکس
+    $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? null;
+    if ($apiKey !== null) {
+        $headers[] = 'X-Api-Key: ' . $apiKey;
+    }
+    // Content-Type: روی برخی هاست‌ها به‌صورت CONTENT_TYPE (بدون پیشوند HTTP_) در دسترس است
+    // برای POST همیشه یک CT مشخص لازم است؛ در غیر این صورت تیپاکس 415 می‌دهد
+    if ($method === 'POST') {
+        $contentType = $_SERVER['HTTP_CONTENT_TYPE'] ?? $_SERVER['CONTENT_TYPE'] ?? 'application/json';
+        $headers[] = 'Content-Type: ' . $contentType;
     }
 
     $ch = curl_init($url);
@@ -102,9 +115,14 @@ if (!hash_equals(RELAY_SECRET, (string)$secret)) {
 }
 
 // ۲) تشخیص سرویس و مسیر
-// فرمت مسیر: /relay.php?service=tipax&path=/api/OM/v3/Account/token
+// فرمت: /relay.php?service=tipax&path=/api/OM/v3/Account/token
+// یا از هدر: X-Relay-Path: /api/... (اگر فایروال کوئری‌استرینگ path را نپسندد)
 $service = $_GET['service'] ?? '';
 $path = $_GET['path'] ?? '';
+$headerPath = $_SERVER['HTTP_X_RELAY_PATH'] ?? '';
+if ($headerPath !== '') {
+    $path = $headerPath;
+}
 
 if (!isset(UPSTREAMS[$service])) {
     deny(400, 'سرویس نامعتبر است. مقادیر مجاز: tipax, postex');
