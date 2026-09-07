@@ -1,0 +1,14 @@
+{
+  "name": "miniroyal",
+  "version": "1.0.0",
+  "description": "Mini Royal Kids Clothing Store - Next.js App for Hostinger",
+  "nodeVersion": "20.x",
+  "buildCommand": "npm run build",
+  "startCommand": "npm start",
+  "entryFile": "server.js",
+  "outputDirectory": ".next",
+  "environment": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  }
+}

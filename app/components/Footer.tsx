@@ -1,0 +1,68 @@
+import Link from "next/link";
+import { mockCategories } from "../lib/data/mockProducts";
+import { kidsCategories } from "../lib/kidsCategories";
+import { getCategories } from "../lib/catalog";
+
+const services = [
+  ["/returns", "شرایط بازگشت کالا"],
+  ["/privacy", "حریم خصوصی"],
+  ["/terms", "قوانین و مقررات"],
+  ["/about", "درباره مینی رویال"],
+  ["/order/track", "پیگیری سفارش"],
+  ["/faq", "سؤالات متداول"],
+  ["/contact", "تماس با ما"],
+];
+
+export default async function Footer() {
+  let categories = [...mockCategories, ...kidsCategories];
+  try { const databaseCategories = await getCategories(); if (databaseCategories.length) categories = databaseCategories; } catch { /* keep footer navigation available during a database outage */ }
+  return (
+    <footer className="border-t border-stone-800/90 bg-[#121113] text-stone-300">
+      <div className="mx-auto site-container px-4 py-14">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_2fr_1fr]">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="grid size-12 overflow-hidden rounded-full border border-amber-400/80 bg-stone-950 shadow-md">
+                <img src="/images/brand/miniroyal-logo.webp" width={48} height={72} alt="لوگوی مینی رویال" className="size-full object-cover" />
+              </span>
+              <div>
+                <span className="text-xl font-black text-white">مینی رویال</span>
+                <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-amber-300/80">Kids Atelier & Couture</span>
+              </div>
+            </div>
+            <p className="mt-5 max-w-sm text-xs leading-7 text-stone-400 sm:text-sm sm:leading-8">
+              بوتیک آنلاین پوشاک و استایل کودک و نوجوان؛ طراحی ظریف، پارچه‌های لطیف ضدحساسیت و تجربه پرو آنلاین هوشمند.
+            </p>
+            <Link href="/virtual-tryon" className="mt-6 inline-flex rounded-xl bg-amber-400 px-5 py-2.5 text-xs font-black text-stone-950 transition hover:bg-amber-300 shadow-md">
+              پرو آنلاین لباس ✨
+            </Link>
+          </div>
+          <div>
+            <h3 className="mb-5 text-xs font-black uppercase tracking-wider text-amber-300">همه دسته‌بندی‌ها</h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+              {categories.map((category) => (
+                <Link key={category.slug} href={`/category/${category.slug}`} className="text-xs font-medium text-stone-400 transition hover:text-amber-200">
+                  {category.icon} {category.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className="mb-5 text-xs font-black uppercase tracking-wider text-amber-300">خدمات و پشتیبانی</h3>
+            <div className="grid gap-2.5">
+              {services.map(([href, label]) => (
+                <Link key={href} href={href} className="text-xs font-medium text-stone-400 transition hover:text-white">
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mt-12 flex flex-col justify-between gap-3 border-t border-stone-800/80 pt-6 text-xs text-stone-500 sm:flex-row">
+          <span>© {new Date().getFullYear()} مینی رویال — همه حقوق محفوظ است.</span>
+          <span>ارسال سریع با تیپاکس • ضمانت تعویض سایز • پرداخت امن</span>
+        </div>
+      </div>
+    </footer>
+  );
+}

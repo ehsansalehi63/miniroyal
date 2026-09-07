@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1060" width="100%" height="100%">
+  <defs>
+    <linearGradient id="dressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6" />
+      <stop offset="45%" stop-color="#ec4899" />
+      <stop offset="100%" stop-color="#be185d" />
+    </linearGradient>
+    <linearGradient id="dressLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.16" />
+    </linearGradient>
+    <linearGradient id="bodiceGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fdf2f8" />
+      <stop offset="100%" stop-color="#fbcfe8" />
+    </linearGradient>
+    <linearGradient id="skinG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f9d3b0" />
+      <stop offset="100%" stop-color="#efb98e" />
+    </linearGradient>
+    <linearGradient id="hairG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a3122" />
+      <stop offset="100%" stop-color="#2b1a10" />
+    </linearGradient>
+    <radialGradient id="cheekG2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fb7185" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#fb7185" stop-opacity="0" />
+    </radialGradient>
+    <filter id="softShadow2" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#831843" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- ================= GIRL MODEL — twirling party dress ================= -->
+  <g filter="url(#softShadow2)">
+
+    <!-- ===== flowing hair back layer ===== -->
+    <path d="M 268 140 Q 240 260 258 400 Q 266 470 300 500 Q 268 430 272 340 Q 250 240 286 150 Z" fill="url(#hairG)" />
+    <path d="M 432 140 Q 460 260 442 400 Q 434 470 400 500 Q 432 430 428 340 Q 450 240 414 150 Z" fill="url(#hairG)" />
+
+    <!-- ===== legs (one bent, dance pose) ===== -->
+    <!-- standing leg -->
+    <path d="M 328 640 L 322 700 Q 318 790 326 862 L 366 862 Q 374 790 372 700 L 368 640 Z" fill="url(#skinG)" />
+    <!-- bent leg -->
+    <path d="M 382 640 Q 400 700 428 740 Q 448 772 438 800 Q 410 792 388 756 Q 372 716 372 660 Z" fill="url(#skinG)" />
+    <!-- stockings -->
+    <path d="M 330 780 L 326 862 L 364 862 L 366 780 Z" fill="#ffffff" opacity="0.85" />
+    <path d="M 386 700 Q 398 736 424 768 Q 434 782 430 792 Q 412 786 396 764 Q 380 736 378 706 Z" fill="#ffffff" opacity="0.6" />
+
+    <!-- ===== mary-jane shoes ===== -->
+    <!-- standing foot -->
+    <path d="M 314 880 Q 312 864 332 864 L 366 864 Q 380 864 380 878 L 380 898 Q 378 910 362 910 L 306 910 Q 292 910 294 896 Q 296 884 314 880 Z" fill="#7c3aed" />
+    <rect x="292" y="902" width="90" height="10" rx="5" fill="#4c1d95" />
+    <circle cx="342" cy="876" r="7" fill="#fbbf24" />
+    <!-- pointed bent foot -->
+    <path d="M 430 802 Q 448 810 462 826 Q 472 838 462 846 Q 440 844 424 830 Q 414 818 418 808 Z" fill="#7c3aed" />
+    <circle cx="436" cy="824" r="6" fill="#fbbf24" />
+
+    <!-- ===== twirling skirt (A-line with scallop hem) ===== -->
+    <path d="M 292 470 Q 240 560 216 660 Q 210 682 232 686 Q 260 690 286 676 Q 300 700 330 702 Q 358 704 376 688 Q 398 706 426 700 Q 452 694 460 672 Q 486 684 508 672 Q 526 662 514 640 Q 480 560 430 478 Q 420 466 402 466 L 318 466 Q 300 466 292 470 Z" fill="url(#dressGrad)" />
+    <path d="M 292 470 Q 240 560 216 660 Q 210 682 232 686 Q 260 690 286 676 Q 300 700 330 702 Q 358 704 376 688 Q 398 706 426 700 Q 452 694 460 672 Q 486 684 508 672 Q 526 662 514 640 Q 480 560 430 478 Q 420 466 402 466 L 318 466 Q 300 466 292 470 Z" fill="url(#dressLight)" />
+    <!-- skirt fold shadows -->
+    <path d="M 330 480 Q 300 570 282 664" stroke="#9d174d" stroke-width="8" fill="none" opacity="0.45" />
+    <path d="M 384 480 Q 420 570 448 656" stroke="#9d174d" stroke-width="8" fill="none" opacity="0.45" />
+    <path d="M 356 482 Q 352 580 348 690" stroke="#f9a8d4" stroke-width="7" fill="none" opacity="0.6" />
+    <!-- waist ribbon -->
+    <rect x="296" y="452" width="118" height="26" rx="13" fill="#be185d" />
+    <path d="M 402 458 L 438 446 L 432 478 L 402 470 Z" fill="#be185d" />
+    <circle cx="440" cy="462" r="9" fill="#fbbf24" />
+
+    <!-- ===== bodice ===== -->
+    <path d="M 300 302 Q 296 286 312 282 L 388 282 Q 404 286 400 302 L 396 380 Q 394 452 350 456 Q 306 452 304 380 Z" fill="url(#bodiceGrad)" />
+    <!-- heart gem -->
+    <path d="M 350 330 Q 342 318 330 322 Q 320 327 324 340 Q 328 352 350 364 Q 372 352 376 340 Q 380 327 370 322 Q 358 318 350 330 Z" fill="#ec4899" />
+    <circle cx="342" cy="334" r="4" fill="#fbcfe8" />
+
+    <!-- ===== puff sleeves + arms ===== -->
+    <!-- right sleeve (raised waving arm) -->
+    <circle cx="418" cy="310" r="34" fill="#fbcfe8" />
+    <path d="M 434 292 Q 468 258 496 238" stroke="url(#skinG)" stroke-width="30" fill="none" stroke-linecap="round" />
+    <ellipse cx="508" cy="230" rx="20" ry="22" fill="url(#skinG)" transform="rotate(-30 508 230)" />
+    <!-- left sleeve (holding skirt) -->
+    <circle cx="284" cy="312" r="34" fill="#fbcfe8" />
+    <path d="M 268 296 Q 236 330 228 372 Q 222 404 238 428" stroke="url(#skinG)" stroke-width="30" fill="none" stroke-linecap="round" />
+    <ellipse cx="246" cy="442" rx="21" ry="23" fill="url(#skinG)" transform="rotate(40 246 442)" />
+
+    <!-- ===== neck & head ===== -->
+    <rect x="330" y="250" width="42" height="40" rx="14" fill="#eeb98c" />
+    <!-- ears -->
+    <circle cx="276" cy="198" r="16" fill="#efb98e" />
+    <circle cx="424" cy="198" r="16" fill="#efb98e" />
+    <!-- face -->
+    <ellipse cx="350" cy="190" rx="78" ry="82" fill="url(#skinG)" />
+    <!-- hair front with fringe -->
+    <path d="M 268 176 Q 262 94 350 88 Q 438 94 432 176 Q 430 150 414 142 Q 420 132 410 124 Q 380 108 348 118 Q 316 106 292 126 Q 280 138 286 150 Q 272 158 268 176 Z" fill="url(#hairG)" />
+    <!-- side hair strands -->
+    <path d="M 270 172 Q 258 240 272 310 Q 276 330 266 338 Q 252 300 252 220 Q 254 176 270 172 Z" fill="url(#hairG)" />
+    <path d="M 430 172 Q 442 240 428 310 Q 424 330 434 338 Q 448 300 448 220 Q 446 176 430 172 Z" fill="url(#hairG)" />
+    <!-- flower clip -->
+    <circle cx="416" cy="120" r="12" fill="#fbbf24" />
+    <circle cx="416" cy="120" r="5" fill="#be185d" />
+    <circle cx="402" cy="132" r="7" fill="#f472b6" />
+    <circle cx="430" cy="132" r="7" fill="#f472b6" />
+    <!-- eyebrows -->
+    <path d="M 308 170 Q 324 162 340 170" stroke="#2b1a10" stroke-width="6" fill="none" stroke-linecap="round" />
+    <path d="M 360 170 Q 376 162 392 170" stroke="#2b1a10" stroke-width="6" fill="none" stroke-linecap="round" />
+    <!-- sparkly open eyes -->
+    <ellipse cx="322" cy="200" rx="12" ry="15" fill="#1c1917" />
+    <ellipse cx="378" cy="200" rx="12" ry="15" fill="#1c1917" />
+    <circle cx="318" cy="195" r="4.5" fill="#ffffff" />
+    <circle cx="374" cy="195" r="4.5" fill="#ffffff" />
+    <circle cx="326" cy="205" r="2.5" fill="#ffffff" opacity="0.8" />
+    <circle cx="382" cy="205" r="2.5" fill="#ffffff" opacity="0.8" />
+    <!-- lashes -->
+    <path d="M 312 190 L 306 184 M 388 190 L 394 184" stroke="#1c1917" stroke-width="4" stroke-linecap="round" />
+    <!-- cheeks -->
+    <circle cx="300" cy="222" r="16" fill="url(#cheekG2)" />
+    <circle cx="400" cy="222" r="16" fill="url(#cheekG2)" />
+    <!-- nose -->
+    <path d="M 347 213 Q 350 220 353 213" stroke="#d9a06b" stroke-width="5" fill="none" stroke-linecap="round" />
+    <!-- joyful smile -->
+    <path d="M 330 234 Q 350 254 370 234 Q 350 244 330 234 Z" fill="#be123c" />
+    <path d="M 336 244 Q 350 252 364 244" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" />
+  </g>
+</svg>

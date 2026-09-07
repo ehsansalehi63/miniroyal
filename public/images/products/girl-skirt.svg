@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="skirtSetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#7e22ce" />
+    </linearGradient>
+  </defs>
+  <rect width="500" height="500" rx="32" fill="#faf5ff" />
+  <circle cx="250" cy="250" r="210" fill="#f3e8ff" opacity="0.6" />
+
+  <!-- Knit Cardigan Top -->
+  <path d="M 160 145 Q 250 160 340 145 L 325 250 Q 250 258 175 250 Z" fill="url(#skirtSetGrad)" />
+  <path d="M 140 155 L 75 240 L 115 265 L 170 185 Z" fill="#9333ea" />
+  <path d="M 360 155 L 425 240 L 385 265 L 330 185 Z" fill="#9333ea" />
+
+  <!-- Pleated Lavender Skirt -->
+  <path d="M 175 250 Q 250 258 325 250 L 360 410 Q 250 425 140 410 Z" fill="#c084fc" />
+  <path d="M 175 250 L 150 410" stroke="#7e22ce" stroke-width="3" />
+  <path d="M 215 254 L 200 417" stroke="#7e22ce" stroke-width="3" />
+  <path d="M 250 256 L 250 422" stroke="#ffffff" stroke-width="3" />
+  <path d="M 285 254 L 300 417" stroke="#7e22ce" stroke-width="3" />
+  <path d="M 325 250 L 350 410" stroke="#7e22ce" stroke-width="3" />
+  <circle cx="250" cy="200" r="8" fill="#fef08a" />
+</svg>

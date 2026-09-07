@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="heroBg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c1d95" />
+      <stop offset="50%" stop-color="#6d28d9" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="600" rx="32" fill="url(#heroBg1)" />
+  <circle cx="800" cy="300" r="240" fill="#ffffff" opacity="0.1" />
+  <circle cx="200" cy="150" r="180" fill="#ffffff" opacity="0.08" />
+
+  <!-- Center Banner Art -->
+  <g transform="translate(680, 300) scale(0.95)">
+    <!-- Hoodie SVG in Hero -->
+    <path d="M -120 -150 Q 0 -130 120 -150 L 140 180 Q 0 190 -140 180 Z" fill="#3b82f6" />
+    <path d="M -90 -150 Q 0 -100 90 -150" fill="none" stroke="#ffffff" stroke-width="6" />
+    <circle cx="0" cy="20" r="35" fill="#fef08a" />
+  </g>
+
+  <text x="80" y="240" fill="#ffffff" font-family="Vazirmatn, sans-serif" font-size="48" font-weight="900">مجموعه پاییز و زمستان مینی رویال 👑</text>
+  <text x="80" y="310" fill="#ddd6fe" font-family="Vazirmatn, sans-serif" font-size="24" font-weight="700">با پرو آنلاین ۳ بعدی و ارسال سریع سراسر ایران</text>
+</svg>

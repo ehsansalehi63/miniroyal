@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <defs>
+    <linearGradient id="fabric" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/><stop offset=".55" stop-color="#1e3a8a"/><stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+  <path d="M280 180C280 80 520 80 520 180L560 210 700 420 630 460 560 300 580 680Q400 700 220 680L240 300 170 460 100 420 240 210Z" fill="url(#fabric)"/>
+  <path d="M300 170C300 100 500 100 500 170Q400 130 300 170Z" fill="#e2e8f0"/>
+  <path d="M220 680Q400 700 580 680V740Q400 760 220 740Z" fill="#172554"/>
+  <path d="M290 510Q400 500 510 510L535 650Q400 665 265 650Z" fill="#172554" stroke="#60a5fa" stroke-width="3"/>
+  <path d="M350 210Q340 320 360 380M450 210Q460 320 440 380" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+  <rect x="353" y="380" width="14" height="24" rx="4" fill="#fbbf24"/><rect x="433" y="380" width="14" height="24" rx="4" fill="#fbbf24"/>
+  <rect x="345" y="335" width="110" height="60" rx="14" fill="#78350f" stroke="#f59e0b" stroke-width="4"/>
+  <text x="400" y="372" fill="#fef08a" font-family="sans-serif" font-size="15" font-weight="900" text-anchor="middle">MINI ROYAL</text>
+</svg>

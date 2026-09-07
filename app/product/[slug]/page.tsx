@@ -1,0 +1,266 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import ProductGallery from "../../components/ProductGallery";
+import SizeChartTable from "../../components/SizeChartTable";
+import SizeFitIndicator from "../../components/SizeFitIndicator";
+import ReviewList from "../../components/ReviewList";
+import VirtualTryonBox from "../../components/VirtualTryonBox";
+import ProductCard from "../../components/ProductCard";
+import ProductVariantsClient from "./ProductVariantsClient";
+import { getProductBySlug, getRelatedProducts } from "../../lib/catalog";
+import { calculateDiscountPercent, formatToman, toPersianDigits } from "../../lib/utils";
+import { currentCustomer } from "../../lib/customer-auth";
+import ManagedBanners from "../../components/ManagedBanners";
+
+export const dynamic = "force-dynamic";
+
+interface ProductPageProps {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tryon?: string }>;
+}
+
+export async function generateMetadata({ params }: ProductPageProps) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+
+  if (!product) {
+    return { title: "محصول یافت نشد | مینی رویال" };
+  }
+
+  return {
+    title: product.seoTitle || `${product.title} | مینی رویال`,
+    description: product.seoDesc || product.shortDesc,
+    openGraph: {
+      title: product.title,
+      description: product.shortDesc,
+      images: product.images,
+    },
+  };
+}
+
+export default async function ProductPage({ params, searchParams }: ProductPageProps) {
+  const { slug } = await params;
+  const { tryon } = await searchParams;
+  const product = await getProductBySlug(slug);
+
+  if (!product) {
+    notFound();
+  }
+
+  const relatedProducts = await getRelatedProducts(product.id, product.categoryId, 4);
+  const customer = await currentCustomer();
+
+  const discountPercent = calculateDiscountPercent(product.basePrice, product.salePrice);
+  const currentPrice = product.salePrice ?? product.basePrice;
+
+  // JSON-LD Schema
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    image: product.images,
+    description: product.shortDesc,
+    sku: product.sku,
+    brand: {
+      "@type": "Brand",
+      name: product.brandName || "مینی رویال",
+    },
+    offers: {
+      "@type": "Offer",
+      url: `https://miniroyal.shop/product/${product.slug}`,
+      priceCurrency: "IRR",
+      price: currentPrice * 10, // Toman to Rial for Schema
+      availability: "https://schema.org/InStock",
+      seller: {
+        "@type": "Organization",
+        name: "مینی رویال",
+      },
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: product.ratingAvg,
+      reviewCount: product.ratingCount || 1,
+    },
+  };
+
+  return (
+    <>
+      {/* اسکیما JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <div className="mx-auto site-container px-4 py-8">
+        <ManagedBanners placement="product_top" />
+        {/* مسیر خرده‌نانی */}
+        <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-500">
+          <Link href="/" className="hover:text-violet-700">خانه</Link>
+          <span>/</span>
+          <Link href="/shop" className="hover:text-violet-700">فروشگاه</Link>
+          <span>/</span>
+          <Link href={`/category/${product.categorySlug}`} className="hover:text-violet-700">
+            {product.categoryName}
+          </Link>
+          <span>/</span>
+          <span className="text-stone-900 font-bold truncate max-w-xs">{product.title}</span>
+        </nav>
+
+        {/* بخش اصلی محصول */}
+        <div className="grid gap-10 lg:grid-cols-12">
+          {/* گالری تصاویر */}
+          <div className="lg:col-span-5">
+            <ProductGallery images={product.images} title={product.title} />
+          </div>
+
+          {/* مشخصات، انتخاب سایز و قیمت */}
+          <div className="flex flex-col gap-6 lg:col-span-7">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-800/90">
+                <span className="rounded-full bg-amber-100/70 px-2.5 py-0.5 text-[11px] font-black text-amber-950">برند {product.brandName || "مینی رویال"}</span>
+                <span>•</span>
+                <span className="text-stone-400">کد کالا: {product.sku}</span>
+              </div>
+              <h1 className="mt-3 text-2xl font-black text-stone-900 sm:text-3xl leading-snug">
+                {product.title}
+              </h1>
+              <p className="mt-2.5 text-xs leading-relaxed text-stone-600 sm:text-sm">
+                {product.shortDesc}
+              </p>
+            </div>
+
+            {/* نوار امتیاز و نظرات سایز با حس لوکس */}
+            <div className="flex flex-wrap items-center gap-3.5 text-xs font-bold text-stone-700 border-y border-stone-200/80 py-3">
+              <div className="flex items-center gap-1 text-amber-600">
+                <span className="text-base">★</span>
+                <span>{toPersianDigits(product.ratingAvg.toFixed(1))}</span>
+                <span className="text-stone-400">({toPersianDigits(product.ratingCount)} نظر)</span>
+              </div>
+              <span className="text-stone-300">|</span>
+              <span className="text-emerald-800">✓ تضمین اصالت پارچه و تعویض آسان سایز</span>
+            </div>
+
+            {/* قیمت و تخفیف با استایل پرمیوم */}
+            <div className="rounded-2xl border border-stone-200/70 bg-stone-50/70 p-5 shadow-sm">
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-black text-stone-950">
+                  {formatToman(currentPrice)}
+                </span>
+                {product.salePrice && (
+                  <span className="text-sm text-stone-400 line-through">
+                    {formatToman(product.basePrice)}
+                  </span>
+                )}
+                {discountPercent > 0 && (
+                  <span className="rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-black text-white">
+                    %{toPersianDigits(discountPercent)} تخفیف
+                  </span>
+                )}
+              </div>
+              <p className="mt-2.5 flex items-center gap-1 text-[11px] font-semibold text-emerald-800">
+                <span>🚚</span>
+                <span>ارسال سریع با تیپاکس • ارسال رایگان برای خریدهای بالای ۵۰۰ هزار تومان</span>
+              </p>
+            </div>
+
+            {/* انتخاب متغیرها (سایز × رنگ) */}
+            <ProductVariantsClient product={product} />
+
+            {/* نشانگر فیت سایز جمعی */}
+            <SizeFitIndicator reviews={product.reviews} />
+          </div>
+        </div>
+
+        {/* بخش پرو آنلاین هوشمند */}
+        <div className="mt-12" id="tryon-section">
+          <VirtualTryonBox product={product} customer={customer} />
+        </div>
+
+        {/* جدول سایز سانتی‌متری */}
+        <div className="mt-10">
+          <SizeChartTable sizeChart={product.sizeChartJson} />
+        </div>
+
+        {/* توضیحات محصول، جنس و راهنمای شست‌وشو */}
+        <div className="mt-12 grid gap-8 lg:grid-cols-3">
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm lg:col-span-2">
+            <h3 className="text-lg font-black text-stone-950">توضیحات و ویژگی‌های طراحی</h3>
+            <div className="mt-4 space-y-4 text-xs leading-7 text-stone-700 sm:text-sm sm:leading-8">
+              <p>{product.description}</p>
+
+              {product.features && product.features.length > 0 && (
+                <div className="mt-5 rounded-xl border border-amber-200/60 bg-amber-50/40 p-4">
+                  <h4 className="font-bold text-stone-950">ویژگی‌های برجسته این مدل:</h4>
+                  <ul className="mt-2 space-y-2 list-disc list-inside text-stone-800">
+                    {product.features.map((feat, idx) => (
+                      <li key={idx}>{feat}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <div className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm">
+              <h4 className="font-black text-stone-950 text-sm">🧵 اصالت پارچه و مراقبت</h4>
+              <div className="mt-3.5 space-y-3 text-xs text-stone-700">
+                {product.fabricMaterial && (
+                  <div>
+                    <strong className="text-stone-900">جنس پارچه: </strong>
+                    {product.fabricMaterial}
+                  </div>
+                )}
+                {product.washCare && (
+                  <div>
+                    <strong className="text-stone-900">دستور شست‌وشو: </strong>
+                    {product.washCare}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* FAQ محصول */}
+            {product.faqJson && product.faqJson.length > 0 && (
+              <div className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm">
+                <h4 className="font-black text-stone-950 text-sm">❓ سؤالات متداول درباره این مدل</h4>
+                <div className="mt-3 space-y-2.5">
+                  {product.faqJson.map((faq, idx) => (
+                    <div key={idx} className="rounded-xl border border-stone-100 bg-stone-50/80 p-3 text-xs">
+                      <strong className="block font-bold text-stone-950">{faq.question}</strong>
+                      <p className="mt-1 text-stone-600 leading-relaxed">{faq.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* لیست نظرات */}
+        <div className="mt-12 rounded-2xl border border-stone-200/80 bg-white p-6 shadow-sm">
+          <ReviewList productId={product.id} reviews={product.reviews} />
+        </div>
+
+        {/* محصولات مرتبط */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-16">
+            <div className="mb-6 flex items-end justify-between border-b border-stone-200 pb-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">You may also love</span>
+                <h3 className="mt-1 text-xl font-black text-stone-950 sm:text-2xl">
+                  محصولات مرتبط و ست‌های پیشنهادی
+                </h3>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+              {relatedProducts.map((rel) => (
+                <ProductCard key={rel.id} product={rel} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
