@@ -1,19 +1,66 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
 const MAX_REMOTE_BYTES = 12 * 1024 * 1024;
-const HOSTINGER_MEDIA_DIR = process.env.HOME
-  ? path.join(process.env.HOME, "domains", "miniroyal.shop", "public_html", "uploads", "products")
-  : path.join(process.cwd(), "public", "uploads", "products");
-const MEDIA_DIR = process.env.MEDIA_UPLOAD_DIR || (process.env.NODE_ENV === "production" ? HOSTINGER_MEDIA_DIR : path.join(process.cwd(), "public", "uploads", "products"));
+// On Hostinger Node.js apps, HOME is already `<account>/domains/<domain>`,
+// so the previous `path.join(HOME, "domains", ...)` produced a doubled
+// `.../domains/<domain>/domains/<domain>/...` path. Detect both layouts and
+// prefer the one that exists, so uploads always land in the real
+// public_html/uploads/products of the site root.
+const LOCAL_FALLBACK_DIR = path.join(process.cwd(), "public", "uploads", "products");
+const HOME_CANDIDATE_DIRS = process.env.HOME
+  ? [
+      path.join(process.env.HOME, "public_html", "uploads", "products"),
+      path.join(process.env.HOME, "domains", "miniroyal.shop", "public_html", "uploads", "products"),
+    ]
+  : [];
+// Resolve at runtime: prefer MEDIA_UPLOAD_DIR, then the first candidate
+// directory that already exists (works on both Hostinger layouts), then the
+// layout that exists with a symlinked base, then local fallback.
+function resolveMediaDir() {
+  if (process.env.MEDIA_UPLOAD_DIR) return process.env.MEDIA_UPLOAD_DIR;
+  for (const candidate of HOME_CANDIDATE_DIRS) {
+    try {
+      if (existsSync(candidate)) return candidate;
+    } catch {
+      // ignore fs errors and keep probing
+    }
+  }
+  for (const candidate of HOME_CANDIDATE_DIRS) {
+    try {
+      const parent = path.dirname(candidate);
+      if (existsSync(parent)) return candidate;
+    } catch {
+      // ignore fs errors and keep probing
+    }
+  }
+  return LOCAL_FALLBACK_DIR;
+}
+const MEDIA_DIR = process.env.NODE_ENV === "production" ? resolveMediaDir() : LOCAL_FALLBACK_DIR;
 const MEDIA_PUBLIC_PREFIX = "/uploads/products";
 
 export function mediaFilePath(filename: string) {
   if (!/^[a-zA-Z0-9._-]+$/.test(filename) || filename.includes("..")) return null;
   return path.join(MEDIA_DIR, filename);
+}
+
+/** Older deployments (doubled `domains/<domain>/domains/<domain>` layout)
+ * keep their files in a different directory. Serving checks these too so
+ * images uploaded before the path fix keep working. */
+export function legacyMediaFilePaths(filename: string) {
+  if (!/^[a-zA-Z0-9._-]+$/.test(filename) || filename.includes("..")) return [] as string[];
+  if (!process.env.HOME) return [] as string[];
+  const home = process.env.HOME;
+  if (home.endsWith(path.join("domains", "miniroyal.shop"))) {
+    // HOME already ends with domains/<domain>: the legacy code appended
+    // domains/<domain> again.
+    return [path.join(home, "domains", "miniroyal.shop", "public_html", "uploads", "products", filename)];
+  }
+  return [] as string[];
 }
 
 function extensionForMime() {

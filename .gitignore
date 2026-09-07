@@ -14,9 +14,10 @@ dist/
 .env.*
 !.env.example
 
-# uploads و رسانه
+# uploads و رسانه (فایل‌های آپلودشده کاربر؛ نه route سرو)
 public/uploads/
-uploads/
+/uploads/
+!app/uploads/
 
 # logs
 *.log
