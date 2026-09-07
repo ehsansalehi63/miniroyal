@@ -76,11 +76,14 @@ export async function createOrder(input: CreateOrderInput) {
     // ارسال رایگان مثل سبد خرید بر اساس مبلغ کالاها (قبل از تخفیف) محاسبه می‌شود.
     // اگر کاربر روش پستکس را انتخاب کرده باشد، هزینه واقعی استعلامی همان لحظه ثبت شده است.
     const freeShippingThreshold = 500000;
-    const baseShippingCost = subtotal >= freeShippingThreshold ? 0 : 45000;
+    const isFreeShipping = subtotal >= freeShippingThreshold;
     const requestedShippingCost = Number(input.shippingCost);
-    const shippingCost = input.shippingProvider === "postex"
-      ? (Number.isFinite(requestedShippingCost) && requestedShippingCost >= 0 ? Math.round(requestedShippingCost) : baseShippingCost)
-      : baseShippingCost;
+    const fallbackShippingCost = input.shippingProvider === "tipax" ? 75000 : 45000;
+    const shippingCost = isFreeShipping
+      ? 0
+      : (Number.isFinite(requestedShippingCost) && requestedShippingCost >= 0
+        ? Math.round(requestedShippingCost)
+        : fallbackShippingCost);
     const finalTotal = Math.max(0, subtotal - discount) + shippingCost;
     const orderNumber = `MR-${Date.now().toString().slice(-8)}`;
     const shippingAddress = JSON.stringify({

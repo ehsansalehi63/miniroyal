@@ -6,12 +6,12 @@ import { useCart } from "../lib/cart";
 import { formatToman } from "../lib/utils";
 import Link from "next/link";
 import { ShieldCheck, MapPin, Truck, CreditCard } from "lucide-react";
-import AddressMapPicker from "../components/AddressMapPicker";
+import AddressMapPicker, { ResolvedAddress } from "../components/AddressMapPicker";
 
 type CityOption = { id: number; name: string; province: string; provinceId: number };
 
 const FREE_SHIPPING_THRESHOLD = 500000;
-const DEFAULT_SHIPPING_COST = 45000;
+const DEFAULT_SHIPPING_COST = 65000;
 
 function useIsMounted() {
   return useSyncExternalStore(
@@ -33,7 +33,7 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [postalCode, setPostalCode] = useState("");
-  const [shippingProvider, setShippingProvider] = useState<"tipax" | "post" | "peyk">("tipax");
+  const [shippingProvider] = useState<"tipax">("tipax");
   const [paymentMethod, setPaymentMethod] = useState<"zarinpal" | "cod">("zarinpal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cities, setCities] = useState<CityOption[]>([]);
@@ -46,6 +46,7 @@ export default function CheckoutPage() {
   const [quoteStatus, setQuoteStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [quotedShippingCost, setQuotedShippingCost] = useState<number | null>(null);
   const [quoteError, setQuoteError] = useState("");
+  const [quoteDetails, setQuoteDetails] = useState<{ zoneName?: string; estimatedDays?: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/shipping/tipax/cities", { cache: "force-cache" })
@@ -84,7 +85,25 @@ export default function CheckoutPage() {
     setLongitude(lng);
   }, []);
 
-  // استعلام هزینه ارسال بر اساس شهر مقصد هر وقت شهر انتخاب شد یا روش ارسال عوض شد
+  // دریافت آدرس استخراج شده مستقیم از روی نقشه (Reverse Geocoding)
+  const handleAddressSelectFromMap = useCallback((info: ResolvedAddress) => {
+    setLatitude(info.lat);
+    setLongitude(info.lng);
+    if (info.address) {
+      setAddress(info.address);
+    }
+    if (info.province) {
+      setProvince(info.province);
+    }
+    if (info.city) {
+      setCity(info.city);
+    }
+    if (info.postalCode) {
+      setPostalCode(info.postalCode);
+    }
+  }, []);
+
+  // استعلام هزینه ارسال تیپاکس بر اساس استان و شهر مقصد
   const subtotal = getRawSubtotal();
   const discount = getDiscountAmount();
   const itemsTotalWeightGrams = useMemo(
@@ -97,21 +116,25 @@ export default function CheckoutPage() {
       setQuoteStatus("idle");
       setQuotedShippingCost(null);
       setQuoteError("");
+      setQuoteDetails(null);
       return;
     }
     if (subtotal >= FREE_SHIPPING_THRESHOLD) {
       setQuoteStatus("ready");
       setQuotedShippingCost(0);
       setQuoteError("");
+      setQuoteDetails({ zoneName: "ارسال رایگان ویژه سفارش بالای ۵۰۰ هزار تومان", estimatedDays: "۱ الی ۲ روز کاری" });
       return;
     }
     let cancelled = false;
     setQuoteStatus("loading");
     setQuoteError("");
-    fetch("/api/shipping/postex/quote", {
+
+    fetch("/api/shipping/tipax/quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        province,
         city,
         totalValue: subtotal - discount,
         totalWeight: Math.max(0.1, itemsTotalWeightGrams / 1000),
@@ -120,37 +143,25 @@ export default function CheckoutPage() {
     })
       .then(async (response) => {
         const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.error || "استعلام هزینه ارسال ناموفق بود.");
+        if (!response.ok || !data.success) throw new Error(data.error || "استعلام آنلاین تعرفه تیپاکس ناموفق بود.");
         if (cancelled) return;
-        const raw = data.data;
-        // استخراج مبلغ از پاسخ پستکس (ساختارهای مختلف ممکن)
-        const candidates: unknown[] = [];
-        const collect = (value: unknown, depth = 0) => {
-          if (!value || typeof value !== "object" || depth > 4) return;
-          if (Array.isArray(value)) { value.forEach((entry) => collect(entry, depth + 1)); return; }
-          const record = value as Record<string, unknown>;
-          for (const key of ["price", "amount", "quote_price", "quotePrice", "total_price", "totalPrice", "shipping_price", "shippingPrice", "cost", "delivery_price", "deliveryPrice"]) {
-            if (record[key] !== undefined && record[key] !== null) candidates.push(record[key]);
-          }
-          for (const key of Object.keys(record)) collect(record[key], depth + 1);
-        };
-        collect(raw);
-        const numeric = candidates.map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0);
-        if (numeric === undefined) throw new Error("پاسخ استعلام هزینه ارسال قابل خواندن نبود.");
-        if (cancelled) return;
-        // پستکس مبالغ را به ریال (×10 تومان) برمی‌گرداند
-        const toman = numeric > 1000000 ? Math.round(numeric / 10) : Math.round(numeric);
-        setQuotedShippingCost(Math.min(toman, 500000));
+        const cost = Number(data.data?.cost);
+        if (!Number.isFinite(cost)) throw new Error("تعرفه استعلامی معتبر نیست.");
+        setQuotedShippingCost(cost);
+        setQuoteDetails({
+          zoneName: data.data?.breakdown?.zoneName,
+          estimatedDays: data.data?.estimatedDays || "۱ الی ۲ روز کاری",
+        });
         setQuoteStatus("ready");
       })
       .catch((error) => {
         if (cancelled) return;
         setQuoteStatus("error");
         setQuotedShippingCost(null);
-        setQuoteError(error instanceof Error ? error.message : "استعلام هزینه ارسال ناموفق بود.");
+        setQuoteError(error instanceof Error ? error.message : "استعلام آنلاین تعرفه تیپاکس ناموفق بود.");
       });
     return () => { cancelled = true; };
-  }, [city, subtotal, discount, itemsTotalWeightGrams, paymentMethod]);
+  }, [province, city, subtotal, discount, itemsTotalWeightGrams, paymentMethod]);
 
   useEffect(() => {
     if (!city.trim().replace(/ي/g, "ی").includes("اصفهان") && paymentMethod === "cod") setPaymentMethod("zarinpal");
@@ -353,17 +364,24 @@ export default function CheckoutPage() {
               <div className="sm:col-span-2">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-xs font-bold text-stone-700">انتخاب آدرس روی نقشه *</p>
-                    <p className="mt-0.5 text-[10px] text-stone-500">موقعیت دقیق روی نقشه ثبت می‌شود تا مرسوله سریع‌تر به دست شما برسد.</p>
+                    <p className="text-xs font-bold text-stone-800">انتخاب و استخراج خودکار آدرس از روی نقشه *</p>
+                    <p className="mt-0.5 text-[10px] text-stone-500">
+                      با کلیک روی نقشه، استان، شهر و نشانی دقیق به‌طور خودکار در فرم بالا ثبت و هزینه تیپاکس محاسبه می‌شود.
+                    </p>
                   </div>
-                  <button type="button" onClick={selectCurrentLocation} className="rounded-xl border border-amber-300 bg-amber-50/50 px-3 py-2 text-[11px] font-bold text-stone-900 hover:bg-amber-100">
-                    استفاده از موقعیت فعلی من
+                  <button type="button" onClick={selectCurrentLocation} className="rounded-xl border border-amber-300 bg-amber-50/70 px-3 py-1.5 text-[11px] font-bold text-stone-900 hover:bg-amber-100 transition">
+                    📍 موقعیت فعلی من
                   </button>
                 </div>
-                <AddressMapPicker latitude={latitude} longitude={longitude} onPick={handlePickOnMap} />
+                <AddressMapPicker
+                  latitude={latitude}
+                  longitude={longitude}
+                  onPick={handlePickOnMap}
+                  onAddressSelect={handleAddressSelectFromMap}
+                />
                 {latitude !== null && longitude !== null && (
                   <p className="mt-2 text-[10px] font-semibold text-emerald-700">
-                    موقعیت ثبت شد: {latitude.toFixed(5)}، {longitude.toFixed(5)}
+                    مختصات جغرافیایی تأیید شده: {latitude.toFixed(5)}، {longitude.toFixed(5)}
                   </p>
                 )}
               </div>
@@ -374,59 +392,67 @@ export default function CheckoutPage() {
           <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-base font-black text-stone-900 border-b border-stone-100 pb-4">
               <Truck className="size-5 text-amber-700" />
-              <span>۲. روش ارسال</span>
+              <span>۲. روش ارسال (تیپاکس اکسپرس)</span>
             </h2>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {[
-                { id: "tipax" as const, title: "تیپاکس (ارسال سریع)", time: "۱ الی ۲ روز کاری" },
-                { id: "post" as const, title: "پست پیشتاز", time: "۲ الی ۴ روز کاری" },
-              ].map((m) => (
-                <label
-                  key={m.id}
-                  className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
-                    shippingProvider === m.id
-                      ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-200"
-                      : "border-stone-200 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="shippingProvider"
-                      checked={shippingProvider === m.id}
-                      onChange={() => setShippingProvider(m.id)}
-                      className="accent-amber-600"
-                    />
-                    <div>
-                      <span className="block text-xs font-bold text-stone-900">{m.title}</span>
-                      <span className="text-[11px] text-stone-500">{m.time}</span>
-                    </div>
+            <div className="mt-4">
+              <div
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-500 bg-amber-50/40 p-4 ring-2 ring-amber-200 shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex size-5 items-center justify-center rounded-full bg-amber-700 text-white shrink-0">
+                    <span className="size-2 rounded-full bg-white" />
                   </div>
-                  <span className="text-xs font-bold text-amber-800">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-stone-900">تیپاکس (ارسال سریع درب منزل)</span>
+                      <span className="rounded-full bg-amber-200/80 px-2 py-0.5 text-[9px] font-bold text-amber-900">
+                        تحویل درب منزل
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-stone-600 block mt-0.5">
+                      {quoteDetails?.estimatedDays || "۱ الی ۲ روز کاری"} همراه با بیمه کالا و کد رهگیری پیامکی
+                    </span>
+                  </div>
+                </div>
+                <div className="text-left sm:text-right">
+                  <span className="text-xs font-black text-amber-900">
                     {!city
-                      ? "پس از انتخاب شهر"
+                      ? "پس از انتخاب شهر یا نقشه"
                       : freeShipping
-                        ? "رایگان"
+                        ? "رایگان (خرید بالای ۵۰۰ هزار تومان)"
                         : quoteStatus === "loading"
-                          ? "در حال محاسبه..."
+                          ? "در حال محاسبه آنلاین..."
                           : shippingCost === 0
                             ? "رایگان"
                             : formatToman(shippingCost)}
                   </span>
-                </label>
-              ))}
+                  {quoteDetails?.zoneName && !freeShipping && (
+                    <span className="block text-[10px] text-stone-500">{quoteDetails.zoneName}</span>
+                  )}
+                </div>
+              </div>
             </div>
 
             {!city && (
-              <p className="mt-3 text-[10px] font-semibold text-stone-500">برای محاسبه دقیق هزینه ارسال، ابتدا استان و شهر را انتخاب کنید.</p>
+              <p className="mt-3 text-[11px] font-semibold text-stone-500">
+                برای محاسبه دقیق آنلاین هزینه تیپاکس، استان و شهر را انتخاب کنید یا روی نقشه بالا کلیک کنید.
+              </p>
             )}
-            {quoteStatus === "loading" && <p className="mt-3 text-[10px] font-semibold text-amber-700">هزینه ارسال بر اساس آدرس شما در حال محاسبه است...</p>}
-            {quoteStatus === "error" && city && !freeShipping && (
-              <p className="mt-3 text-[10px] font-semibold text-amber-700">استعلام آنلاین هزینه ارسال ممکن نشد؛ هزینه پیش‌فرض {formatToman(DEFAULT_SHIPPING_COST)} اعمال می‌شود. {quoteError}</p>
+            {quoteStatus === "loading" && (
+              <p className="mt-3 text-[11px] font-semibold text-amber-700 animate-pulse">
+                هزینه ارسال تیپاکس بر اساس آدرس شما در حال محاسبه آنلاین است...
+              </p>
+            )}
+            {quoteStatus === "error" && (
+              <p className="mt-3 text-[11px] font-semibold text-amber-800">
+                {quoteError}
+              </p>
             )}
             {quoteStatus === "ready" && !freeShipping && quotedShippingCost !== null && (
-              <p className="mt-3 text-[10px] font-semibold text-emerald-700">هزینه ارسال بر اساس آدرس انتخابی شما محاسبه شد.</p>
+              <p className="mt-3 text-[11px] font-semibold text-emerald-700">
+                ✓ تعرفه رسمی تیپاکس بر اساس مقصد «{province ? `${province} - ` : ""}{city}» آنلاین محاسبه شد: {formatToman(shippingCost)}
+              </p>
             )}
           </div>
 
