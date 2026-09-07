@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const revalidate = 3600;
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
@@ -112,7 +115,7 @@ const mockArticlesMap: Record<
   },
 };
 
-export async function generateMetadata({ params }: ArticlePageProps) {
+export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
   const article = mockArticlesMap[slug];
 
@@ -120,9 +123,27 @@ export async function generateMetadata({ params }: ArticlePageProps) {
     return { title: "مقاله یافت نشد | مینی رویال" };
   }
 
+  const title = `${article.title} | مجله مینی رویال`;
+  const description = article.content.substring(0, 160).replace(/\n/g, " ").trim();
+  const canonicalUrl = `/blog/${slug}`;
+
   return {
-    title: `${article.title} | مجله مینی رویال`,
-    description: article.content.substring(0, 150),
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: `https://miniroyal.shop${canonicalUrl}`,
+      type: "article",
+      images: [{ url: article.image, alt: article.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [article.image],
+    },
   };
 }
 
@@ -136,18 +157,39 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
   const articleJsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: article.title,
-    image: article.image,
-    author: {
-      "@type": "Person",
-      name: article.author,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "مینی رویال",
-    },
-    datePublished: "2026-08-25",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "خانه", item: "https://miniroyal.shop/" },
+          { "@type": "ListItem", position: 2, name: "مجله تخصصی", item: "https://miniroyal.shop/blog" },
+          { "@type": "ListItem", position: 3, name: article.title, item: `https://miniroyal.shop/blog/${slug}` },
+        ],
+      },
+      {
+        "@type": "BlogPosting",
+        headline: article.title,
+        description: article.content.substring(0, 160).replace(/\n/g, " ").trim(),
+        image: `https://miniroyal.shop${article.image}`,
+        author: {
+          "@type": "Person",
+          name: article.author,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "مینی رویال",
+          logo: {
+            "@type": "ImageObject",
+            url: "https://miniroyal.shop/images/brand/miniroyal-logo.webp",
+          },
+        },
+        datePublished: "2026-08-25",
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": `https://miniroyal.shop/blog/${slug}`,
+        },
+      },
+    ],
   };
 
   return (

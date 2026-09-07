@@ -7,6 +7,8 @@ import { CatalogFilterParams, Gender } from "../../lib/types/catalog";
 import { toPersianDigits } from "../../lib/utils";
 import ManagedBanners from "../../components/ManagedBanners";
 
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
 
 interface CategoryPageProps {
@@ -22,7 +24,7 @@ interface CategoryPageProps {
   }>;
 }
 
-export async function generateMetadata({ params }: CategoryPageProps) {
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
   const categorySlug = slug[0];
   const category = await getCategoryBySlug(categorySlug);
@@ -31,9 +33,27 @@ export async function generateMetadata({ params }: CategoryPageProps) {
     return { title: "دسته‌بندی یافت نشد | مینی رویال" };
   }
 
+  const title = `خرید لباس ${category.name} | فروشگاه مینی رویال`;
+  const description = category.description || `خرید جدیدترین مدل‌های پوشاک ${category.name} با پرو آنلاین هوشمند، جدول سایز و تضمین کیفیت و تعویض سایز.`;
+  const canonicalUrl = `/category/${categorySlug}`;
+
   return {
-    title: `خرید لباس ${category.name} | فروشگاه مینی رویال`,
-    description: category.description || `خرید جدیدترین پوشاک ${category.name} با تضمین تعویض سایز و ارسال سریع.`,
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: `https://miniroyal.shop${canonicalUrl}`,
+      type: "website",
+      images: category.imageUrl ? [{ url: category.imageUrl, alt: category.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: category.imageUrl ? [category.imageUrl] : undefined,
+    },
   };
 }
 
@@ -71,8 +91,42 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     sort: resolvedParams.sort as CatalogFilterParams["sort"],
   });
 
+  const categoryJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "خانه", item: "https://miniroyal.shop/" },
+          { "@type": "ListItem", position: 2, name: "دسته‌بندی‌ها", item: "https://miniroyal.shop/shop" },
+          { "@type": "ListItem", position: 3, name: category.name, item: `https://miniroyal.shop/category/${categorySlug}` },
+        ],
+      },
+      {
+        "@type": "CollectionPage",
+        name: `پوشاک ${category.name} | مینی رویال`,
+        description: category.description || `خرید جدیدترین پوشاک ${category.name}`,
+        url: `https://miniroyal.shop/category/${categorySlug}`,
+        mainEntity: {
+          "@type": "ItemList",
+          numberOfItems: catalogData.products.length,
+          itemListElement: catalogData.products.slice(0, 16).map((prod, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            url: `https://miniroyal.shop/product/${prod.slug}`,
+            name: prod.title,
+          })),
+        },
+      },
+    ],
+  };
+
   return (
     <div className="mx-auto site-container px-4 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryJsonLd) }}
+      />
       <ManagedBanners placement="category_top" />
       {/* مسیر خرده‌نانی */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">

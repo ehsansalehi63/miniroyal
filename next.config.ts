@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  compress: true,
+  poweredByHeader: false,
   images: {
     // All artwork is self-hosted under /public — no external image CDNs,
     // so the storefront renders fully with or without VPN/DNS filtering.
@@ -13,6 +15,13 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
       {
         // Admin sessions and API responses are user-specific. Hostinger's
         // front proxy must never cache an anonymous response and replay it

@@ -52,9 +52,12 @@ export default function ProductCard({ product }: { product: Product }) {
           <img
             src={currentImage}
             alt={`${product.title} - تصویر ${activeIndex + 1}`}
+            width={400}
+            height={533}
             onError={() => setFailedImages((current) => [...new Set([...current, gallery[activeIndex]])])}
             className="editorial-image size-full object-cover object-center transition duration-700 ease-out group-hover:scale-[1.03]"
             loading="lazy"
+            decoding="async"
           />
 
           {/* هاور روی زاویه دوم لباس (Hover Reveal) به صورت نرم و سینمایی */}
@@ -62,9 +65,12 @@ export default function ProductCard({ product }: { product: Product }) {
             <img
               src={secondaryImage}
               alt={`${product.title} - زاویه دوم`}
+              width={400}
+              height={533}
               onError={() => setFailedImages((current) => [...new Set([...current, gallery[1]])])}
               className="absolute inset-0 size-full object-cover object-center opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
               loading="lazy"
+              decoding="async"
             />
           )}
         </Link>

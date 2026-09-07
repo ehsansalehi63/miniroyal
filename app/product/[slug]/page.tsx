@@ -11,6 +11,7 @@ import { getProductBySlug, getRelatedProducts } from "../../lib/catalog";
 import { calculateDiscountPercent, formatToman, toPersianDigits } from "../../lib/utils";
 import { currentCustomer } from "../../lib/customer-auth";
 import ManagedBanners from "../../components/ManagedBanners";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ interface ProductPageProps {
   searchParams: Promise<{ tryon?: string }>;
 }
 
-export async function generateMetadata({ params }: ProductPageProps) {
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
@@ -27,20 +28,44 @@ export async function generateMetadata({ params }: ProductPageProps) {
     return { title: "محصول یافت نشد | مینی رویال" };
   }
 
+  const title = product.seoTitle || `${product.title} | مینی رویال`;
+  const description = product.seoDesc || product.shortDesc || `خرید ${product.title} با بهترین پارچه ضد حساسیت کودک، جدول اندازه دقیق و امکان پرو آنلاین هوشمند.`;
+  const canonicalUrl = `/product/${product.slug}`;
+
   return {
-    title: product.seoTitle || `${product.title} | مینی رویال`,
-    description: product.seoDesc || product.shortDesc,
+    title,
+    description,
+    keywords: [
+      product.title,
+      product.categoryName,
+      product.brandName || "مینی رویال",
+      "پوشاک کودک",
+      "پرو آنلاین لباس",
+      "خرید لباس بچه",
+    ].filter(Boolean),
+    alternates: { canonical: canonicalUrl },
     openGraph: {
-      title: product.title,
-      description: product.shortDesc,
-      images: product.images,
+      title,
+      description,
+      url: `https://miniroyal.shop${canonicalUrl}`,
+      type: "website",
+      images: product.images.map((img) => ({
+        url: img,
+        alt: `${product.title} — مینی رویال`,
+      })),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: product.images.slice(0, 1),
     },
   };
 }
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = await params;
-  const { tryon } = await searchParams;
+  const { tryon: _tryon } = await searchParams;
   const product = await getProductBySlug(slug);
 
   if (!product) {
@@ -53,34 +78,51 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const discountPercent = calculateDiscountPercent(product.basePrice, product.salePrice);
   const currentPrice = product.salePrice ?? product.basePrice;
 
-  // JSON-LD Schema
+  // JSON-LD Schema با هماهنگی کامل BreadcrumbList و Product Offer
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.title,
-    image: product.images,
-    description: product.shortDesc,
-    sku: product.sku,
-    brand: {
-      "@type": "Brand",
-      name: product.brandName || "مینی رویال",
-    },
-    offers: {
-      "@type": "Offer",
-      url: `https://miniroyal.shop/product/${product.slug}`,
-      priceCurrency: "IRR",
-      price: currentPrice * 10, // Toman to Rial for Schema
-      availability: "https://schema.org/InStock",
-      seller: {
-        "@type": "Organization",
-        name: "مینی رویال",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "خانه", item: "https://miniroyal.shop/" },
+          { "@type": "ListItem", position: 2, name: "فروشگاه", item: "https://miniroyal.shop/shop" },
+          { "@type": "ListItem", position: 3, name: product.categoryName, item: `https://miniroyal.shop/category/${product.categorySlug}` },
+          { "@type": "ListItem", position: 4, name: product.title, item: `https://miniroyal.shop/product/${product.slug}` },
+        ],
       },
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: product.ratingAvg,
-      reviewCount: product.ratingCount || 1,
-    },
+      {
+        "@type": "Product",
+        name: product.title,
+        image: product.images,
+        description: product.shortDesc || product.description,
+        sku: product.sku,
+        brand: {
+          "@type": "Brand",
+          name: product.brandName || "مینی رویال",
+        },
+        offers: {
+          "@type": "Offer",
+          url: `https://miniroyal.shop/product/${product.slug}`,
+          priceCurrency: "IRR",
+          price: currentPrice * 10, // Toman to Rial for Schema
+          priceValidUntil: "2027-12-31",
+          itemCondition: "https://schema.org/NewCondition",
+          availability: product.variants.some((v) => v.stock > 0)
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+          seller: {
+            "@type": "Organization",
+            name: "مینی رویال",
+          },
+        },
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: product.ratingAvg || 5,
+          reviewCount: product.ratingCount || 1,
+        },
+      },
+    ],
   };
 
   return (

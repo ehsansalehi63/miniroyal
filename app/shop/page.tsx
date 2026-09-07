@@ -5,8 +5,26 @@ import Link from "next/link";
 import { CatalogFilterParams, Gender } from "../lib/types/catalog";
 import { toPersianDigits } from "../lib/utils";
 import ManagedBanners from "../components/ManagedBanners";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "فروشگاه تخصصی پوشاک کودک و نوجوان | مینی رویال",
+  description: "خرید انواع لباس دخترانه، پسرانه و نوزادی با امکان پرو آنلاین هوشمند، تفکیک بر اساس قد و وزن و ارسال سریع به سراسر ایران.",
+  alternates: { canonical: "/shop" },
+  openGraph: {
+    title: "فروشگاه تخصصی پوشاک کودک و نوجوان | مینی رویال",
+    description: "خرید انواع لباس دخترانه، پسرانه و نوزادی با امکان پرو آنلاین هوشمند، تفکیک بر اساس قد و وزن و ارسال سریع به سراسر ایران.",
+    url: "https://miniroyal.shop/shop",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "فروشگاه تخصصی پوشاک کودک و نوجوان | مینی رویال",
+    description: "خرید انواع لباس دخترانه، پسرانه و نوزادی با امکان پرو آنلاین هوشمند، تفکیک بر اساس قد و وزن و ارسال سریع به سراسر ایران.",
+  },
+};
 
 interface ShopPageProps {
   searchParams: Promise<{
@@ -47,8 +65,21 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     search: resolvedParams.q,
   });
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "خانه", item: "https://miniroyal.shop/" },
+      { "@type": "ListItem", position: 2, name: "فروشگاه", item: "https://miniroyal.shop/shop" },
+    ],
+  };
+
   return (
     <div className="mx-auto site-container px-4 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <ManagedBanners placement="shop_top" />
       {/* مسیر خرده‌نانی Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">

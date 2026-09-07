@@ -6,6 +6,16 @@ import { kidsCategories } from "./kidsCategories";
 
 const staticCategories = [...mockCategories, ...kidsCategories];
 
+// کش درون‌حافظه‌ای جهت کاهش چشمگیر کوئری‌های تکراری و بالا بردن سرعت لود صفحات (TTFB)
+let cachedCategories: { data: Category[]; timestamp: number } | null = null;
+let cachedActiveProducts: { data: Product[]; timestamp: number } | null = null;
+const CACHE_TTL_MS = 45_000; // ۴۵ ثانیه
+
+export function invalidateCatalogCache() {
+  cachedCategories = null;
+  cachedActiveProducts = null;
+}
+
 type CategoryRow = RowDataPacket & {
   id: number; parent_id: number | null; name: string; slug: string; description: string | null;
   icon: string | null; image_url: string | null; sort_order: number;
@@ -28,15 +38,22 @@ function parseJson<T>(value: unknown, fallback: T): T {
 }
 
 async function loadCategories() {
+  const now = Date.now();
+  if (cachedCategories && now - cachedCategories.timestamp < CACHE_TTL_MS) {
+    return cachedCategories.data;
+  }
+
   try {
     const [rows] = await pool.execute<CategoryRow[]>("SELECT id, parent_id, name, slug, description, icon, image_url, sort_order FROM categories WHERE is_active = 1 ORDER BY sort_order, id");
     if (rows && rows.length > 0) {
       const byId = new Map(rows.map((row) => [row.id, row]));
-      return rows.map((row): Category => ({
+      const result = rows.map((row): Category => ({
         id: row.id, parentId: row.parent_id, parentSlug: row.parent_id ? byId.get(row.parent_id)?.slug : undefined,
         name: row.name, slug: row.slug, description: row.description || undefined, icon: row.icon || undefined,
         imageUrl: row.image_url || undefined, sortOrder: row.sort_order,
       }));
+      cachedCategories = { data: result, timestamp: now };
+      return result;
     }
   } catch (err) {
     console.warn("Categories query error, using static categories fallback:", err);
@@ -45,6 +62,13 @@ async function loadCategories() {
 }
 
 async function loadProducts(where = "p.status = 'active'", params: (string | number)[] = []): Promise<Product[]> {
+  const isDefaultQuery = where === "p.status = 'active'" && params.length === 0;
+  const now = Date.now();
+
+  if (isDefaultQuery && cachedActiveProducts && now - cachedActiveProducts.timestamp < CACHE_TTL_MS) {
+    return cachedActiveProducts.data;
+  }
+
   try {
     const [productRows] = await pool.execute<ProductRow[]>(
       `SELECT p.id, p.title, p.slug, p.sku, p.short_desc, p.description, p.category_id,
@@ -69,7 +93,7 @@ async function loadProducts(where = "p.status = 'active'", params: (string | num
       }
       const mediaByProduct = new Map<number, MediaRow[]>();
       for (const row of mediaRows || []) mediaByProduct.set(row.product_id, [...(mediaByProduct.get(row.product_id) || []), row]);
-      return productRows.map((row): Product => ({
+      const mappedProducts = productRows.map((row): Product => ({
         id: row.id, title: row.title, slug: row.slug, sku: row.sku, shortDesc: row.short_desc || "", description: row.description || "",
         categoryId: row.category_id, categorySlug: row.category_slug, categoryName: row.category_name, brandName: row.brand_name || undefined,
         gender: row.gender, ageMinMonth: row.age_min_month, ageMaxMonth: row.age_max_month, basePrice: Number(row.base_price), salePrice: row.sale_price === null ? undefined : Number(row.sale_price),
@@ -78,9 +102,16 @@ async function loadProducts(where = "p.status = 'active'", params: (string | num
         faqJson: parseJson(row.faq_json, []), sizeChartJson: parseJson(row.size_chart_json, []), images: (mediaByProduct.get(row.id) || []).map((media) => media.url),
         variants: variantsByProduct.get(row.id) || [], publishedAt: new Date(row.published_at).toISOString(),
       }));
+      if (isDefaultQuery) {
+        cachedActiveProducts = { data: mappedProducts, timestamp: now };
+      }
+      return mappedProducts;
     }
   } catch (err) {
     console.warn("Products query error, using mock fallback:", err);
+  }
+  if (isDefaultQuery) {
+    cachedActiveProducts = { data: mockProducts, timestamp: now };
   }
   return mockProducts;
 }

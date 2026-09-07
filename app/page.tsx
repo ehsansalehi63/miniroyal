@@ -13,12 +13,25 @@ import { getActiveBanners } from "./lib/banners";
 import { blogPosts } from "./lib/blogPosts";
 import { ShieldCheck, Truck, RotateCcw, Headset, ArrowLeft, Star } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata = {
-  title: "مینی رویال | فروشگاه پوشاک کودک و نوجوان با پرو آنلاین لباس",
+  title: "مینی رویال | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین",
   description: "خرید شیک‌ترین لباس‌های دخترانه، پسرانه و نوزاد با پرو آنلاین، جدول سایز سانتی‌متری و ارسال سریع به سراسر کشور.",
   alternates: { canonical: "/" },
+  openGraph: {
+    title: "مینی رویال | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین",
+    description: "خرید شیک‌ترین لباس‌های دخترانه، پسرانه و نوزاد با پرو آنلاین، جدول سایز سانتی‌متری و ارسال سریع به سراسر کشور.",
+    url: "https://miniroyal.shop",
+    type: "website",
+    images: [{ url: "/images/hero-poster.webp", width: 1600, height: 893, alt: "مینی رویال — پوشاک کودک و نوجوان" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "مینی رویال | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین",
+    description: "خرید شیک‌ترین لباس‌های دخترانه، پسرانه و نوزاد با پرو آنلاین، جدول سایز سانتی‌متری و ارسال سریع به سراسر کشور.",
+    images: ["/images/hero-poster.webp"],
+  },
 };
 
 /** دسته‌های اصلی همراه با تصویر و زیردسته‌های واقعی (از همان taxanomy کاتالوگ) */

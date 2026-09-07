@@ -1,16 +1,44 @@
 import Link from "next/link";
 import { blogPosts } from "../lib/blogPosts";
+import type { Metadata } from "next";
 
-export const metadata = {
+export const revalidate = 3600;
+
+export const metadata: Metadata = {
   title: "مجله تخصصی و بلاگ پوشاک کودک | مینی رویال",
   description: "راهنمای کامل خرید لباس کودک، انتخاب سایز، نگهداری از پارچه، و استایل فرزندان.",
+  alternates: { canonical: "/blog" },
+  openGraph: {
+    title: "مجله تخصصی و بلاگ پوشاک کودک | مینی رویال",
+    description: "راهنمای کامل خرید لباس کودک، انتخاب سایز، نگهداری از پارچه، و استایل فرزندان.",
+    url: "https://miniroyal.shop/blog",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "مجله تخصصی و بلاگ پوشاک کودک | مینی رویال",
+    description: "راهنمای کامل خرید لباس کودک، انتخاب سایز، نگهداری از پارچه، و استایل فرزندان.",
+  },
 };
 
 const articles = blogPosts;
 
 export default function BlogListPage() {
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "خانه", item: "https://miniroyal.shop/" },
+      { "@type": "ListItem", position: 2, name: "مجله تخصصی", item: "https://miniroyal.shop/blog" },
+    ],
+  };
+
   return (
     <div className="mx-auto site-container px-4 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* مسیر خرده‌نانی */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
         <Link href="/" className="hover:text-amber-700">خانه</Link>

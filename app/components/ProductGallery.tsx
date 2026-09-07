@@ -44,6 +44,11 @@ export default function ProductGallery({ images, title }: ProductGalleryProps) {
         <img
           src={activeImage}
           alt={`${title} - ${DEFAULT_ANGLE_NAMES[activeIndex] || "زاویه تصویر"}`}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          width={600}
+          height={800}
           style={{
             transformOrigin: `${mousePos.x}% ${mousePos.y}%`,
           }}
@@ -107,6 +112,10 @@ export default function ProductGallery({ images, title }: ProductGalleryProps) {
                 <img
                   src={img}
                   alt={`${title} - بندانگشتی ${idx + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  width={60}
+                  height={80}
                   className="size-full object-cover"
                 />
               </button>
