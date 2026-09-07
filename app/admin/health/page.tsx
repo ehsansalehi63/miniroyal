@@ -75,7 +75,7 @@ export default function AdminHealthPage() {
         <button
           onClick={runHealthCheck}
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-violet-700 px-6 py-3 text-xs font-black text-white shadow-lg transition hover:bg-violet-800 disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-stone-950 px-6 py-3 text-xs font-black text-white shadow-lg transition hover:bg-stone-800 disabled:opacity-50"
         >
           <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
           <span>{loading ? "در حال تست زیرسیستم‌ها..." : "شروع تست مجدد سلامت کل سایت"}</span>
@@ -118,7 +118,7 @@ export default function AdminHealthPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 font-black text-xs text-stone-900">
-                      <Icon className="size-4 text-violet-700" />
+                      <Icon className="size-4 text-amber-700" />
                       <span>{getLabel(key)}</span>
                     </div>
 

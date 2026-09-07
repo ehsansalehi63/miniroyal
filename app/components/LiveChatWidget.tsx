@@ -69,14 +69,14 @@ export default function LiveChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-700 px-5 py-3.5 text-white shadow-2xl transition-all hover:scale-105 hover:shadow-violet-500/50"
+          className="group relative flex items-center gap-3 rounded-full bg-stone-950 px-5 py-3.5 text-white shadow-2xl transition-all hover:scale-105 border border-amber-500/30"
           aria-label="چت آنلاین و مشاوره خرید"
         >
           <span className="relative flex size-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
             <span className="relative inline-flex size-3 rounded-full bg-amber-400" />
           </span>
-          <MessageCircle className="size-5" />
+          <MessageCircle className="size-5 text-amber-400" />
           <span className="text-xs font-black">مشاوره خرید و چت آنلاین</span>
         </button>
       )}
@@ -84,13 +84,13 @@ export default function LiveChatWidget() {
       {isOpen && (
         <div className="flex h-[500px] w-[360px] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl transition-all sm:w-[400px]">
           {/* هدر چت */}
-          <div className="flex items-center justify-between bg-gradient-to-r from-violet-700 via-fuchsia-600 to-violet-700 p-4 text-white">
+          <div className="flex items-center justify-between bg-stone-950 p-4 text-white border-b border-amber-500/30">
             <div className="flex items-center gap-3">
               <span className="grid size-10 overflow-hidden rounded-2xl bg-white/20 shadow-inner">
                 <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
               </span>
               <div>
-                <span className="block text-sm font-black">پشتیبانی آنلاین مینی رویال</span>
+                <span className="block text-sm font-black text-amber-100">پشتیبانی آنلاین مینی رویال</span>
                 <span className="flex items-center gap-1 text-[10px] text-emerald-300 font-bold">
                   <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
                   پاسخگویی آنلاین و مشاوره سایز
@@ -116,8 +116,8 @@ export default function LiveChatWidget() {
                 <div
                   className={`grid size-7 shrink-0 place-items-center rounded-xl text-xs font-bold ${
                     m.sender === "user"
-                      ? "bg-violet-600 text-white"
-                      : "bg-fuchsia-100 text-fuchsia-800"
+                      ? "bg-amber-700 text-white"
+                      : "bg-stone-200 text-stone-800"
                   }`}
                 >
                   {m.sender === "user" ? <User className="size-3.5" /> : <Bot className="size-3.5" />}
@@ -126,14 +126,14 @@ export default function LiveChatWidget() {
                 <div
                   className={`max-w-[78%] rounded-2xl p-3 shadow-sm ${
                     m.sender === "user"
-                      ? "bg-violet-700 text-white rounded-br-none"
+                      ? "bg-stone-900 text-white rounded-br-none"
                       : "bg-white text-stone-800 border border-stone-200 rounded-bl-none"
                   }`}
                 >
                   <p className="leading-5">{m.text}</p>
                   <span
                     className={`mt-1 block text-[9px] ${
-                      m.sender === "user" ? "text-violet-200" : "text-stone-400"
+                      m.sender === "user" ? "text-stone-300" : "text-stone-400"
                     }`}
                   >
                     {m.time}
@@ -150,11 +150,11 @@ export default function LiveChatWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="سوال خود را بنویسید..."
-              className="flex-1 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs outline-none focus:border-violet-500 focus:bg-white"
+              className="flex-1 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs outline-none focus:border-amber-500 focus:bg-white"
             />
             <button
               type="submit"
-              className="grid size-10 place-items-center rounded-2xl bg-violet-700 text-white shadow-md hover:bg-violet-800"
+              className="grid size-10 place-items-center rounded-2xl bg-stone-950 text-amber-400 shadow-md hover:bg-stone-800 transition"
               aria-label="ارسال"
             >
               <Send className="size-4 rotate-180" />

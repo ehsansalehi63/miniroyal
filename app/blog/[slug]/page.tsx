@@ -159,14 +159,14 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
       <article className="mx-auto max-w-4xl px-4 py-8">
         <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
-          <Link href="/" className="hover:text-violet-700">خانه</Link>
+          <Link href="/" className="hover:text-amber-700">خانه</Link>
           <span>/</span>
-          <Link href="/blog" className="hover:text-violet-700">مجله</Link>
+          <Link href="/blog" className="hover:text-amber-700">مجله</Link>
           <span>/</span>
           <span className="text-stone-900 font-bold">{article.title}</span>
         </nav>
 
-        <span className="rounded-full bg-violet-100 px-3.5 py-1 text-xs font-bold text-violet-800">
+        <span className="rounded-full border border-amber-300 bg-amber-50 px-3.5 py-1 text-xs font-black text-amber-900">
           {article.category}
         </span>
         <h1 className="mt-3 text-3xl font-black text-stone-900 sm:text-4xl leading-tight">

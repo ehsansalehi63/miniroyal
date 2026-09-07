@@ -162,7 +162,7 @@ export default function CheckoutPage() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
         <h1 className="text-xl font-bold text-stone-900">سبد خرید شما خالی است.</h1>
-        <Link href="/shop" className="mt-4 inline-block text-xs font-bold text-violet-700 underline">
+        <Link href="/shop" className="mt-4 inline-block text-xs font-bold text-amber-800 hover:text-amber-900 underline">
           بازگشت به فروشگاه
         </Link>
       </div>
@@ -230,9 +230,9 @@ export default function CheckoutPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
-        <Link href="/" className="hover:text-violet-700">خانه</Link>
+        <Link href="/" className="hover:text-amber-700">خانه</Link>
         <span>/</span>
-        <Link href="/cart" className="hover:text-violet-700">سبد خرید</Link>
+        <Link href="/cart" className="hover:text-amber-700">سبد خرید</Link>
         <span>/</span>
         <span className="text-stone-900 font-bold">تسویه حساب و پرداخت</span>
       </nav>
@@ -245,7 +245,7 @@ export default function CheckoutPage() {
           {/* آدرس تحویل */}
           <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-base font-black text-stone-900 border-b border-stone-100 pb-4">
-              <MapPin className="size-5 text-violet-600" />
+              <MapPin className="size-5 text-amber-700" />
               <span>۱. آدرس تحویل مرسوله</span>
             </h2>
 
@@ -258,7 +258,7 @@ export default function CheckoutPage() {
                   placeholder="مثال: زهرا محمدی"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -270,7 +270,7 @@ export default function CheckoutPage() {
                   placeholder="۰۹۱۲۳۴۵۶۷۸۹"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -281,7 +281,7 @@ export default function CheckoutPage() {
                     required
                     value={province}
                     onChange={(e) => { setProvince(e.target.value); setCity(""); }}
-                    className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"
+                    className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-amber-500"
                   >
                     <option value="">انتخاب استان</option>
                     {provinces.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -293,7 +293,7 @@ export default function CheckoutPage() {
                     placeholder="مثال: اصفهان"
                     value={province}
                     onChange={(e) => { setProvince(e.target.value); setCity(""); }}
-                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
                   />
                 )}
               </div>
@@ -306,7 +306,7 @@ export default function CheckoutPage() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     disabled={!province}
-                    className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500 disabled:bg-stone-50 disabled:text-stone-400"
+                    className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-amber-500 disabled:bg-stone-50 disabled:text-stone-400"
                   >
                     <option value="">{province ? "انتخاب شهر" : "ابتدا استان را انتخاب کنید"}</option>
                     {cityOptions.map((item) => <option key={`${item.id}-${item.name}`} value={item.name}>{item.name}</option>)}
@@ -319,7 +319,7 @@ export default function CheckoutPage() {
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     disabled={Boolean(provinces.length) && !province}
-                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500 disabled:bg-stone-50 disabled:text-stone-400"
+                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500 disabled:bg-stone-50 disabled:text-stone-400"
                   />
                 )}
                 {citiesError && <p className="mt-1 text-[10px] text-amber-700">{citiesError}؛ شهر را دستی وارد کنید.</p>}
@@ -333,7 +333,7 @@ export default function CheckoutPage() {
                   placeholder="خیابان، کوچه، پلاک، واحد..."
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -346,7 +346,7 @@ export default function CheckoutPage() {
                   placeholder="۱۲۳۴۵۶۷۸۹۰"
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -356,7 +356,7 @@ export default function CheckoutPage() {
                     <p className="text-xs font-bold text-stone-700">انتخاب آدرس روی نقشه *</p>
                     <p className="mt-0.5 text-[10px] text-stone-500">موقعیت دقیق روی نقشه ثبت می‌شود تا مرسوله سریع‌تر به دست شما برسد.</p>
                   </div>
-                  <button type="button" onClick={selectCurrentLocation} className="rounded-xl border border-violet-200 bg-white px-3 py-2 text-[11px] font-bold text-violet-700 hover:bg-violet-50">
+                  <button type="button" onClick={selectCurrentLocation} className="rounded-xl border border-amber-300 bg-amber-50/50 px-3 py-2 text-[11px] font-bold text-stone-900 hover:bg-amber-100">
                     استفاده از موقعیت فعلی من
                   </button>
                 </div>
@@ -373,7 +373,7 @@ export default function CheckoutPage() {
           {/* روش ارسال */}
           <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-base font-black text-stone-900 border-b border-stone-100 pb-4">
-              <Truck className="size-5 text-violet-600" />
+              <Truck className="size-5 text-amber-700" />
               <span>۲. روش ارسال</span>
             </h2>
 
@@ -386,7 +386,7 @@ export default function CheckoutPage() {
                   key={m.id}
                   className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
                     shippingProvider === m.id
-                      ? "border-violet-700 bg-violet-50/50 ring-2 ring-violet-200"
+                      ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-200"
                       : "border-stone-200 bg-white"
                   }`}
                 >
@@ -396,14 +396,14 @@ export default function CheckoutPage() {
                       name="shippingProvider"
                       checked={shippingProvider === m.id}
                       onChange={() => setShippingProvider(m.id)}
-                      className="accent-violet-600"
+                      className="accent-amber-600"
                     />
                     <div>
                       <span className="block text-xs font-bold text-stone-900">{m.title}</span>
                       <span className="text-[11px] text-stone-500">{m.time}</span>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-violet-700">
+                  <span className="text-xs font-bold text-amber-800">
                     {!city
                       ? "پس از انتخاب شهر"
                       : freeShipping
@@ -421,7 +421,7 @@ export default function CheckoutPage() {
             {!city && (
               <p className="mt-3 text-[10px] font-semibold text-stone-500">برای محاسبه دقیق هزینه ارسال، ابتدا استان و شهر را انتخاب کنید.</p>
             )}
-            {quoteStatus === "loading" && <p className="mt-3 text-[10px] font-semibold text-violet-700">هزینه ارسال بر اساس آدرس شما در حال محاسبه است...</p>}
+            {quoteStatus === "loading" && <p className="mt-3 text-[10px] font-semibold text-amber-700">هزینه ارسال بر اساس آدرس شما در حال محاسبه است...</p>}
             {quoteStatus === "error" && city && !freeShipping && (
               <p className="mt-3 text-[10px] font-semibold text-amber-700">استعلام آنلاین هزینه ارسال ممکن نشد؛ هزینه پیش‌فرض {formatToman(DEFAULT_SHIPPING_COST)} اعمال می‌شود. {quoteError}</p>
             )}
@@ -433,7 +433,7 @@ export default function CheckoutPage() {
           {/* روش پرداخت */}
           <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
             <h2 className="flex items-center gap-2 text-base font-black text-stone-900 border-b border-stone-100 pb-4">
-              <CreditCard className="size-5 text-violet-600" />
+              <CreditCard className="size-5 text-amber-700" />
               <span>۳. روش پرداخت</span>
             </h2>
 
@@ -441,7 +441,7 @@ export default function CheckoutPage() {
               <label
                 className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
                   paymentMethod === "zarinpal"
-                    ? "border-violet-700 bg-violet-50/50 ring-2 ring-violet-200"
+                    ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-200"
                     : "border-stone-200 bg-white"
                 }`}
               >
@@ -451,7 +451,7 @@ export default function CheckoutPage() {
                     name="paymentMethod"
                     checked={paymentMethod === "zarinpal"}
                     onChange={() => setPaymentMethod("zarinpal")}
-                    className="accent-violet-600"
+                    className="accent-amber-600"
                   />
                   <div>
                     <span className="block text-xs font-bold text-stone-900">
@@ -469,7 +469,7 @@ export default function CheckoutPage() {
                 key="cod"
                 className={`flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition ${
                   paymentMethod === "cod"
-                    ? "border-violet-700 bg-violet-50/50 ring-2 ring-violet-200"
+                    ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-200"
                     : "border-stone-200 bg-white"
                 }`}
               >
@@ -479,7 +479,7 @@ export default function CheckoutPage() {
                     name="paymentMethod"
                     checked={paymentMethod === "cod"}
                     onChange={() => setPaymentMethod("cod")}
-                    className="accent-violet-600"
+                    className="accent-amber-600"
                   />
                   <div>
                     <span className="block text-xs font-bold text-stone-900">
@@ -542,7 +542,7 @@ export default function CheckoutPage() {
                         : formatToman(shippingCost)}
                 </span>
               </div>
-              <div className="flex justify-between text-sm font-black text-violet-700 border-t border-stone-100 pt-3">
+              <div className="flex justify-between text-sm font-black text-amber-800 border-t border-stone-100 pt-3">
                 <span>مبلغ نهایی:</span>
                 <span>{quoteStatus === "loading" && !freeShipping ? "..." : formatToman(finalTotal)}</span>
               </div>
@@ -551,7 +551,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={isSubmitting || quoteStatus === "loading"}
-              className="mt-6 w-full rounded-2xl bg-violet-700 py-3.5 text-xs font-bold text-white shadow-xl shadow-violet-200 transition hover:bg-violet-800 disabled:opacity-50"
+              className="mt-6 w-full rounded-2xl bg-amber-400 py-3.5 text-xs font-black text-stone-950 shadow-lg transition hover:bg-amber-300 disabled:opacity-50"
             >
               {isSubmitting ? "در حال ثبت سفارش..." : "تأیید نهایی و پرداخت سفارش 🔒"}
             </button>

@@ -20,7 +20,7 @@ function PaymentResult() {
       <p className="mt-3 text-sm text-stone-600">
         {message || "تراکنش تأیید نشد. در صورت کسر وجه، پیگیری از زرین‌پال انجام می‌شود."}
       </p>
-      <Link href="/checkout" className="mt-8 inline-block rounded-xl bg-violet-700 px-6 py-3 text-sm font-bold text-white">
+      <Link href="/checkout" className="mt-8 inline-block rounded-xl bg-stone-950 px-6 py-3 text-sm font-black text-white hover:bg-stone-800 transition shadow-md">
         بازگشت به تسویه حساب
       </Link>
     </div>

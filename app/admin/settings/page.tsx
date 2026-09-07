@@ -100,7 +100,7 @@ export default function AdminSettingsPage() {
         </div>
         <button
           onClick={handleSave}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 text-xs font-black text-white shadow-lg transition hover:brightness-110"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-stone-950 px-6 py-3 text-xs font-black text-white shadow-lg transition hover:bg-stone-800"
         >
           <Save className="size-4" />
           <span>{isSaved ? "ذخیره شد! 🎉" : "ذخیره تغییرات سایت"}</span>
@@ -108,9 +108,9 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* ۱. تغییر رمز عبور ادمین */}
-      <div className="rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-6 shadow-sm">
-        <h2 className="text-base font-black text-stone-900 border-b border-violet-100 pb-3 flex items-center gap-2">
-          <KeyRound className="size-5 text-violet-600" />
+      <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+        <h2 className="text-base font-black text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
+          <KeyRound className="size-5 text-amber-600" />
           <span>تغییر رمز عبور حساب ادمین</span>
         </h2>
 
@@ -122,7 +122,7 @@ export default function AdminSettingsPage() {
               value={currentPasswordInput}
               onChange={(e) => setCurrentPasswordInput(e.target.value)}
               placeholder="••••••••"
-              className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 outline-none focus:border-violet-500"
+              className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 outline-none focus:border-amber-500"
               required
             />
           </div>
@@ -134,7 +134,7 @@ export default function AdminSettingsPage() {
               value={newPasswordInput}
               onChange={(e) => setNewPasswordInput(e.target.value)}
               placeholder="حداقل ۴ کاراکتر"
-              className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 outline-none focus:border-violet-500"
+              className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 outline-none focus:border-amber-500"
               required
             />
           </div>
@@ -142,7 +142,7 @@ export default function AdminSettingsPage() {
           <div>
             <button
               type="submit"
-              className="w-full rounded-xl bg-violet-700 py-2.5 text-xs font-bold text-white shadow hover:bg-violet-800"
+              className="w-full rounded-xl bg-stone-950 py-2.5 text-xs font-black text-white shadow hover:bg-stone-800 transition"
             >
               ثبت رمز عبور جدید
             </button>
@@ -164,7 +164,7 @@ export default function AdminSettingsPage() {
         {/* ۲. درگاه‌های پرداخت آنلاین */}
         <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-base font-black text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
-            <CreditCard className="size-5 text-violet-600" />
+            <CreditCard className="size-5 text-amber-600" />
             <span>تنظیمات درگاه‌های پرداخت آنلاین</span>
           </h2>
 
@@ -174,7 +174,7 @@ export default function AdminSettingsPage() {
               <select
                 value={activeGateway}
                 onChange={(e) => setActiveGateway(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500 font-bold"
               >
                 <option value="zarinpal">زرین‌پال (ZarinPal)</option>
                 <option value="parsian">بانک پارسیان (Parsian)</option>
@@ -190,7 +190,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={zarinpalMerchant}
                 onChange={(e) => setZarinpalMerchant(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-amber-500"
               />
             </div>
 
@@ -203,7 +203,7 @@ export default function AdminSettingsPage() {
                 type="checkbox"
                 checked={isSandbox}
                 onChange={(e) => setIsSandbox(e.target.checked)}
-                className="size-5 accent-violet-600"
+                className="size-5 accent-amber-600"
               />
             </div>
           </div>
@@ -212,7 +212,7 @@ export default function AdminSettingsPage() {
         {/* ۳. اتصال به پنل پیامکی */}
         <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-base font-black text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
-            <MessageSquareCode className="size-5 text-violet-600" />
+            <MessageSquareCode className="size-5 text-amber-600" />
             <span>تنظیمات سامانه پیامک و کد ورود OTP</span>
           </h2>
 
@@ -247,7 +247,7 @@ export default function AdminSettingsPage() {
               <select
                 value={smsProvider}
                 onChange={(e) => setSmsProvider(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500 font-bold"
               >
                 {/* فقط سرویس‌هایی که در app/lib/sms.ts پیاده‌سازی شده‌اند. */}
                 <option value="iranpayamak">ایران پیامک / فراز (IranPayamak)</option>
@@ -264,7 +264,7 @@ export default function AdminSettingsPage() {
                 value={smsApiKey}
                 onChange={(e) => setSmsApiKey(e.target.value)}
                 placeholder="مثال: 3456...45345"
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-amber-500"
               />
             </div>
 
@@ -275,7 +275,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={smsSenderLine}
                   onChange={(e) => setSmsSenderLine(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-amber-500"
                 />
               </div>
               <div>
@@ -284,7 +284,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={smsPatternCode}
                   onChange={(e) => setSmsPatternCode(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-amber-500"
                 />
               </div>
             </div>
@@ -294,7 +294,7 @@ export default function AdminSettingsPage() {
         {/* ۴. هویت برند و اطلاعات تماس */}
         <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-base font-black text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
-            <Store className="size-5 text-violet-600" />
+            <Store className="size-5 text-amber-600" />
             <span>اطلاعات عمومی برند و تماس</span>
           </h2>
 
@@ -305,7 +305,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={siteName}
                 onChange={(e) => setSiteName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
               />
             </div>
 
@@ -315,7 +315,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
               />
             </div>
 
@@ -326,7 +326,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
                 />
               </div>
               <div>
@@ -335,7 +335,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
                 />
               </div>
             </div>
@@ -346,7 +346,7 @@ export default function AdminSettingsPage() {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 rows={2}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
               />
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function AdminSettingsPage() {
         {/* ۵. نرخ‌های ارسال و ارسال رایگان */}
         <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="text-base font-black text-stone-900 border-b border-stone-100 pb-3 flex items-center gap-2">
-            <Truck className="size-5 text-violet-600" />
+            <Truck className="size-5 text-amber-600" />
             <span>تنظیمات ارسال و پست</span>
           </h2>
 
@@ -366,7 +366,7 @@ export default function AdminSettingsPage() {
                 type="number"
                 value={freeShippingThreshold}
                 onChange={(e) => setFreeShippingThreshold(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
               />
             </div>
 
@@ -376,7 +376,7 @@ export default function AdminSettingsPage() {
                 type="number"
                 value={baseShippingFee}
                 onChange={(e) => setBaseShippingFee(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
               />
             </div>
           </div>

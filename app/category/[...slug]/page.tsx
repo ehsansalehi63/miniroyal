@@ -76,23 +76,23 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       <ManagedBanners placement="category_top" />
       {/* مسیر خرده‌نانی */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
-        <Link href="/" className="hover:text-violet-700">خانه</Link>
+        <Link href="/" className="hover:text-amber-700">خانه</Link>
         <span>/</span>
-        <Link href="/shop" className="hover:text-violet-700">دسته‌بندی‌ها</Link>
+        <Link href="/shop" className="hover:text-amber-700">دسته‌بندی‌ها</Link>
         <span>/</span>
         <span className="text-stone-900 font-bold">{category.name}</span>
       </nav>
 
       {/* بنر بالای دسته */}
-      <div className="mb-8 rounded-3xl bg-gradient-to-r from-violet-100 via-purple-50 to-amber-50 p-6 sm:p-8">
+      <div className="mb-8 rounded-3xl border border-amber-500/20 bg-gradient-to-r from-stone-950 via-stone-900 to-amber-950/80 p-6 sm:p-8 text-white shadow-lg">
         <div className="flex items-center gap-4">
           <span className="text-4xl sm:text-5xl">{category.icon || "👕"}</span>
           <div>
-            <h1 className="text-2xl font-black text-stone-900 sm:text-3xl">
+            <h1 className="text-2xl font-black text-amber-50 sm:text-3xl">
               پوشاک {category.name}
             </h1>
-            <p className="mt-2 text-xs text-stone-600 sm:text-sm">
-              {category.description} — شامل {toPersianDigits(catalogData.total)} محصول باکیفیت.
+            <p className="mt-2 text-xs text-stone-300 sm:text-sm">
+              {category.description} — شامل {toPersianDigits(catalogData.total)} محصول باکیفیت و اصیل.
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
               </h3>
               <Link
                 href={`/category/${categorySlug}`}
-                className="mt-6 inline-block rounded-full bg-violet-700 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+                className="mt-6 inline-block rounded-full bg-stone-950 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-stone-800"
               >
                 مشاهده همه محصولات {category.name}
               </Link>

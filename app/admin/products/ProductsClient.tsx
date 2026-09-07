@@ -199,7 +199,7 @@ export default function AdminProductsPage() {
             setFitProfile({ garmentType: "top", measurementMethod: "garment", preferredBodyMeasurement: "height", easeCm: 7, stretch: "low", sizeSystem: "age", tryOnAnchors: { shoulder: 50, waist: 52, length: 68 } });
             setShowFormModal(true);
           }}
-          className="flex items-center gap-1.5 rounded-2xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+          className="flex items-center gap-1.5 rounded-2xl bg-stone-950 px-5 py-2.5 text-xs font-black text-white shadow-md hover:bg-stone-800 transition"
         >
           <Plus className="size-4" />
           <span>افزودن محصول جدید</span>
@@ -243,7 +243,7 @@ export default function AdminProductsPage() {
                   <td className="p-3 font-bold max-w-xs">{p.title}</td>
                   <td className="p-3 font-mono text-stone-500">{p.sku}</td>
                   <td className="p-3">
-                    <span className="rounded-lg bg-violet-50 px-2 py-1 font-bold text-violet-700">
+                    <span className="rounded-lg bg-amber-50 px-2 py-1 font-bold text-amber-800">
                       {p.categoryName}
                     </span>
                   </td>
@@ -260,7 +260,7 @@ export default function AdminProductsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEdit(p)}
-                        className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 hover:text-violet-700"
+                        className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 hover:text-amber-800"
                         title="ویرایش"
                       >
                         <Edit className="size-4" />
@@ -298,21 +298,21 @@ export default function AdminProductsPage() {
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                  className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
                 />
               </div>
 
-              <div className="rounded-2xl border-2 border-violet-200 bg-violet-50 p-4" dir="rtl">
-                <label className="block text-sm font-black text-violet-950">۱) ابتدا دسته‌بندی محصول را انتخاب کنید *</label>
-                <p className="mt-1 text-[11px] leading-5 text-violet-800">بعد از انتخاب دسته‌بندی، مشخصات پیشنهادی همان کالا نمایش داده می‌شود؛ مثلاً برای اکسسوری فیلدهای دور سینه و کمر نشان داده نمی‌شود.</p>
-                <select value={categoryId || editingProduct?.categoryId || ""} onChange={(e) => { const id = Number(e.target.value); setCategoryId(id); setCategoryName(categories.find((category) => category.id === id)?.name || ""); setAttributes([]); setSizeChart([]); }} className="mt-3 w-full rounded-xl border border-violet-300 bg-white p-3 text-sm outline-none focus:border-violet-600" required>
+              <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4" dir="rtl">
+                <label className="block text-sm font-black text-amber-950">۱) ابتدا دسته‌بندی محصول را انتخاب کنید *</label>
+                <p className="mt-1 text-[11px] leading-5 text-amber-900">بعد از انتخاب دسته‌بندی، مشخصات پیشنهادی همان کالا نمایش داده می‌شود؛ مثلاً برای اکسسوری فیلدهای دور سینه و کمر نشان داده نمی‌شود.</p>
+                <select value={categoryId || editingProduct?.categoryId || ""} onChange={(e) => { const id = Number(e.target.value); setCategoryId(id); setCategoryName(categories.find((category) => category.id === id)?.name || ""); setAttributes([]); setSizeChart([]); }} className="mt-3 w-full rounded-xl border border-amber-300 bg-white p-3 text-sm outline-none focus:border-amber-600 font-bold" required>
                   <option value="">انتخاب دسته‌بندی اصلی یا زیر‌دسته</option>
                   {categories.filter((category) => !category.parentId).map((parent) => <optgroup key={parent.id} label={`${parent.icon || ""} ${parent.name}`}>
                     <option value={parent.id}>{parent.name} (دسته اصلی)</option>
                     {categories.filter((category) => category.parentId === parent.id).map((child) => <option key={child.id} value={child.id}>↳ {child.name}</option>)}
                   </optgroup>)}
                 </select>
-                {categoryId > 0 && <p className="mt-2 text-[10px] font-bold text-violet-700">دسته انتخاب‌شده: {categoryName} — مشخصات پیشنهادی در ادامه فرم آماده می‌شود.</p>}
+                {categoryId > 0 && <p className="mt-2 text-[10px] font-bold text-amber-800">دسته انتخاب‌شده: {categoryName} — مشخصات پیشنهادی در ادامه فرم آماده می‌شود.</p>}
               </div>
 
               {similarProducts.length > 0 && <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4" dir="rtl"><h4 className="text-xs font-black text-orange-950">محصول مشابه پیدا شد</h4><p className="mt-1 text-[10px] text-orange-800">قبل از ثبت محصول جدید، بررسی کنید این مورد همان محصول قبلی نباشد.</p><div className="mt-2 space-y-2">{similarProducts.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-orange-200 bg-white p-2"><div><p className="text-[11px] font-black">{item.title}</p><p className="text-[10px] text-stone-500">SKU: {item.sku} — وضعیت: {item.status === "active" ? "فعال" : item.status === "draft" ? "پیش‌نویس" : item.status}</p></div><button type="button" onClick={() => handleEdit(item)} className="rounded-lg bg-orange-600 px-3 py-2 text-[10px] font-bold text-white">ویرایش / تغییر موجودی</button></div>)}</div></div>}
@@ -366,16 +366,16 @@ export default function AdminProductsPage() {
                 </div>
               </div>}
 
-              {!isAccessoryCategory && <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4" dir="rtl">
-                <h4 className="text-sm font-black text-violet-950">پروفایل فیت و پرو محصول <span className="font-normal text-violet-700">(اختیاری)</span></h4>
-                <p className="mt-1 text-[11px] leading-5 text-violet-800">این تنظیمات به سیستم می‌گوید لباس چه نوعی است، اندازه‌گیری از کجا انجام شده و لباس چقدر آزاد یا کشسان است. اگر فقط می‌خواهید محصول را ثبت کنید، می‌توانید مقادیر پیش‌فرض را دست‌نخورده بگذارید.</p>
+              {!isAccessoryCategory && <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4" dir="rtl">
+                <h4 className="text-sm font-black text-amber-950">پروفایل فیت و پرو محصول <span className="font-normal text-amber-700">(اختیاری)</span></h4>
+                <p className="mt-1 text-[11px] leading-5 text-amber-900">این تنظیمات به سیستم می‌گوید لباس چه نوعی است، اندازه‌گیری از کجا انجام شده و لباس چقدر آزاد یا کشسان است. اگر فقط می‌خواهید محصول را ثبت کنید، می‌توانید مقادیر پیش‌فرض را دست‌نخورده بگذارید.</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <label className="text-[10px] font-bold text-stone-700">نوع لباس<p className="font-normal text-stone-500">برای انتخاب الگوی مناسب پرو</p><select value={fitProfile.garmentType} onChange={(e) => setFitProfile({ ...fitProfile, garmentType: e.target.value as NonNullable<Product["fitProfile"]>["garmentType"] })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs"><option value="top">بالاپوش؛ تی‌شرت، هودی و بلوز</option><option value="bottom">پایین‌پوش؛ شلوار و دامن</option><option value="dress">پیراهن</option><option value="outerwear">لباس رویی؛ کاپشن و پالتو</option><option value="set">ست چندتکه</option><option value="baby">لباس نوزادی</option></select></label>
-                  <label className="text-[10px] font-bold text-stone-700">مبنای اندازه‌گیری<p className="font-normal text-stone-500">اعداد جدول اندازه مربوط به چیست؟</p><select value={fitProfile.measurementMethod} onChange={(e) => setFitProfile({ ...fitProfile, measurementMethod: e.target.value as NonNullable<Product["fitProfile"]>["measurementMethod"] })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs"><option value="garment">اندازه خود لباس؛ متر روی لباس</option><option value="body">اندازه بدن کودک</option></select></label>
-                  <label className="text-[10px] font-bold text-stone-700">میزان کشسانی پارچه<p className="font-normal text-stone-500">پارچه چقدر کش می‌آید؟</p><select value={fitProfile.stretch} onChange={(e) => setFitProfile({ ...fitProfile, stretch: e.target.value as NonNullable<Product["fitProfile"]>["stretch"] })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs"><option value="none">بدون کشسانی</option><option value="low">کم؛ کمی کش می‌آید</option><option value="medium">متوسط؛ قابل‌کشش</option><option value="high">زیاد؛ کشسان</option></select></label>
-                  <label className="text-[10px] font-bold text-stone-700">آزادی لباس (cm)<p className="font-normal text-stone-500">چند سانتی‌متر از بدن آزادتر باشد؟</p><input type="number" min="0" max="30" value={fitProfile.easeCm} onChange={(e) => setFitProfile({ ...fitProfile, easeCm: Number(e.target.value) })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold text-stone-700">لنگر شانه (%)<p className="font-normal text-stone-500">جای شانه در تصویر پرو؛ معمولاً ۵۰</p><input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.shoulder} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, shoulder: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
-                  <label className="text-[10px] font-bold text-stone-700">لنگر کمر (%)<p className="font-normal text-stone-500">جای کمر در تصویر پرو؛ معمولاً ۵۲</p><input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.waist} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, waist: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-violet-200 bg-white p-2 text-xs" /></label>
+                  <label className="text-[10px] font-bold text-stone-700">نوع لباس<p className="font-normal text-stone-500">برای انتخاب الگوی مناسب پرو</p><select value={fitProfile.garmentType} onChange={(e) => setFitProfile({ ...fitProfile, garmentType: e.target.value as NonNullable<Product["fitProfile"]>["garmentType"] })} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs"><option value="top">بالاپوش؛ تی‌شرت، هودی و بلوز</option><option value="bottom">پایین‌پوش؛ شلوار و دامن</option><option value="dress">پیراهن</option><option value="outerwear">لباس رویی؛ کاپشن و پالتو</option><option value="set">ست چندتکه</option><option value="baby">لباس نوزادی</option></select></label>
+                  <label className="text-[10px] font-bold text-stone-700">مبنای اندازه‌گیری<p className="font-normal text-stone-500">اعداد جدول اندازه مربوط به چیست؟</p><select value={fitProfile.measurementMethod} onChange={(e) => setFitProfile({ ...fitProfile, measurementMethod: e.target.value as NonNullable<Product["fitProfile"]>["measurementMethod"] })} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs"><option value="garment">اندازه خود لباس؛ متر روی لباس</option><option value="body">اندازه بدن کودک</option></select></label>
+                  <label className="text-[10px] font-bold text-stone-700">میزان کشسانی پارچه<p className="font-normal text-stone-500">پارچه چقدر کش می‌آید؟</p><select value={fitProfile.stretch} onChange={(e) => setFitProfile({ ...fitProfile, stretch: e.target.value as NonNullable<Product["fitProfile"]>["stretch"] })} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs"><option value="none">بدون کشسانی</option><option value="low">کم؛ کمی کش می‌آید</option><option value="medium">متوسط؛ قابل‌کشش</option><option value="high">زیاد؛ کشسان</option></select></label>
+                  <label className="text-[10px] font-bold text-stone-700">آزادی لباس (cm)<p className="font-normal text-stone-500">چند سانتی‌متر از بدن آزادتر باشد؟</p><input type="number" min="0" max="30" value={fitProfile.easeCm} onChange={(e) => setFitProfile({ ...fitProfile, easeCm: Number(e.target.value) })} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs" /></label>
+                  <label className="text-[10px] font-bold text-stone-700">لنگر شانه (%)<p className="font-normal text-stone-500">جای شانه در تصویر پرو؛ معمولاً ۵۰</p><input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.shoulder} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, shoulder: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs" /></label>
+                  <label className="text-[10px] font-bold text-stone-700">لنگر کمر (%)<p className="font-normal text-stone-500">جای کمر در تصویر پرو؛ معمولاً ۵۲</p><input type="number" min="0" max="100" value={fitProfile.tryOnAnchors.waist} onChange={(e) => setFitProfile({ ...fitProfile, tryOnAnchors: { ...fitProfile.tryOnAnchors, waist: Number(e.target.value) } })} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs" /></label>
                 </div>
               </div>}
 
@@ -387,7 +387,7 @@ export default function AdminProductsPage() {
                     required
                     value={sku}
                     onChange={(e) => setSku(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500 font-mono"
+                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500 font-mono"
                   />
                 </div>
 
@@ -398,8 +398,8 @@ export default function AdminProductsPage() {
                 <p className="mt-1 text-[11px] leading-5 text-amber-800">محصول فعال بلافاصله در فروشگاه و صفحه اختصاصی خودش قابل مشاهده است. گزینه‌های زیر تعیین می‌کنند محصول در کدام بخش‌های صفحه اصلی هم نمایش داده شود.</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <label className="text-[10px] font-bold text-stone-700">وضعیت انتشار<p className="font-normal text-stone-500">برای نمایش در سایت باید «فعال» باشد.</p><select value={productStatus} onChange={(e) => setProductStatus(e.target.value as Product["status"])} className="mt-1 w-full rounded-lg border border-amber-200 bg-white p-2 text-xs"><option value="active">فعال و قابل نمایش در سایت</option><option value="draft">پیش‌نویس؛ فقط مدیر می‌بیند</option><option value="review">در انتظار بررسی</option><option value="archived">بایگانی‌شده</option></select></label>
-                  <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white p-3 text-[11px] font-bold"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="mt-1 size-4 accent-violet-700" /><span>نمایش در صفحه اصلی<p className="mt-1 font-normal text-stone-500">در بخش «جدیدترین محصولات» صفحه اصلی نمایش داده شود.</p></span></label>
-                  <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white p-3 text-[11px] font-bold"><input type="checkbox" checked={isSpecialOffer} onChange={(e) => setIsSpecialOffer(e.target.checked)} className="mt-1 size-4 accent-violet-700" /><span>حراج / پیشنهاد ویژه<p className="mt-1 font-normal text-stone-500">برای بخش تخفیف و پیشنهادهای ویژه علامت‌گذاری شود.</p></span></label>
+                  <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white p-3 text-[11px] font-bold"><input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="mt-1 size-4 accent-amber-600" /><span>نمایش در صفحه اصلی<p className="mt-1 font-normal text-stone-500">در بخش «جدیدترین محصولات» صفحه اصلی نمایش داده شود.</p></span></label>
+                  <label className="flex items-start gap-2 rounded-xl border border-amber-200 bg-white p-3 text-[11px] font-bold"><input type="checkbox" checked={isSpecialOffer} onChange={(e) => setIsSpecialOffer(e.target.checked)} className="mt-1 size-4 accent-amber-600" /><span>حراج / پیشنهاد ویژه<p className="mt-1 font-normal text-stone-500">برای بخش تخفیف و پیشنهادهای ویژه علامت‌گذاری شود.</p></span></label>
                 </div>
               </div>
 
@@ -413,7 +413,7 @@ export default function AdminProductsPage() {
                     required
                     value={basePrice}
                     onChange={(e) => setBasePrice(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
                   />
                 </div>
 
@@ -423,7 +423,7 @@ export default function AdminProductsPage() {
                     type="number"
                     value={salePrice}
                     onChange={(e) => setSalePrice(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-violet-500"
+                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -433,7 +433,7 @@ export default function AdminProductsPage() {
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-violet-700 py-3 font-bold text-white shadow-md hover:bg-violet-800 disabled:cursor-wait disabled:opacity-60"
+                  className="flex-1 rounded-xl bg-stone-950 py-3 font-black text-white shadow-md hover:bg-stone-800 transition disabled:cursor-wait disabled:opacity-60"
                   disabled={saving}
                 >
                   {saving ? "در حال ذخیره..." : "ذخیره تغییرات"}

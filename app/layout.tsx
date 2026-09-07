@@ -67,12 +67,12 @@ export default function RootLayout({
           که از داخل ایران هم کند و ناپایدار است.
         */}
         <style dangerouslySetInnerHTML={{ __html: `
-          body { margin: 0; padding: 0; background-color: #fbf8f5; color: #211b25; }
+          body { margin: 0; padding: 0; background-color: #fbf8f5; color: #1c1917; }
           a { text-decoration: none; color: inherit; }
           * { box-sizing: border-box; }
         ` }} />
       </head>
-      <body className="min-h-screen bg-stone-50/50 text-stone-900 font-sans antialiased flex flex-col selection:bg-violet-100 selection:text-violet-900">
+      <body className="min-h-screen bg-stone-50/50 text-stone-900 font-sans antialiased flex flex-col selection:bg-amber-100 selection:text-amber-950">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

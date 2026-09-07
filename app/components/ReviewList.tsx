@@ -49,7 +49,7 @@ export default function ReviewList({ productId, reviews = [] }: ReviewListProps)
         </h3>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="rounded-full bg-violet-700 px-4 py-2 text-xs font-bold text-white shadow-md transition hover:bg-violet-800"
+          className="rounded-full bg-stone-950 px-4 py-2 text-xs font-black text-white shadow-md transition hover:bg-stone-800"
         >
           {showForm ? "بستن فرم" : "ثبت نظر جدید ✍️"}
         </button>
@@ -63,7 +63,7 @@ export default function ReviewList({ productId, reviews = [] }: ReviewListProps)
 
       {/* فرم ثبت نظر */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="rounded-3xl border border-violet-100 bg-violet-50/40 p-6 shadow-sm">
+        <form onSubmit={handleSubmit} className="rounded-3xl border border-stone-200 bg-stone-50/80 p-6 shadow-sm">
           <h4 className="text-sm font-bold text-stone-900">ثبت نظر و تجربه سایز خرید</h4>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
@@ -74,7 +74,7 @@ export default function ReviewList({ productId, reviews = [] }: ReviewListProps)
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="مثال: مریم احمدی"
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-amber-500"
               />
             </div>
             <div>
@@ -82,7 +82,7 @@ export default function ReviewList({ productId, reviews = [] }: ReviewListProps)
               <select
                 value={rating}
                 onChange={(e) => setRating(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"
+                className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-amber-500 font-bold"
               >
                 <option value={5}>⭐⭐⭐⭐⭐ (عالی)</option>
                 <option value={4}>⭐⭐⭐⭐ (خوب)</option>
@@ -108,7 +108,7 @@ export default function ReviewList({ productId, reviews = [] }: ReviewListProps)
                     value={item.id}
                     checked={sizeFit === item.id}
                     onChange={() => setSizeFit(item.id)}
-                    className="accent-violet-600"
+                    className="accent-amber-600"
                   />
                   {item.label}
                 </label>
@@ -124,13 +124,13 @@ export default function ReviewList({ productId, reviews = [] }: ReviewListProps)
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="درباره جنس پارچه، ثبات رنگ، تعویض سایز و تن‌خور بنویسید..."
-              className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"
+              className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-amber-500"
             />
           </div>
 
           <button
             type="submit"
-            className="mt-4 rounded-xl bg-violet-700 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+            className="mt-4 rounded-xl bg-stone-950 px-6 py-2.5 text-xs font-black text-white shadow-md hover:bg-stone-800 transition"
           >
             ثبت نهایی نظر
           </button>

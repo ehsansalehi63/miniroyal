@@ -19,12 +19,12 @@ export default function VirtualTryonSelector({ products, initialProductSlug, cus
 
   return (
     <div dir="rtl" className="space-y-4">
-      <label className="block rounded-2xl border border-violet-200 bg-white p-4 text-xs font-black text-stone-800 shadow-sm">
+      <label className="block rounded-2xl border border-stone-200 bg-white p-4 text-xs font-black text-stone-800 shadow-sm">
         مرحلهٔ اول: لباس موردنظر برای پرو را انتخاب کنید
         <select
           value={selectedId ?? ""}
           onChange={(event) => setSelectedId(event.target.value ? Number(event.target.value) : null)}
-          className="mt-2 w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm outline-none focus:border-violet-500"
+          className="mt-2 w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm outline-none focus:border-amber-500 font-bold"
         >
           {products.map((item) => (
             <option key={item.id} value={item.id}>
@@ -39,7 +39,7 @@ export default function VirtualTryonSelector({ products, initialProductSlug, cus
       {product ? (
         <VirtualTryonBox key={product.id} product={product} customer={customer} />
       ) : (
-        <div className="rounded-3xl border border-dashed border-violet-300 bg-violet-50 p-10 text-center text-sm font-bold text-violet-900">
+        <div className="rounded-3xl border border-dashed border-amber-300 bg-amber-50 p-10 text-center text-sm font-bold text-amber-900">
           برای فعال‌شدن آپلود عکس و پیشنهاد سایز، ابتدا یک محصول را انتخاب کنید.
         </div>
       )}

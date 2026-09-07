@@ -59,14 +59,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <div className="mx-auto site-container px-4 py-8">
       {/* مسیر خرده‌نانی */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
-        <Link href="/" className="hover:text-violet-700">خانه</Link>
+        <Link href="/" className="hover:text-amber-700">خانه</Link>
         <span>/</span>
         <span className="text-stone-900 font-bold">نتایج جستجو</span>
       </nav>
 
       <div className="mb-8">
         <h1 className="text-2xl font-black text-stone-900 sm:text-3xl">
-          نتایج جستجو برای: <span className="text-violet-700">«{query}»</span>
+          نتایج جستجو برای: <span className="text-amber-800">«{query}»</span>
         </h1>
         <p className="mt-2 text-xs text-stone-500 sm:text-sm">
           تعداد {toPersianDigits(catalogData.total)} محصول با عبارت مورد نظر شما یافت شد.
@@ -100,7 +100,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   <Link
                     key={c.slug}
                     href={`/category/${c.slug}`}
-                    className="rounded-full bg-violet-50 px-4 py-2 text-xs font-bold text-violet-700 hover:bg-violet-100"
+                    className="rounded-full bg-stone-100 px-4 py-2 text-xs font-bold text-stone-800 hover:bg-amber-100 hover:text-amber-900"
                   >
                     {c.name}
                   </Link>

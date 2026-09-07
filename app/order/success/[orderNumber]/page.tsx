@@ -69,7 +69,7 @@ export default function OrderSuccessPage() {
             سفارش شما با موفقیت ثبت شد! 🎉
           </h1>
           <p className="mt-2 text-xs text-stone-600 sm:text-sm">
-            کد پیگیری سفارش شما: <strong className="text-violet-700 font-extrabold">{order.orderNumber}</strong>
+            کد پیگیری سفارش شما: <strong className="text-amber-800 font-extrabold">{order.orderNumber}</strong>
           </p>
         </div>
 
@@ -81,8 +81,8 @@ export default function OrderSuccessPage() {
               <span className="mx-auto grid size-8 place-items-center rounded-full bg-emerald-500 text-white mb-1">✓</span>
               ثبت سفارش
             </div>
-            <div className="text-violet-700">
-              <span className="mx-auto grid size-8 place-items-center rounded-full bg-violet-600 text-white mb-1">۲</span>
+            <div className="text-amber-800">
+              <span className="mx-auto grid size-8 place-items-center rounded-full bg-amber-400 text-stone-950 font-black mb-1">۲</span>
               پردازش انبار
             </div>
             <div className="text-stone-400">
@@ -125,7 +125,7 @@ export default function OrderSuccessPage() {
 
           <Link
             href="/shop"
-            className="rounded-full bg-violet-700 px-8 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+            className="rounded-full bg-stone-950 px-8 py-2.5 text-xs font-black text-white shadow-md hover:bg-stone-800"
           >
             ادامه خرید از فروشگاه
           </Link>

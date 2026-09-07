@@ -93,7 +93,7 @@ export default function AdminCustomersPage() {
                     <select
                       value={c.role}
                       onChange={(e) => handleRoleChange(c.id, e.target.value)}
-                      className="rounded-xl border border-stone-200 bg-stone-50 p-1.5 text-xs outline-none focus:border-violet-500 font-bold"
+                      className="rounded-xl border border-stone-200 bg-stone-50 p-1.5 text-xs outline-none focus:border-amber-500 font-bold"
                     >
                       <option value="customer">مشتری عادی</option>
                       <option value="vip">مشتری VIP</option>
@@ -105,7 +105,7 @@ export default function AdminCustomersPage() {
                       🏆 {c.clubTier === "gold" ? "سطح طلایی" : "سطح نقره‌ای"}
                     </span>
                   </td>
-                  <td className="p-3.5 font-bold text-violet-700">{toPersianDigits(c.points)} امتیاز</td>
+                  <td className="p-3.5 font-black text-amber-800">{toPersianDigits(c.points)} امتیاز</td>
                   <td className="p-3.5 font-bold">{toPersianDigits(c.ordersCount)} سفارش</td>
                   <td className="p-3.5 font-extrabold text-emerald-700">{formatToman(c.totalSpent)}</td>
                 </tr>

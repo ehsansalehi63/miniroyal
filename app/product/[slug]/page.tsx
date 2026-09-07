@@ -95,11 +95,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <ManagedBanners placement="product_top" />
         {/* مسیر خرده‌نانی */}
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-stone-500">
-          <Link href="/" className="hover:text-violet-700">خانه</Link>
+          <Link href="/" className="hover:text-amber-800">خانه</Link>
           <span>/</span>
-          <Link href="/shop" className="hover:text-violet-700">فروشگاه</Link>
+          <Link href="/shop" className="hover:text-amber-800">فروشگاه</Link>
           <span>/</span>
-          <Link href={`/category/${product.categorySlug}`} className="hover:text-violet-700">
+          <Link href={`/category/${product.categorySlug}`} className="hover:text-amber-800">
             {product.categoryName}
           </Link>
           <span>/</span>
@@ -116,7 +116,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           {/* مشخصات، انتخاب سایز و قیمت */}
           <div className="flex flex-col gap-6 lg:col-span-7">
             <div>
-              <div className="flex items-center gap-2 text-xs font-bold text-violet-700">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-800">
                 <span>برند {product.brandName || "مینی رویال"}</span>
                 <span>•</span>
                 <span>کد کالا: {product.sku}</span>
@@ -188,7 +188,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               <p>{product.description}</p>
 
               {product.features && product.features.length > 0 && (
-                <div className="mt-4 rounded-2xl bg-violet-50/50 p-4 border border-violet-100">
+                <div className="mt-4 rounded-2xl bg-amber-50/60 p-4 border border-amber-200">
                   <h4 className="font-bold text-stone-900">ویژگی‌های برجسته این لباس:</h4>
                   <ul className="mt-2 space-y-2 list-disc list-inside text-stone-800">
                     {product.features.map((feat, idx) => (

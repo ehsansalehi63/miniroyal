@@ -52,7 +52,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       <ManagedBanners placement="shop_top" />
       {/* مسیر خرده‌نانی Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
-        <Link href="/" className="hover:text-violet-700">خانه</Link>
+        <Link href="/" className="hover:text-amber-700">خانه</Link>
         <span>/</span>
         <span className="text-stone-900 font-bold">فروشگاه پوشاک کودک</span>
       </nav>
@@ -89,7 +89,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               </p>
               <Link
                 href="/shop"
-                className="mt-6 inline-block rounded-full bg-violet-700 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+                className="mt-6 inline-block rounded-full bg-stone-950 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-stone-800"
               >
                 حذف همه فیلترها
               </Link>

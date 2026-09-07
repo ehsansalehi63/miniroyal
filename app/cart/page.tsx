@@ -58,7 +58,7 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <div className="mx-auto grid size-24 place-items-center rounded-full bg-violet-50 text-4xl text-violet-600">
+        <div className="mx-auto grid size-24 place-items-center rounded-full bg-amber-50 text-4xl text-amber-600">
           <ShoppingBag className="size-10" />
         </div>
         <h1 className="mt-6 text-2xl font-black text-stone-900 sm:text-3xl">
@@ -69,10 +69,10 @@ export default function CartPage() {
         </p>
         <Link
           href="/shop"
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-violet-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-violet-800"
+          className="mt-8 inline-flex items-center gap-2 rounded-full bg-stone-950 px-8 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-stone-800"
         >
           <span>مشاهده فروشگاه پوشاک کودک</span>
-          <ArrowRight className="size-4 rotate-180" />
+          <ArrowRight className="size-4 rotate-180 text-amber-400" />
         </Link>
       </div>
     );
@@ -81,7 +81,7 @@ export default function CartPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
-        <Link href="/" className="hover:text-violet-700">خانه</Link>
+        <Link href="/" className="hover:text-amber-700">خانه</Link>
         <span>/</span>
         <span className="text-stone-900 font-bold">سبد خرید</span>
       </nav>
@@ -91,22 +91,22 @@ export default function CartPage() {
       </h1>
 
       {/* نوار ارسال رایگان */}
-      <div className="mt-6 overflow-hidden rounded-3xl border border-violet-100 bg-violet-50/70 p-5">
-        <div className="flex items-center justify-between text-xs font-bold text-stone-800">
+      <div className="mt-6 overflow-hidden rounded-3xl border border-amber-200 bg-amber-50/60 p-5">
+        <div className="flex items-center justify-between text-xs font-bold text-stone-900">
           <span>
             {remainingForFreeShipping > 0 ? (
               <>
-                🚚 تنها <strong className="text-violet-700">{formatToman(remainingForFreeShipping)}</strong> دیگر تا ارسال رایگان نیاز است!
+                🚚 تنها <strong className="text-amber-800">{formatToman(remainingForFreeShipping)}</strong> دیگر تا ارسال رایگان نیاز است!
               </>
             ) : (
               <>🎉 تبریک! سفارش شما شامل ارسال رایگان گردید.</>
             )}
           </span>
-          <span className="text-violet-700">{toPersianDigits(freeShippingPercent)}٪</span>
+          <span className="text-amber-800 font-black">{toPersianDigits(freeShippingPercent)}٪</span>
         </div>
         <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-stone-200">
           <div
-            className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-500 transition-all duration-500"
+            className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-500"
             style={{ width: `${freeShippingPercent}%` }}
           />
         </div>
@@ -195,7 +195,7 @@ export default function CartPage() {
             >
               پاک کردن کل سبد خرید
             </button>
-            <Link href="/shop" className="text-xs font-bold text-violet-700 hover:underline">
+            <Link href="/shop" className="text-xs font-bold text-amber-800 hover:underline">
               ← ادامه خرید و دیدن محصولات بیشتر
             </Link>
           </div>
@@ -230,7 +230,7 @@ export default function CartPage() {
 
               <div className="border-t border-stone-100 pt-4 flex justify-between text-sm font-black text-stone-900">
                 <span>مبلغ قابل پرداخت:</span>
-                <span className="text-violet-700">
+                <span className="text-amber-800 font-black">
                   {formatToman(finalTotal + (remainingForFreeShipping === 0 ? 0 : 45000))}
                 </span>
               </div>
@@ -239,7 +239,7 @@ export default function CartPage() {
             {/* فرم کد تخفیف */}
             <form onSubmit={handleApplyCoupon} className="mt-6 border-t border-stone-100 pt-4">
               <label className="block text-xs font-bold text-stone-700 flex items-center gap-1">
-                <Tag className="size-3.5 text-violet-600" /> کد تخفیف داری؟
+                <Tag className="size-3.5 text-amber-700" /> کد تخفیف داری؟
               </label>
               <div className="mt-2 flex gap-2">
                 <input
@@ -247,11 +247,11 @@ export default function CartPage() {
                   placeholder="مثال: MINI10 یا ROYAL50"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
-                  className="flex-1 rounded-xl border border-stone-200 bg-stone-50 p-2.5 text-xs uppercase outline-none focus:border-violet-500"
+                  className="flex-1 rounded-xl border border-stone-200 bg-stone-50 p-2.5 text-xs uppercase outline-none focus:border-amber-500"
                 />
                 <button
                   type="submit"
-                  className="rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+                  className="rounded-xl bg-stone-950 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-stone-800"
                 >
                   اعمال
                 </button>
@@ -283,7 +283,7 @@ export default function CartPage() {
 
             <Link
               href="/checkout"
-              className="mt-6 block w-full rounded-2xl bg-violet-700 py-3.5 text-center text-xs font-bold text-white shadow-xl shadow-violet-200 transition hover:bg-violet-800"
+              className="mt-6 block w-full rounded-2xl bg-amber-400 py-3.5 text-center text-xs font-black text-stone-950 shadow-lg transition hover:bg-amber-300"
             >
               ادامه و ثبت نهایی آدرس و پرداخت ←
             </Link>

@@ -12,18 +12,18 @@ export default function SuggestedSets({ sets }: { sets: SuggestedSet[] }) {
       </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {sets.map((set) => (
-          <div key={set.id} className="rounded-3xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50 to-white p-4 shadow-sm">
+          <div key={set.id} className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-black text-stone-900">{set.title}</h3>
                 <p className="mt-1 text-[11px] text-stone-500">{set.reason}</p>
               </div>
-              <span className="rounded-full bg-fuchsia-100 px-2.5 py-1 text-[10px] font-black text-fuchsia-800">پیشنهاد هوشمند</span>
+              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black text-amber-900">پیشنهاد هوشمند</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {set.products.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
-            <Link href={`/shop?set=${set.id}`} className="mt-4 block rounded-xl bg-fuchsia-700 py-2.5 text-center text-xs font-black text-white hover:bg-fuchsia-800">
+            <Link href={`/shop?set=${set.id}`} className="mt-4 block rounded-xl bg-stone-950 py-2.5 text-center text-xs font-black text-white hover:bg-stone-800 transition">
               مشاهده این ست
             </Link>
           </div>

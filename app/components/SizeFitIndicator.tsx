@@ -26,10 +26,10 @@ export default function SizeFitIndicator({ reviews = [] }: SizeFitIndicatorProps
   const largePercent = Math.round((largeCount / total) * 100);
 
   return (
-    <div className="rounded-2xl border border-violet-100 bg-violet-50/50 p-4">
+    <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
       <div className="flex items-center justify-between text-xs font-bold text-stone-800">
         <span>بازخورد سایز خریداران ({toPersianDigits(total)} نظر)</span>
-        <span className="text-violet-700">{toPersianDigits(perfectPercent)}٪ گفته‌اند سایز دقیق است</span>
+        <span className="text-amber-800 font-black">{toPersianDigits(perfectPercent)}٪ گفته‌اند سایز دقیق است</span>
       </div>
 
       {/* نوار فیت */}

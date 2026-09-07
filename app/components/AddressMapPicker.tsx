@@ -52,7 +52,9 @@ export default function AddressMapPicker({
   const [mapError, setMapError] = useState("");
   const [ready, setReady] = useState(false);
 
-  onPickRef.current = onPick;
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,7 +155,7 @@ export default function AddressMapPicker({
     <div className="overflow-hidden rounded-2xl border border-stone-200">
       <div ref={containerRef} className="h-64 w-full" dir="ltr" />
       {mapError && <p className="bg-rose-50 px-3 py-2 text-[10px] font-semibold text-rose-700">{mapError}</p>}
-      <p className="bg-violet-50/60 px-3 py-2 text-[10px] font-semibold text-violet-800">
+      <p className="bg-amber-50/60 px-3 py-2 text-[10px] font-semibold text-amber-900 border-t border-amber-100">
         روی نقشه کلیک کنید تا موقعیت دقیق آدرس شما ثبت شود. نشانگر را هم می‌توانید جابه‌جا کنید.
       </p>
     </div>

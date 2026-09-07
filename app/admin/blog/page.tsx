@@ -84,7 +84,7 @@ export default function AdminBlogPage() {
               placeholder="مثال: نحوه ست کردن لباس نوزاد برای عکاسی"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
             />
           </div>
 
@@ -93,7 +93,7 @@ export default function AdminBlogPage() {
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500 font-bold"
+              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500 font-bold"
             >
               <option value="راهنمای خرید">راهنمای خرید</option>
               <option value="راهنمای سایز">راهنمای سایز</option>
@@ -110,7 +110,7 @@ export default function AdminBlogPage() {
               type="button"
               onClick={handleGenerateAI}
               disabled={isGenerating}
-              className="flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800 hover:bg-violet-200 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 hover:bg-amber-200 disabled:opacity-50"
             >
               <Sparkles className="size-3.5" />
               <span>{isGenerating ? "در حال تولید با AI..." : "تولید خودکار متن با AI"}</span>
@@ -122,13 +122,13 @@ export default function AdminBlogPage() {
             placeholder="متن مقاله را بنویسید یا دکمه تولید خودکار با AI را بزنید..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+            className="w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
           />
         </div>
 
         <button
           type="submit"
-          className="rounded-2xl bg-violet-700 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+          className="rounded-2xl bg-stone-950 px-6 py-2.5 text-xs font-black text-white shadow-md hover:bg-stone-800 transition"
         >
           انتشار مقاله در سایت
         </button>

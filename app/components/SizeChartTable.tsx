@@ -22,7 +22,7 @@ export default function SizeChartTable({ sizeChart }: SizeChartTableProps) {
         </h3>
         <button
           onClick={() => setIsOpenModal(true)}
-          className="text-xs font-bold text-violet-700 hover:underline"
+          className="text-xs font-bold text-amber-800 hover:underline"
         >
           راهنمای اندازه‌گیری دقیق 📐
         </button>
@@ -41,8 +41,8 @@ export default function SizeChartTable({ sizeChart }: SizeChartTableProps) {
           </thead>
           <tbody className="divide-y divide-stone-200 text-stone-800">
             {sizeChart.map((row, idx) => (
-              <tr key={idx} className="hover:bg-violet-50/50">
-                <td className="p-2.5 font-bold text-violet-700">{row.size}</td>
+              <tr key={idx} className="hover:bg-amber-50/50">
+                <td className="p-2.5 font-bold text-amber-800">{row.size}</td>
                 <td className="p-2.5">{row.ageRange}</td>
                 <td className="p-2.5">{toPersianDigits(row.heightCm)}</td>
                 <td className="p-2.5">{toPersianDigits(row.chestCm)}</td>
@@ -73,7 +73,7 @@ export default function SizeChartTable({ sizeChart }: SizeChartTableProps) {
             </ul>
             <button
               onClick={() => setIsOpenModal(false)}
-              className="mt-6 w-full rounded-2xl bg-violet-700 py-3 text-sm font-bold text-white shadow-md hover:bg-violet-800"
+              className="mt-6 w-full rounded-2xl bg-stone-950 py-3 text-sm font-black text-white shadow-md hover:bg-stone-800 transition"
             >
               متوجه شدم
             </button>

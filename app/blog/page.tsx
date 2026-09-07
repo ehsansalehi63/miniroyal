@@ -13,13 +13,13 @@ export default function BlogListPage() {
     <div className="mx-auto site-container px-4 py-8">
       {/* مسیر خرده‌نانی */}
       <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-stone-500">
-        <Link href="/" className="hover:text-violet-700">خانه</Link>
+        <Link href="/" className="hover:text-amber-700">خانه</Link>
         <span>/</span>
         <span className="text-stone-900 font-bold">مجله آموزشی مینی رویال</span>
       </nav>
 
       <div className="mb-10 text-center">
-        <span className="rounded-full bg-violet-100 px-4 py-1.5 text-xs font-bold text-violet-800">
+        <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-1.5 text-xs font-black text-amber-900">
           📚 مجله تخصصی پوشاک کودک
         </span>
         <h1 className="mt-4 text-3xl font-black text-stone-900 sm:text-4xl">
@@ -44,11 +44,11 @@ export default function BlogListPage() {
               />
             </div>
             <div className="flex flex-1 flex-col p-6">
-              <div className="flex items-center justify-between text-xs font-bold text-violet-700">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-800">
                 <span>{article.category}</span>
                 <span className="text-stone-400 font-normal">{article.date}</span>
               </div>
-              <h2 className="mt-3 text-lg font-black text-stone-900 group-hover:text-violet-700">
+              <h2 className="mt-3 text-lg font-black text-stone-900 group-hover:text-amber-800">
                 <Link href={`/blog/${article.slug}`}>{article.title}</Link>
               </h2>
               <p className="mt-2 text-xs leading-6 text-stone-600 flex-1">
@@ -58,7 +58,7 @@ export default function BlogListPage() {
                 <span>نویسنده: {article.author}</span>
                 <Link
                   href={`/blog/${article.slug}`}
-                  className="font-bold text-violet-700 hover:underline"
+                  className="font-bold text-amber-800 hover:text-amber-900 hover:underline"
                 >
                   ادامه مطلب ←
                 </Link>

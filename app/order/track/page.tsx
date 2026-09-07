@@ -23,8 +23,8 @@ interface TrackedOrder {
 }
 
 const ORDER_STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  pending: { label: "در انتظار پردازش", className: "bg-amber-100 text-amber-800" },
-  processing: { label: "در حال پردازش انبار", className: "bg-violet-100 text-violet-800" },
+  pending: { label: "در انتظار پردازش", className: "bg-amber-100 text-amber-900 border border-amber-300" },
+  processing: { label: "در حال پردازش انبار", className: "bg-amber-50 text-amber-950 border border-amber-200" },
   shipped: { label: "تحویل به شرکت حمل", className: "bg-sky-100 text-sky-800" },
   delivered: { label: "تحویل داده شد", className: "bg-emerald-100 text-emerald-800" },
   cancelled: { label: "لغو شده", className: "bg-rose-100 text-rose-800" },
@@ -94,7 +94,7 @@ export default function OrderTrackPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="text-center">
-        <span className="rounded-full bg-violet-100 px-4 py-1.5 text-xs font-bold text-violet-800">
+        <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-1.5 text-xs font-black text-amber-900">
           📦 سامانه رهگیری سفارشات
         </span>
         <h1 className="mt-4 text-3xl font-black text-stone-900">رهگیری مرسوله مینی رویال</h1>
@@ -110,12 +110,12 @@ export default function OrderTrackPage() {
           placeholder="شماره سفارش یا شماره همراه..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 rounded-full border border-stone-200 bg-stone-50 px-4 py-3 text-xs outline-none focus:border-violet-500 focus:bg-white"
+          className="flex-1 rounded-full border border-stone-200 bg-stone-50 px-4 py-3 text-xs outline-none focus:border-amber-500 focus:bg-white"
         />
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-1.5 rounded-full bg-violet-700 px-6 py-3 text-xs font-bold text-white shadow-md hover:bg-violet-800 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full bg-stone-950 px-6 py-3 text-xs font-black text-white shadow-md hover:bg-stone-800 disabled:opacity-50"
         >
           <Search className="size-4" />
           <span>{loading ? "..." : "جستجو"}</span>
@@ -125,7 +125,7 @@ export default function OrderTrackPage() {
       {searched && (
         <div className="mt-10">
           {loading ? (
-            <div className="mx-auto size-10 animate-spin rounded-full border-4 border-violet-200 border-t-violet-700" />
+            <div className="mx-auto size-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
           ) : foundOrder ? (
             <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-lg">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 pb-4">
@@ -181,12 +181,12 @@ export default function OrderTrackPage() {
               {postexEvents && postexEvents.length > 0 && (
                 <div className="mt-6 rounded-2xl border border-stone-100 bg-stone-50 p-4">
                   <h4 className="flex items-center gap-1.5 text-xs font-bold text-stone-800">
-                    <Truck className="size-4 text-violet-600" /> آخرین رویدادهای حمل‌ونقل پستکس:
+                    <Truck className="size-4 text-amber-700" /> آخرین رویدادهای حمل‌ونقل پستکس:
                   </h4>
                   <ul className="mt-3 space-y-2 text-[11px] text-stone-600">
                     {postexEvents.map((event, index) => (
                       <li key={index} className="flex items-center gap-2">
-                        <Package className="size-3.5 shrink-0 text-violet-500" />
+                        <Package className="size-3.5 shrink-0 text-amber-600" />
                         <span className="font-semibold text-stone-800">{event.title || "رویداد حمل"}</span>
                         {event.time && <span className="text-stone-400">({event.time})</span>}
                       </li>

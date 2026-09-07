@@ -45,7 +45,7 @@ export default function AdminInventoryPage() {
           <h1 className="mt-2 text-2xl font-black text-stone-900">مرکز کنترل انبار</h1>
           <p className="mt-1 text-xs text-stone-500">موجودی variantها، هشدار کمبود و ارزش تقریبی انبار مرکزی.</p>
         </div>
-        <button type="button" className="inline-flex items-center gap-2 rounded-2xl bg-violet-700 px-4 py-3 text-xs font-black text-white shadow-lg hover:bg-violet-800">
+        <button type="button" className="inline-flex items-center gap-2 rounded-2xl bg-stone-950 px-4 py-3 text-xs font-black text-white shadow-lg hover:bg-stone-800 transition">
           <ArrowDownToLine className="size-4" /> ثبت ورود کالا
         </button>
       </div>
@@ -53,7 +53,7 @@ export default function AdminInventoryPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: "کل واحدهای قابل فروش", value: formatNumber(totalUnits), icon: Boxes, tone: "violet" },
+          { label: "کل واحدهای قابل فروش", value: formatNumber(totalUnits), icon: Boxes, tone: "amber" },
           { label: "ارزش تقریبی انبار", value: formatToman(totalValue), icon: PackageSearch, tone: "emerald" },
           { label: "در آستانهٔ کمبود", value: formatNumber(lowStock.length), icon: AlertTriangle, tone: "amber" },
           { label: "ناموجود", value: formatNumber(outOfStock.length), icon: RefreshCw, tone: "rose" },
@@ -63,7 +63,7 @@ export default function AdminInventoryPage() {
             <article key={item.label} className="fashion-surface rounded-3xl p-5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-stone-500">{item.label}</span>
-                <Icon className={`size-5 ${item.tone === "emerald" ? "text-emerald-600" : item.tone === "amber" ? "text-amber-600" : item.tone === "rose" ? "text-rose-600" : "text-violet-700"}`} />
+                <Icon className={`size-5 ${item.tone === "emerald" ? "text-emerald-600" : item.tone === "amber" ? "text-amber-600" : item.tone === "rose" ? "text-rose-600" : "text-stone-900"}`} />
               </div>
               <p className="mt-4 text-xl font-black text-stone-900">{item.value}</p>
             </article>

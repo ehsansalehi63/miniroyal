@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, MouseEvent, TouchEvent } from "react";
-import { MoveHorizontal } from "lucide-react";
+import { MoveHorizontal, Sparkles } from "lucide-react";
 
 interface TryonCompareSliderProps {
   beforeImage: string;
@@ -14,8 +14,8 @@ interface TryonCompareSliderProps {
 export default function TryonCompareSlider({
   beforeImage,
   afterImage,
-  beforeLabel = "عکس اصلی",
-  afterLabel = "نتیجه پرو آنلاین",
+  beforeLabel = "عکس ارسالی شما",
+  afterLabel = "تن‌خور آتلیه سلطنتی",
   productTitle,
 }: TryonCompareSliderProps) {
   const [sliderPosition, setSliderPosition] = useState<number>(50);
@@ -45,18 +45,21 @@ export default function TryonCompareSlider({
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-xs font-bold text-violet-200 px-1">
-        <span className="flex items-center gap-1.5 text-stone-300">
-          <span className="inline-block size-2 rounded-full bg-stone-400" />
-          {beforeLabel}
-        </span>
-        <span className="flex items-center gap-1.5 text-emerald-300">
-          <span className="inline-block size-2 rounded-full bg-emerald-400" />
-          {afterLabel}
-        </span>
+    <div className="flex flex-col gap-3">
+      {/* هدر متالیک نوار مقایسه */}
+      <div className="flex items-center justify-between px-2 text-xs font-black">
+        <div className="flex items-center gap-2 rounded-full border border-stone-600/40 bg-stone-900/80 px-3 py-1 text-stone-300 backdrop-blur shadow-sm">
+          <span className="size-2 rounded-full bg-stone-400" />
+          <span>{beforeLabel}</span>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-full border border-amber-400/50 bg-gradient-to-r from-amber-950/80 via-stone-900/90 to-amber-950/80 px-3.5 py-1 text-amber-300 backdrop-blur shadow-[0_0_15px_rgba(251,191,36,0.15)]">
+          <Sparkles className="size-3 text-amber-400 animate-pulse" />
+          <span>{afterLabel}</span>
+        </div>
       </div>
 
+      {/* فریم عکاسی اختصاصی آتلیه */}
       <div
         ref={containerRef}
         dir="ltr"
@@ -65,9 +68,9 @@ export default function TryonCompareSlider({
         onMouseLeave={handleMouseUp}
         onMouseMove={handleMouseMove}
         onTouchMove={handleTouchMove}
-        className="relative mx-auto aspect-[3/4] max-h-[640px] w-full max-w-xl cursor-ew-resize select-none overflow-hidden rounded-2xl border border-violet-400/30 bg-stone-900 shadow-2xl"
+        className="group relative mx-auto aspect-[3/4] max-h-[660px] w-full max-w-xl cursor-ew-resize select-none overflow-hidden rounded-[16px] border-2 border-stone-800 bg-[#0a0a09] ring-1 ring-amber-500/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)]"
       >
-        {/* تصویر بعد (نتیجه پرو - پس‌زمینه کامل) */}
+        {/* تصویر بعد (نتیجه پرو آتلیه - پس‌زمینه کامل) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={afterImage}
@@ -75,7 +78,7 @@ export default function TryonCompareSlider({
           className="absolute inset-0 size-full object-contain pointer-events-none"
         />
 
-        {/* تصویر قبل (عکس کودک - با استفاده از clip-path بدون نیاز به خواندن ref در زمان رندر) */}
+        {/* تصویر قبل (عکس کودک با برش داینامیک) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={beforeImage}
@@ -86,27 +89,42 @@ export default function TryonCompareSlider({
           }}
         />
 
-        {/* خط جداکننده و دستگیره */}
+        {/* خط جداکننده با بازتاب نوری */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)] pointer-events-none"
+          className="absolute top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-amber-200 to-transparent shadow-[0_0_14px_rgba(251,191,36,0.9)] pointer-events-none"
           style={{ left: `${sliderPosition}%` }}
         >
-          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full border-2 border-white bg-violet-600 text-white shadow-lg pointer-events-auto cursor-grab active:cursor-grabbing">
-            <MoveHorizontal className="size-4" />
+          {/* دستگیرهٔ الماسی با افکت بازتاب نور (Diamond Handle with Light Reflection) */}
+          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-grab active:cursor-grabbing">
+            {/* هاله نور درخشان پشت الماس */}
+            <div className="absolute -inset-2 rounded-full bg-amber-400/30 blur-md animate-pulse" />
+
+            {/* بدنه الماسی چرخیده ۴۵ درجه */}
+            <div className="relative size-10 rotate-45 rounded-lg border-2 border-amber-200 bg-gradient-to-tr from-amber-700 via-amber-200 to-amber-500 shadow-[0_4px_20px_rgba(0,0,0,0.8),0_0_15px_rgba(251,191,36,0.6)] transition-transform duration-200 hover:scale-110">
+              {/* خط بازتاب نور نقره‌ای-طلایی روی وجه الماس */}
+              <div className="absolute inset-1 rounded bg-stone-950/90 flex items-center justify-center">
+                <div className="-rotate-45 text-amber-300">
+                  <MoveHorizontal className="size-4 drop-shadow-[0_0_4px_rgba(251,191,36,0.8)]" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* برچسب‌های شناور روی تصویر */}
-        <div className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-stone-950/70 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur">
-          {beforeLabel}
+        {/* برچسب‌های متالیک شیک شناور روی تصویر */}
+        <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-1.5 rounded-lg border border-stone-500/50 bg-stone-950/80 px-3 py-1.5 text-[10px] font-black text-stone-200 shadow-lg backdrop-blur-md">
+          <span className="size-1.5 rounded-full bg-stone-400" />
+          <span>{beforeLabel}</span>
         </div>
-        <div className="pointer-events-none absolute bottom-3 right-3 rounded-md bg-emerald-950/80 px-2.5 py-1 text-[10px] font-bold text-emerald-300 backdrop-blur">
-          {afterLabel}
+
+        <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-amber-400/60 bg-gradient-to-r from-amber-950/90 to-stone-950/90 px-3 py-1.5 text-[10px] font-black text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.3)] backdrop-blur-md">
+          <Sparkles className="size-3 text-amber-400" />
+          <span>{afterLabel}</span>
         </div>
       </div>
 
-      <p className="text-center text-[11px] text-stone-400">
-        دستگیره را به چپ و راست بکشید تا تفاوت تن‌خور را قبل و بعد از پرو مقایسه کنید.
+      <p className="text-center text-[11px] font-bold text-stone-400">
+        الماس طلایی را به چپ و راست حرکت دهید تا جزییات برش و فیت لباس در آتلیه رویال را ببینید.
       </p>
     </div>
   );

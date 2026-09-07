@@ -38,7 +38,7 @@ function PaymentGatewayContent() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-24 text-center" dir="rtl">
-      <div className="mx-auto size-14 animate-spin rounded-full border-4 border-violet-200 border-t-violet-700" />
+      <div className="mx-auto size-14 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
       <h1 className="mt-6 text-xl font-black text-stone-900">در حال انتقال به درگاه امن زرین‌پال</h1>
       <p className="mt-2 text-sm text-stone-500">اطلاعات کارت فقط در صفحه رسمی زرین‌پال وارد می‌شود.</p>
     </div>

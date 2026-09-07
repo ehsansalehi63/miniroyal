@@ -146,16 +146,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <form onSubmit={handleRequestOtp} className="mt-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-stone-300">شماره موبایل مدیر مجاز</label>
-                <input type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="۰۹۱۳۳۲۸۷۹۸۴" className="mt-1 w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-xs text-white outline-none focus:border-violet-500" required />
+                <input type="tel" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="۰۹۱۳۳۲۸۷۹۸۴" className="mt-1 w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-xs text-white outline-none focus:border-amber-500" required />
               </div>
               {loginError && <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-center text-xs font-bold text-rose-400">{loginError}</p>}
-              <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-xs font-black text-white shadow-lg transition hover:brightness-110">ارسال کد ورود با پیامک ←</button>
+              <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 py-3.5 text-xs font-black text-stone-950 shadow-lg transition hover:brightness-110">ارسال کد ورود با پیامک ←</button>
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="mt-6 space-y-4">
-              <div><label className="block text-xs font-bold text-stone-300">کد ارسال‌شده به {phone}</label><input type="text" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="کد ۶ رقمی" className="mt-1 w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-center text-lg tracking-[.35em] text-white outline-none focus:border-violet-500" required /></div>
+              <div><label className="block text-xs font-bold text-stone-300">کد ارسال‌شده به {phone}</label><input type="text" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="کد ۶ رقمی" className="mt-1 w-full rounded-2xl border border-stone-700 bg-stone-800 px-4 py-3 text-center text-lg tracking-[.35em] text-white outline-none focus:border-amber-500" required /></div>
               {loginError && <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-center text-xs font-bold text-rose-400">{loginError}</p>}
-              <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 py-3.5 text-xs font-black text-white shadow-lg transition hover:brightness-110">تأیید و ورود به پنل ←</button>
+              <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 py-3.5 text-xs font-black text-stone-950 shadow-lg transition hover:brightness-110">تأیید و ورود به پنل ←</button>
               <button type="button" onClick={() => { setLoginStep("phone"); setCode(""); setLoginError(""); }} className="w-full text-xs font-bold text-stone-400 hover:text-white">تغییر شماره</button>
             </form>
           )}
@@ -176,12 +176,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="sticky top-0 h-screen w-64 shrink-0 border-l border-stone-200 bg-stone-900 text-white flex flex-col p-4">
         <div className="flex items-center justify-between border-b border-stone-800 pb-4">
           <div className="flex items-center gap-3">
-            <span className="grid size-10 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-xl shadow-md">
+            <span className="grid size-10 overflow-hidden rounded-2xl bg-stone-800 border border-amber-500/30 text-xl shadow-md">
               <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
             </span>
               <div>
                 <span className="block font-black text-sm text-white">مدیریت مینی رویال</span>
-                <span className="text-[10px] font-bold text-violet-400">{adminRole || "پنل کنترل اصلی"}</span>
+                <span className="text-[10px] font-bold text-amber-400">{adminRole || "پنل کنترل اصلی"}</span>
               </div>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={`${adminBase}${item.href.replace(/^\/admin/, "")}`}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold text-stone-300 transition hover:bg-stone-800 hover:text-white"
               >
-                <Icon className="size-4 text-violet-400" />
+                <Icon className="size-4 text-amber-400" />
                 <span>{item.label}</span>
               </Link>
             );

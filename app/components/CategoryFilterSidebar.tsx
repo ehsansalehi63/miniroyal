@@ -101,7 +101,7 @@ export default function CategoryFilterSidebar({
           onChange={(e) => {
             setSort(e.target.value);
           }}
-          className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 p-2.5 text-xs font-semibold outline-none focus:border-violet-500"
+          className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 p-2.5 text-xs font-semibold outline-none focus:border-amber-500"
         >
           <option value="recommended">پیشنهادی مینی رویال</option>
           <option value="newest">جدیدترین‌ها</option>
@@ -126,7 +126,7 @@ export default function CategoryFilterSidebar({
               onClick={() => setGender(item.id)}
               className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
                 gender === item.id
-                  ? "bg-violet-700 text-white shadow-sm"
+                  ? "bg-stone-950 text-white shadow-sm"
                   : "bg-stone-100 text-stone-700 hover:bg-stone-200"
               }`}
             >
@@ -148,7 +148,7 @@ export default function CategoryFilterSidebar({
                 onClick={() => toggleSize(size)}
                 className={`rounded-xl px-2.5 py-1 text-xs font-bold transition ${
                   isSelected
-                    ? "bg-violet-700 text-white shadow-sm"
+                    ? "bg-stone-950 text-white shadow-sm"
                     : "bg-stone-100 text-stone-700 hover:bg-stone-200"
                 }`}
               >
@@ -171,7 +171,7 @@ export default function CategoryFilterSidebar({
                 onClick={() => toggleColor(color.name)}
                 className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition border ${
                   isSelected
-                    ? "border-violet-700 bg-violet-50 text-violet-900"
+                    ? "border-amber-500 bg-amber-50 text-amber-950 ring-1 ring-amber-400"
                     : "border-stone-200 bg-white text-stone-700"
                 }`}
               >
@@ -195,14 +195,14 @@ export default function CategoryFilterSidebar({
             placeholder="از"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
-            className="w-1/2 rounded-xl border border-stone-200 bg-stone-50 p-2 text-xs outline-none focus:border-violet-500"
+            className="w-1/2 rounded-xl border border-stone-200 bg-stone-50 p-2 text-xs outline-none focus:border-amber-500"
           />
           <input
             type="number"
             placeholder="تا"
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
-            className="w-1/2 rounded-xl border border-stone-200 bg-stone-50 p-2 text-xs outline-none focus:border-violet-500"
+            className="w-1/2 rounded-xl border border-stone-200 bg-stone-50 p-2 text-xs outline-none focus:border-amber-500"
           />
         </div>
       </div>
@@ -214,7 +214,7 @@ export default function CategoryFilterSidebar({
             type="checkbox"
             checked={isOfferOnly}
             onChange={(e) => setIsOfferOnly(e.target.checked)}
-            className="size-4 rounded accent-violet-600"
+            className="size-4 rounded accent-amber-600"
           />
           🔥 فقط کالاهای تخفیف‌دار و ویژه
         </label>
@@ -223,7 +223,7 @@ export default function CategoryFilterSidebar({
       {/* اعمال فیلتر ها */}
       <button
         onClick={applyFilters}
-        className="mt-6 w-full rounded-2xl bg-violet-700 py-3 text-xs font-bold text-white shadow-md transition hover:bg-violet-800"
+        className="mt-6 w-full rounded-2xl bg-amber-400 py-3 text-xs font-black text-stone-950 shadow-md transition hover:bg-amber-300"
       >
         اعمال فیلترها
       </button>

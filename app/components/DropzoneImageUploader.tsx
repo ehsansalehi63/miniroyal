@@ -92,29 +92,29 @@ export default function DropzoneImageUploader({ images, onChange }: Props) {
 
   return (
     <div dir="rtl" className="space-y-3">
-      <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
         <div className="flex items-center gap-2">
-          <Sparkles className="size-5 text-violet-700" />
+          <Sparkles className="size-5 text-amber-700" />
           <div>
-            <p className="text-xs font-black text-violet-950">ویرایش اختیاری عکس محصول با AI</p>
-            <p className="mt-1 text-[10px] text-violet-800">آپلود مستقل انجام می‌شود؛ AI فقط وقتی شما درخواست کنید اجرا می‌شود و تصویر اصلی از بین نمی‌رود.</p>
+            <p className="text-xs font-black text-amber-950">ویرایش اختیاری عکس محصول با AI</p>
+            <p className="mt-1 text-[10px] text-amber-900">آپلود مستقل انجام می‌شود؛ AI فقط وقتی شما درخواست کنید اجرا می‌شود و تصویر اصلی از بین نمی‌رود.</p>
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="مثلاً: پس‌زمینه روشن‌تر و چروک کمتر" className="min-w-[220px] flex-1 rounded-xl border border-violet-200 bg-white p-2 text-xs outline-none" />
-          <button type="button" onClick={() => void runCustomEdit()} disabled={Boolean(busy) || !images[selected]} className="flex items-center gap-1 rounded-xl bg-violet-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
-            {busy === "ai" ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} ویرایش با دستور
+          <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="مثلاً: پس‌زمینه روشن‌تر و چروک کمتر" className="min-w-[220px] flex-1 rounded-xl border border-stone-200 bg-white p-2 text-xs outline-none focus:border-amber-500" />
+          <button type="button" onClick={() => void runCustomEdit()} disabled={Boolean(busy) || !images[selected]} className="flex items-center gap-1 rounded-xl bg-stone-950 px-3 py-2 text-xs font-black text-white hover:bg-stone-800 transition disabled:opacity-50">
+            {busy === "ai" ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4 text-amber-400" />} ویرایش با دستور
           </button>
-          <button type="button" onClick={() => void editImage(images[selected])} disabled={Boolean(busy) || !images[selected]} className="flex items-center gap-1 rounded-xl border border-violet-300 bg-white px-3 py-2 text-xs font-bold text-violet-800 disabled:opacity-50">
-            {busy === "ai" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />} آماده‌سازی کاتالوگ
+          <button type="button" onClick={() => void editImage(images[selected])} disabled={Boolean(busy) || !images[selected]} className="flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 disabled:opacity-50">
+            {busy === "ai" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4 text-amber-600" />} آماده‌سازی کاتالوگ
           </button>
         </div>
-        {message && <p className="mt-2 text-[11px] font-bold text-violet-800">{message}</p>}
+        {message && <p className="mt-2 text-[11px] font-bold text-amber-900">{message}</p>}
       </div>
 
-      <div onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop} onClick={() => inputRef.current?.click()} className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center ${dragging ? "border-violet-600 bg-violet-100" : "border-stone-300 bg-stone-50 hover:border-violet-500"}`}>
+      <div onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop} onClick={() => inputRef.current?.click()} className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center ${dragging ? "border-amber-600 bg-amber-100" : "border-stone-300 bg-stone-50 hover:border-amber-500"}`}>
         <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={onInput} />
-        {busy === "upload" ? <Loader2 className="size-8 animate-spin text-violet-600" /> : <UploadCloud className="size-8 text-violet-600" />}
+        {busy === "upload" ? <Loader2 className="size-8 animate-spin text-amber-600" /> : <UploadCloud className="size-8 text-amber-600" />}
         <p className="mt-2 text-xs font-bold text-stone-800">عکس واقعی لباس را آپلود یا اینجا رها کنید</p>
         <p className="mt-1 text-[10px] text-stone-500">تصویر بلافاصله در فضای رسانه ذخیره می‌شود؛ ویرایش AI جداگانه و اختیاری است.</p>
       </div>
@@ -122,12 +122,12 @@ export default function DropzoneImageUploader({ images, onChange }: Props) {
       {images.length > 0 && (
         <div className="grid grid-cols-4 gap-2">
           {images.map((image, index) => (
-            <button key={`${image}-${index}`} type="button" onClick={() => setSelected(index)} className={`group relative aspect-square overflow-hidden rounded-xl border-2 ${selected === index ? "border-violet-600" : "border-stone-200"}`}>
+            <button key={`${image}-${index}`} type="button" onClick={() => setSelected(index)} className={`group relative aspect-square overflow-hidden rounded-xl border-2 ${selected === index ? "border-amber-600 ring-2 ring-amber-200" : "border-stone-200"}`}>
               <img src={image} alt={`تصویر محصول ${index + 1}`} className="size-full object-cover" />
               <span onClick={(event) => { event.stopPropagation(); onChange(images.filter((_, i) => i !== index)); setSelected(Math.max(0, Math.min(selected, images.length - 2))); }} className="absolute right-1 top-1 grid size-5 place-items-center rounded-full bg-rose-600 text-white">
                 <X className="size-3" />
               </span>
-              {index === 0 && <span className="absolute bottom-1 right-1 rounded bg-violet-700 px-1 text-[9px] font-bold text-white">اصلی</span>}
+              {index === 0 && <span className="absolute bottom-1 right-1 rounded bg-stone-950 px-1 text-[9px] font-bold text-white">اصلی</span>}
             </button>
           ))}
         </div>

@@ -126,7 +126,7 @@ export default function AccountPage() {
     return (
       <main className="mx-auto max-w-3xl px-4 py-16" dir="rtl">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-8 shadow-sm">
-          <p className="text-xs font-black tracking-[0.2em] text-violet-700">MINIROYAL MEMBER</p>
+          <p className="text-xs font-black tracking-[0.2em] text-amber-700">MINIROYAL MEMBER</p>
           <h1 className="mt-3 text-3xl font-black text-stone-950">سلام {customer.fullName}</h1>
           <p className="mt-2 text-sm text-stone-500">حساب دائمی شما فعال است و سفارش‌ها به این حساب متصل می‌شوند.</p>
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -135,15 +135,15 @@ export default function AccountPage() {
             <div className="rounded-2xl bg-stone-50 p-4"><span className="block text-xs text-stone-500">سطح عضویت</span><strong className="mt-1 block">{customer.clubTier || "bronze"}</strong></div>
           </div>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/shop" className="rounded-full bg-violet-700 px-5 py-3 text-sm font-black text-white hover:bg-violet-800">ادامه خرید</Link>
-            <button onClick={logout} className="rounded-full border border-stone-300 px-5 py-3 text-sm font-black text-stone-700 hover:border-violet-400">خروج از حساب</button>
+            <Link href="/shop" className="rounded-full bg-stone-950 px-5 py-3 text-sm font-black text-white hover:bg-stone-800">ادامه خرید</Link>
+            <button onClick={logout} className="rounded-full border border-stone-300 px-5 py-3 text-sm font-black text-stone-700 hover:border-amber-400">خروج از حساب</button>
           </div>
-          <div className="mt-8 rounded-2xl border border-violet-100 bg-violet-50/50 p-5">
+          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
             <h2 className="text-base font-black text-stone-900">پیگیری مرسوله</h2>
             <p className="mt-1 text-xs text-stone-500">شماره سفارش را وارد کنید تا آخرین وضعیت پستکس نمایش داده شود.</p>
             <form onSubmit={trackOrder} className="mt-3 flex gap-2">
-              <input required value={trackingOrder} onChange={(event) => setTrackingOrder(event.target.value)} placeholder="مثال: MR-12345678" className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-violet-500" />
-              <button disabled={trackingLoading} className="rounded-xl bg-violet-700 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">{trackingLoading ? "در حال بررسی..." : "رهگیری"}</button>
+              <input required value={trackingOrder} onChange={(event) => setTrackingOrder(event.target.value)} placeholder="مثال: MR-12345678" className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-amber-500" />
+              <button disabled={trackingLoading} className="rounded-xl bg-stone-950 px-4 py-2.5 text-xs font-black text-white disabled:opacity-50 hover:bg-stone-800">{trackingLoading ? "در حال بررسی..." : "رهگیری"}</button>
             </form>
             {Boolean(trackingResult) && <pre className="mt-3 max-h-44 overflow-auto rounded-xl bg-white p-3 text-left text-[10px] leading-5 text-stone-700" dir="ltr">{String(JSON.stringify(trackingResult, null, 2))}</pre>}
           </div>
@@ -155,22 +155,22 @@ export default function AccountPage() {
   return (
     <main className="mx-auto max-w-md px-4 py-16" dir="rtl">
       <div className="rounded-[2rem] border border-stone-200 bg-white p-7 shadow-sm">
-        <p className="text-xs font-black tracking-[0.2em] text-violet-700">MINIROYAL ACCOUNT</p>
+        <p className="text-xs font-black tracking-[0.2em] text-amber-700">MINIROYAL ACCOUNT</p>
         <h1 className="mt-3 text-3xl font-black text-stone-950">{mode === "login" ? "ورود به حساب" : "ساخت حساب مشتری"}</h1>
         <p className="mt-2 text-sm text-stone-500">حساب شما برای پیگیری سفارش‌ها و پرداخت‌های آینده دائمی می‌ماند.</p>
         <form onSubmit={submit} className="mt-7 space-y-4">
-          {mode === "register" && <input required value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="نام و نام خانوادگی" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />}
+          {mode === "register" && <input required value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="نام و نام خانوادگی" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-amber-500" />}
           <div className="flex gap-2">
-            <input required value={phone} onChange={(event) => { setPhone(event.target.value); setPhoneVerified(false); }} placeholder="شماره موبایل" inputMode="tel" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />
+            <input required value={phone} onChange={(event) => { setPhone(event.target.value); setPhoneVerified(false); }} placeholder="شماره موبایل" inputMode="tel" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-amber-500" />
             {mode === "register" && <button type="button" disabled={resendSeconds > 0} onClick={() => void requestOtp().catch((e) => setError(e.message))} className="rounded-xl bg-amber-400 px-3 text-xs font-black text-stone-950 disabled:cursor-not-allowed disabled:opacity-50">{resendSeconds > 0 ? `ارسال مجدد ${toPersianDigits(resendSeconds)} ثانیه` : otpSent ? "ارسال مجدد کد" : "ارسال کد تایید"}</button>}
           </div>
-          {mode === "register" && otpSent && <div className="flex gap-2"><input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="کد ۶ رقمی" inputMode="numeric" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" /><button type="button" onClick={() => void verifyOtp().catch((e) => setError(e.message))} className="rounded-xl bg-emerald-600 px-4 text-xs font-black text-white">{phoneVerified ? "تایید شد" : "تایید شماره"}</button></div>}
-          {mode === "register" && <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ایمیل (اختیاری)" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />}
-          <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="رمز عبور (حداقل ۸ کاراکتر)" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-violet-500" />
+          {mode === "register" && otpSent && <div className="flex gap-2"><input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="کد ۶ رقمی" inputMode="numeric" className="min-w-0 flex-1 rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-amber-500" /><button type="button" onClick={() => void verifyOtp().catch((e) => setError(e.message))} className="rounded-xl bg-emerald-600 px-4 text-xs font-black text-white">{phoneVerified ? "تایید شد" : "تایید شماره"}</button></div>}
+          {mode === "register" && <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ایمیل (اختیاری)" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-amber-500" />}
+          <input required minLength={8} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="رمز عبور (حداقل ۸ کاراکتر)" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm outline-none focus:border-amber-500" />
           {error && <p className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</p>}
-          <button disabled={submitting} className="w-full rounded-full bg-violet-700 px-5 py-3.5 text-sm font-black text-white disabled:opacity-50">{submitting ? "در حال پردازش..." : mode === "login" ? "ورود امن" : "ایجاد حساب"}</button>
+          <button disabled={submitting} className="w-full rounded-full bg-stone-950 px-5 py-3.5 text-sm font-black text-white hover:bg-stone-800 disabled:opacity-50">{submitting ? "در حال پردازش..." : mode === "login" ? "ورود امن" : "ایجاد حساب"}</button>
         </form>
-        <button onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }} className="mt-5 w-full text-center text-xs font-bold text-violet-700">
+        <button onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }} className="mt-5 w-full text-center text-xs font-bold text-amber-800 hover:text-amber-900">
           {mode === "login" ? "حساب ندارید؟ ثبت‌نام کنید" : "قبلاً ثبت‌نام کرده‌اید؟ وارد شوید"}
         </button>
       </div>

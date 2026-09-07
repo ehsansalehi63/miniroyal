@@ -28,7 +28,7 @@ export default async function VirtualTryonPage({ searchParams }: VirtualTryonPag
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div dir="rtl" className="text-center">
-        <span className="rounded-full bg-violet-100 px-4 py-1.5 text-xs font-bold text-violet-800">
+        <span className="rounded-full border border-amber-300 bg-amber-50 px-4 py-1.5 text-xs font-black text-amber-900">
           👗 پرو آنلاین لباس کودک
         </span>
         <h1 className="mt-4 text-3xl font-black text-stone-900 sm:text-4xl">
@@ -50,7 +50,7 @@ export default async function VirtualTryonPage({ searchParams }: VirtualTryonPag
       <div dir="rtl" className="mt-12 rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm">
         <h2 className="text-xl font-bold text-stone-900">لباس دیگری می‌خواهید؟</h2>
         <p className="mt-2 text-xs text-stone-500">از کاتالوگ محصول دیگری انتخاب کنید و پرو آنلاین آن را اجرا کنید.</p>
-        <Link href="/shop" className="mt-6 inline-block rounded-full bg-violet-700 px-8 py-3.5 text-sm font-bold text-white shadow-lg hover:bg-violet-800">
+        <Link href="/shop" className="mt-6 inline-block rounded-full bg-stone-950 px-8 py-3.5 text-sm font-black text-white shadow-lg hover:bg-stone-800">
           ورود به فروشگاه
         </Link>
       </div>

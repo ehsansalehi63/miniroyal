@@ -24,7 +24,7 @@ export default function AdminSlidesPage() {
     <div dir="rtl" className="max-w-5xl space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div><h1 className="text-2xl font-black text-stone-900">مدیریت اسلایدشو صفحهٔ اصلی</h1><p className="mt-1 text-xs text-stone-500">متن، لینک و تصویر هر اسلاید را ویرایش کنید.</p></div>
-        <div className="flex gap-2"><button onClick={reset} className="rounded-xl bg-stone-200 px-4 py-3 text-xs font-bold text-stone-700">بازنشانی</button><button onClick={save} className="rounded-xl bg-violet-700 px-5 py-3 text-xs font-black text-white">ذخیره</button></div>
+        <div className="flex gap-2"><button onClick={reset} className="rounded-xl bg-stone-200 px-4 py-3 text-xs font-bold text-stone-700">بازنشانی</button><button onClick={save} className="rounded-xl bg-stone-950 px-5 py-3 text-xs font-black text-white hover:bg-stone-800 transition shadow-md">ذخیره</button></div>
       </div>
       {slides.map((slide) => (
         <div key={slide.id} className="grid gap-4 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm lg:grid-cols-[150px_1fr]">
@@ -32,7 +32,7 @@ export default function AdminSlidesPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             {(["title", "subtitle", "badge", "ctaText", "ctaLink", "image"] as const).map((key) => (
               <label key={key} className="text-[11px] font-bold text-stone-700">{key}
-                <input value={slide[key]} onChange={(e) => update(slide.id, key, e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />
+                <input value={slide[key]} onChange={(e) => update(slide.id, key, e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500" />
               </label>
             ))}
           </div>

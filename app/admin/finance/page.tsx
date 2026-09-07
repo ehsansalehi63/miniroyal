@@ -14,7 +14,7 @@ export default async function AdminFinancePage() {
     return { gross, fees, cost, net: Math.max(0, gross - fees - cost) };
   })();
   const cards: Array<{ label: string; value: number; icon: LucideIcon; color: string }> = [
-    { label: "فروش ناخالص", value: metrics.gross, icon: ReceiptText, color: "text-violet-700" },
+    { label: "فروش ناخالص", value: metrics.gross, icon: ReceiptText, color: "text-amber-700" },
     { label: "کارمزد درگاه", value: metrics.fees, icon: ArrowDownLeft, color: "text-rose-600" },
     { label: "بهای تمام‌شده", value: metrics.cost, icon: ArrowUpRight, color: "text-amber-600" },
     { label: "سود عملیاتی تخمینی", value: metrics.net, icon: Landmark, color: "text-emerald-600" },

@@ -64,7 +64,7 @@ export default function AdminCouponsPage() {
               placeholder="مثال: MINI20"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500 font-mono uppercase"
+              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500 font-mono uppercase"
             />
           </div>
 
@@ -73,7 +73,7 @@ export default function AdminCouponsPage() {
             <select
               value={type}
               onChange={(e) => setType(e.target.value as "percent" | "fixed")}
-              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500 font-bold"
+              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500 font-bold"
             >
               <option value="percent">درصدی (%)</option>
               <option value="fixed">مبلغ ثابت (تومان)</option>
@@ -87,7 +87,7 @@ export default function AdminCouponsPage() {
               required
               value={value}
               onChange={(e) => setValue(Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
             />
           </div>
 
@@ -98,14 +98,14 @@ export default function AdminCouponsPage() {
               required
               value={minOrder}
               onChange={(e) => setMinOrder(Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+              className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500"
             />
           </div>
         </div>
 
         <button
           type="submit"
-          className="rounded-2xl bg-violet-700 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+          className="rounded-2xl bg-stone-950 px-6 py-2.5 text-xs font-black text-white shadow-md hover:bg-stone-800 transition"
         >
           ایجاد کد تخفیف جدید
         </button>
@@ -127,7 +127,7 @@ export default function AdminCouponsPage() {
           <tbody className="divide-y divide-stone-100 text-stone-800">
             {coupons.map((c) => (
               <tr key={c.id} className="hover:bg-stone-50">
-                <td className="p-3.5 font-mono font-bold text-violet-700">{c.code}</td>
+                <td className="p-3.5 font-mono font-bold text-amber-800">{c.code}</td>
                 <td className="p-3.5">{c.type === "percent" ? "درصدی" : "ثابت"}</td>
                 <td className="p-3.5 font-bold">
                   {c.type === "percent" ? `%${toPersianDigits(c.value)}` : formatToman(c.value)}

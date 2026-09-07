@@ -17,21 +17,21 @@ export default function ContactPage() {
           <p><strong>✉️ ایمیل پشتیبانی:</strong> info@miniroyal.shop</p>
         </div>
 
-        <form className="rounded-3xl border border-violet-100 bg-violet-50/40 p-6 shadow-sm space-y-4">
+        <form className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm space-y-4">
           <h2 className="font-bold text-base text-stone-900">ارسال پیام به پشتیبانی</h2>
           <div>
             <label className="block text-xs font-bold text-stone-700">نام و نام خانوادگی</label>
-            <input type="text" className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" required />
+            <input type="text" className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500" required />
           </div>
           <div>
             <label className="block text-xs font-bold text-stone-700">شماره موبایل</label>
-            <input type="tel" className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" required />
+            <input type="tel" className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500" required />
           </div>
           <div>
             <label className="block text-xs font-bold text-stone-700">متن پیام</label>
-            <textarea rows={3} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" required />
+            <textarea rows={3} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-amber-500" required />
           </div>
-          <button type="submit" className="w-full rounded-xl bg-violet-700 py-3 text-xs font-bold text-white shadow-md hover:bg-violet-800">
+          <button type="submit" className="w-full rounded-xl bg-stone-950 py-3 text-xs font-black text-white shadow-md hover:bg-stone-800 transition">
             ارسال پیام
           </button>
         </form>

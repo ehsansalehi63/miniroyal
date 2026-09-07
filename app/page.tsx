@@ -205,7 +205,7 @@ export default async function HomePage() {
             </h2>
             <p className="mt-1 text-xs text-stone-500">پوشاک با ضمانت اصالت پارچه و پرو آنلاین سایز</p>
           </div>
-          <Link href="/shop" className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 hover:underline">
+          <Link href="/shop" className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 hover:text-amber-900 hover:underline">
             دیدن کاتالوگ کامل
             <ArrowLeft className="size-3.5" />
           </Link>
@@ -283,7 +283,7 @@ export default async function HomePage() {
             </h2>
             <p className="mt-1 text-xs text-stone-500">راهنمای سایز، پارچه و نگهداری لباس کودک</p>
           </div>
-          <Link href="/blog" className="inline-flex items-center gap-1 text-xs font-bold text-violet-700 hover:underline">
+          <Link href="/blog" className="inline-flex items-center gap-1 text-xs font-bold text-amber-800 hover:text-amber-900 hover:underline">
             همهٔ مقاله‌ها
             <ArrowLeft className="size-3.5" />
           </Link>
@@ -291,10 +291,10 @@ export default async function HomePage() {
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {blogPosts.slice(0, 3).map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="fashion-surface group rounded-3xl p-5">
-              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-black text-violet-800">
+              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-900 border border-amber-200">
                 {post.category}
               </span>
-              <h3 className="mt-3 text-sm font-black leading-6 text-stone-900 group-hover:text-violet-700">
+              <h3 className="mt-3 text-sm font-black leading-6 text-stone-900 group-hover:text-amber-800">
                 {post.title}
               </h3>
               <p className="mt-2 line-clamp-3 text-[11px] leading-6 text-stone-500">{post.summary}</p>

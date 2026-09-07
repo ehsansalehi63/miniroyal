@@ -35,7 +35,7 @@ export default async function AdminDashboardPage() {
 
         <Link
           href="/ehsanpaneladmin/products"
-          className="rounded-2xl bg-violet-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-violet-800"
+          className="rounded-2xl bg-stone-950 px-5 py-2.5 text-xs font-black text-white shadow-md hover:bg-stone-800 transition"
         >
           + افزودن محصول جدید
         </Link>
@@ -61,14 +61,14 @@ export default async function AdminDashboardPage() {
         <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-stone-500">سفارشات جدید</span>
-            <span className="grid size-10 place-items-center rounded-2xl bg-violet-50 text-violet-600">
+            <span className="grid size-10 place-items-center rounded-2xl bg-amber-50 text-amber-600">
               <PackageCheck className="size-5" />
             </span>
           </div>
           <div className="mt-3 text-2xl font-black text-stone-900">
             {toPersianDigits(monthOrders.length)} سفارش
           </div>
-          <span className="mt-1 block text-[11px] font-bold text-violet-600">
+          <span className="mt-1 block text-[11px] font-bold text-amber-700">
             {toPersianDigits(monthOrders.filter((order) => order.status === "processing").length)} سفارش نیازمند پردازش انبار
           </span>
         </div>
@@ -135,7 +135,7 @@ export default async function AdminDashboardPage() {
                     <td className="p-3">
                       <Link
                         href={`/ehsanpaneladmin/products?edit=${p.id}`}
-                        className="rounded-lg bg-violet-50 px-3 py-1 text-[11px] font-bold text-violet-700 hover:bg-violet-100"
+                        className="rounded-lg bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-900 hover:bg-amber-100"
                       >
                         ویرایش موجودی
                       </Link>

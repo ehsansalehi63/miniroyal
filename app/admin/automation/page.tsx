@@ -59,7 +59,7 @@ export default function AdminAutomationPage() {
       <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
         <div className="p-4 border-b border-stone-100 flex justify-between items-center">
           <h3 className="text-sm font-bold text-stone-900">آخرین فرآیندهای آپلود و انتشار (`ingest_jobs`)</h3>
-          <button className="flex items-center gap-1.5 text-xs font-bold text-violet-700">
+          <button className="flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-900 transition">
             <RefreshCw className="size-3.5" />
             <span>به‌روزرسانی صف</span>
           </button>
@@ -79,7 +79,7 @@ export default function AdminAutomationPage() {
           <tbody className="divide-y divide-stone-100 text-stone-800">
             {jobs.map((job) => (
               <tr key={job.id} className="hover:bg-stone-50">
-                <td className="p-3.5 font-mono font-bold text-violet-700">{job.id}</td>
+                <td className="p-3.5 font-mono font-bold text-amber-800">{job.id}</td>
                 <td className="p-3.5">{job.source === "telegram" ? "ربات تلگرام 📱" : "PWA فروشنده 💻"}</td>
                 <td className="p-3.5">{job.imagesCount} تصویر</td>
                 <td className="p-3.5 font-bold">{job.productTitle}</td>
