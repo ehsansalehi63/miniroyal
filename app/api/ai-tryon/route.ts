@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeTryon, recordTryonSuccess } from "@/app/lib/tryon-usage";
-import sharp from "sharp";
 
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
+const DEFAULT_POLLINATIONS_GEN_URL = "https://gen.pollinations.ai/v1/images/generations";
 const MAX_DATA_URI_LENGTH = 11_000_000;
 const DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_DAHL_URL = "https://inference.dahl.global/v1/chat/completions";
@@ -11,53 +11,13 @@ const DEFAULT_AIHUBMIX_URL = "https://aihubmix.com/v1/images/edits";
 const DEFAULT_AIHUBMIX_TRYON_URL =
   "https://aihubmix.com/v1/models/doubao/doubao-seedream-4-5/predictions";
 const DEFAULT_AIHUBMIX_TRYON_MODEL = "doubao-seedream-4-5";
-const TRYON_REQUEST_TIMEOUT_MS = 15_000;
+const TRYON_REQUEST_TIMEOUT_MS = 25_000;
 
 function dataUriToBlob(value: string, fallbackType: string) {
   const match = value.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) throw new Error("Invalid image data.");
   if (value.length > MAX_DATA_URI_LENGTH) throw new Error("Image is too large.");
   return new Blob([Buffer.from(match[2], "base64")], { type: match[1] || fallbackType });
-}
-
-async function createStudioTryonComposite(personImage: string, garmentImage: string): Promise<string | null> {
-  try {
-    const personMatch = personImage.match(/^data:([^;]+);base64,(.+)$/);
-    const garmentMatch = garmentImage.match(/^data:([^;]+);base64,(.+)$/);
-    if (!personMatch || !garmentMatch) return null;
-
-    const personBuffer = Buffer.from(personMatch[2], "base64");
-    const garmentBuffer = Buffer.from(garmentMatch[2], "base64");
-
-    const personMeta = await sharp(personBuffer).metadata();
-    const width = personMeta.width || 800;
-    const height = personMeta.height || 1000;
-
-    // Scale garment to proportional torso width/height
-    const targetW = Math.max(120, Math.round(width * 0.62));
-    const targetH = Math.max(120, Math.round(height * 0.48));
-
-    const garmentPng = await sharp(garmentBuffer)
-      .resize(targetW, targetH, { fit: "inside" })
-      .png()
-      .toBuffer();
-
-    const gMeta = await sharp(garmentPng).metadata();
-    const gW = gMeta.width || targetW;
-
-    const left = Math.max(0, Math.round((width - gW) / 2));
-    const top = Math.max(0, Math.round(height * 0.28));
-
-    const composite = await sharp(personBuffer)
-      .composite([{ input: garmentPng, top, left, blend: "over" }])
-      .jpeg({ quality: 88 })
-      .toBuffer();
-
-    return `data:image/jpeg;base64,${composite.toString("base64")}`;
-  } catch (err) {
-    console.warn("Studio composite fallback error:", err);
-    return null;
-  }
 }
 
 async function improvePromptWithOpenRouter(personImage: string, garmentImage: string, requestedSize: string) {
@@ -332,61 +292,93 @@ export async function POST(request: NextRequest) {
     }
 
     if (pollinationsKey) {
-      const form = new FormData();
-      form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
-      form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
-      form.append("prompt", prompt);
-      const configuredModel = process.env.TRYON_MODEL?.trim().toLowerCase();
-      const tryOnModel = configuredModel && configuredModel !== "kontext" ? configuredModel : "seedream";
-      form.append("model", tryOnModel);
-      form.append("size", "1024x1024");
+      // 1. Try multi-image neural edits with candidate models
+      const configuredModel = process.env.TRYON_MODEL?.trim();
+      const candidateModels = [
+        ...(configuredModel && configuredModel !== "seedream" && configuredModel !== "kontext" ? [configuredModel] : []),
+        "black-forest-labs/flux.1-schnell",
+        "MarcosFRG/flux-1-schnell",
+        "pollinations/midijourney",
+      ];
 
+      for (const tryOnModel of candidateModels) {
+        try {
+          const form = new FormData();
+          form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
+          form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
+          form.append("prompt", prompt);
+          form.append("model", tryOnModel);
+          form.append("size", "1024x1024");
+
+          const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${pollinationsKey}` },
+            body: form,
+            cache: "no-store",
+            signal: AbortSignal.timeout(
+              Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
+            ),
+          });
+          const result = await response.json().catch(() => null);
+          const rawB64 = result?.data?.[0]?.b64_json;
+          const rawUrl = result?.data?.[0]?.url;
+          const imageUrl = rawB64
+            ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
+            : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
+
+          if (response.ok && imageUrl) {
+            if (!access.unlimited && access.customer?.id) {
+              await recordTryonSuccess(access.customer.id, productId);
+            }
+            const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+            return NextResponse.json({ success: true, imageUrl, provider: `pollinations-${tryOnModel}`, remaining: finalRemaining, unlimited: access.unlimited });
+          }
+          if (response.status === 402 || response.status === 403) {
+            continue;
+          }
+        } catch (polError) {
+          console.warn(`Pollinations try-on error with ${tryOnModel}:`, polError);
+        }
+      }
+
+      // 2. Fallback: Generate full AI photorealistic image via /v1/images/generations with flux.1-schnell
       try {
-        const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
+        const genRes = await fetch(DEFAULT_POLLINATIONS_GEN_URL, {
           method: "POST",
-          headers: { Authorization: `Bearer ${pollinationsKey}` },
-          body: form,
+          headers: {
+            Authorization: `Bearer ${pollinationsKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "black-forest-labs/flux.1-schnell",
+            prompt,
+            size: "1024x1024",
+            n: 1,
+          }),
           cache: "no-store",
-          signal: AbortSignal.timeout(
-            Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
-          ),
+          signal: AbortSignal.timeout(TRYON_REQUEST_TIMEOUT_MS),
         });
-        const result = await response.json().catch(() => null);
-        const imageUrl = result?.data?.[0]?.b64_json
-          ? `data:image/png;base64,${result.data[0].b64_json}`
-          : result?.data?.[0]?.url;
+        const genData = await genRes.json().catch(() => null);
+        const rawB64 = genData?.data?.[0]?.b64_json;
+        const rawUrl = genData?.data?.[0]?.url;
+        const genImageUrl = rawB64
+          ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
+          : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
 
-        if (response.ok && imageUrl) {
+        if (genRes.ok && genImageUrl) {
           if (!access.unlimited && access.customer?.id) {
             await recordTryonSuccess(access.customer.id, productId);
           }
           const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-          return NextResponse.json({ success: true, imageUrl, provider: "pollinations", remaining: finalRemaining, unlimited: access.unlimited });
+          return NextResponse.json({ success: true, imageUrl: genImageUrl, provider: "pollinations-flux-gen", remaining: finalRemaining, unlimited: access.unlimited });
         }
-      } catch (polError) {
-        console.warn("Pollinations try-on error:", polError);
+      } catch (genError) {
+        console.warn("Pollinations generation fallback error:", genError);
       }
-    }
-
-    // Smart fallback: Generate high-fidelity studio composite try-on
-    const compositeImage = await createStudioTryonComposite(personImage, garmentImage);
-    if (compositeImage) {
-      if (!access.unlimited && access.customer?.id) {
-        await recordTryonSuccess(access.customer.id, productId);
-      }
-      const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-      return NextResponse.json({
-        success: true,
-        imageUrl: compositeImage,
-        provider: "studio-composite",
-        notice: "تن‌خور آتلیه با شبیه‌ساز دقیق مزون مینی‌رویال آماده شد.",
-        remaining: finalRemaining,
-        unlimited: access.unlimited,
-      });
     }
 
     return NextResponse.json(
-      { success: false, code: "IMAGE_PROVIDER_ERROR", error: "سرویس پرو آنلاین موقتاً با ترافیک بالا مواجه شده است. لطفاً چند لحظه بعد مجدداً امتحان کنید." },
+      { success: false, code: "AI_GENERATION_FAILED", error: "سرویس هوش مصنوعی پرو لباس در این لحظه با ترافیک بالا مواجه است. لطفاً چند لحظه بعد مجدداً امتحان کنید." },
       { status: 200 }
     );
   } catch (error) {
