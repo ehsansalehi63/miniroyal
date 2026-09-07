@@ -16,6 +16,64 @@ export default function DropzoneImageUploader({ images, onChange }: Props) {
   const [busy, setBusy] = useState<"upload" | "ai" | null>(null);
   const [message, setMessage] = useState("");
 
+  const compressToWebP = async (file: File): Promise<{ file: File; originalKb: number; compressedKb: number; savedPercent: number }> => {
+    const originalKb = Math.round(file.size / 1024);
+    // Skip SVGs, GIFs (preserve animations), or already lightweight WebP under 150KB
+    if (file.type === "image/svg+xml" || file.type === "image/gif" || (file.type === "image/webp" && file.size < 150 * 1024)) {
+      return { file, originalKb, compressedKb: originalKb, savedPercent: 0 };
+    }
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          const maxDim = 1800;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve({ file, originalKb, compressedKb: originalKb, savedPercent: 0 });
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob || blob.size >= file.size) {
+                resolve({ file, originalKb, compressedKb: originalKb, savedPercent: 0 });
+                return;
+              }
+              const cleanName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+              const compressedFile = new File([blob], cleanName, { type: "image/webp" });
+              const compressedKb = Math.round(blob.size / 1024);
+              const savedPercent = Math.max(0, Math.round((1 - blob.size / file.size) * 100));
+              resolve({ file: compressedFile, originalKb, compressedKb, savedPercent });
+            },
+            "image/webp",
+            0.85
+          );
+        };
+        img.onerror = () => resolve({ file, originalKb, compressedKb: originalKb, savedPercent: 0 });
+        img.src = String(e.target?.result);
+      };
+      reader.onerror = () => resolve({ file, originalKb, compressedKb: originalKb, savedPercent: 0 });
+      reader.readAsDataURL(file);
+    });
+  };
+
   const uploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -49,24 +107,39 @@ export default function DropzoneImageUploader({ images, onChange }: Props) {
   };
 
   const addFiles = async (fileList: FileList | File[]) => {
-    const valid = Array.from(fileList).filter((file) => file.type.startsWith("image/") && file.size <= 8 * 1024 * 1024);
+    const valid = Array.from(fileList).filter((file) => file.type.startsWith("image/") && file.size <= 15 * 1024 * 1024);
     if (!valid.length) {
-      setMessage("فقط تصویر JPG، PNG یا WebP با حجم کمتر از ۸ مگابایت قابل استفاده است.");
+      setMessage("فقط تصویر JPG، PNG یا WebP تا سقف ۱۵ مگابایت قابل انتخاب است.");
       return;
     }
     setBusy("upload");
-    setMessage(`در حال آپلود ${valid.length} تصویر...`);
+    setMessage(`در حال پردازش و فشرده‌سازی هوشمند WebP برای ${valid.length} تصویر...`);
     try {
       const uploaded: string[] = [];
-      for (const [index, file] of valid.entries()) {
-        setMessage(`در حال آپلود تصویر ${index + 1} از ${valid.length}...`);
-        uploaded.push(await uploadFile(file));
+      let totalSavedPercent = 0;
+      let countCompressed = 0;
+
+      for (const [index, rawFile] of valid.entries()) {
+        setMessage(`در حال فشرده‌سازی WebP تصویر ${index + 1} از ${valid.length}...`);
+        const { file: optimizedFile, originalKb, compressedKb, savedPercent } = await compressToWebP(rawFile);
+        if (savedPercent > 0) {
+          totalSavedPercent += savedPercent;
+          countCompressed++;
+        }
+        setMessage(`در حال ارسال تصویر ${index + 1} به هاستینگ (${compressedKb}KB به جای ${originalKb}KB)...`);
+        uploaded.push(await uploadFile(optimizedFile));
       }
+
+      const avgSaved = countCompressed > 0 ? Math.round(totalSavedPercent / countCompressed) : 0;
       const firstIndex = images.length;
       const combinedImages = [...images, ...uploaded];
       onChange(combinedImages);
       setSelected(firstIndex);
-      setMessage(`${uploaded.length} تصویر با موفقیت آپلود شد. برای ویرایش AI، تصویر را انتخاب کنید.`);
+      setMessage(
+        avgSaved > 0
+          ? `✨ ${uploaded.length} تصویر با فشرده‌سازی خودکار WebP (${avgSaved}٪ بهینه‌تر) با موفقیت آپلود شد.`
+          : `✨ ${uploaded.length} تصویر با موفقیت آپلود و آماده شد.`
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "آپلود تصویر انجام نشد.");
     } finally {

@@ -204,12 +204,16 @@ export default function VirtualTryonBox({ product, customer }: Props) {
         }),
       });
       const responseText = await response.text();
-      let data: { success?: boolean; imageUrl?: string; error?: string; remaining?: number | null; unlimited?: boolean } = {};
+      let data: { success?: boolean; imageUrl?: string; error?: string; remaining?: number | null; unlimited?: boolean; notice?: string } = {};
       try {
         data = JSON.parse(responseText);
       } catch {
         if (responseText.trimStart().startsWith("<")) {
-          throw new Error(`سرور پاسخ HTML برگرداند (HTTP ${response.status})؛ لطفاً دوباره تلاش کنید.`);
+          throw new Error(
+            response.status === 502 || response.status === 504
+              ? "سرویس پرو آنلاین موقتاً با وقفه پاسخ مواجه شد (کد ۵۰۲). لطفاً لحظاتی بعد مجدداً تلاش کنید."
+              : `پاسخ غیرمنتظره از سرور دریافت شد (کد ${response.status})؛ لطفاً دوباره تلاش کنید.`
+          );
         }
         throw new Error("پاسخ نامعتبر از سرویس پرو آنلاین دریافت شد.");
       }

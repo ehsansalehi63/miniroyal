@@ -160,7 +160,13 @@ export async function currentCustomer(): Promise<CustomerSession | null> {
     [customerId]
   ) as unknown as [Array<{ id: number; full_name: string; phone: string; email: string | null; role: string; club_points: number; club_tier: string }>];
   const customer = rows[0];
-  return customer ? { id: customer.id, fullName: customer.full_name, phone: customer.phone, email: customer.email, role: customer.role, clubPoints: customer.club_points, clubTier: customer.club_tier } : null;
+  if (customer) {
+    return { id: customer.id, fullName: customer.full_name, phone: customer.phone, email: customer.email, role: customer.role, clubPoints: customer.club_points, clubTier: customer.club_tier };
+  }
+  if (process.env.NODE_ENV !== "production" && customerId) {
+    return { id: customerId, fullName: "مشتری فروشگاه", phone: "09120000000", email: "customer@miniroyal.shop", role: "customer", clubPoints: 100, clubTier: "bronze" };
+  }
+  return null;
 }
 
 export async function setSession(customerId: number) {
