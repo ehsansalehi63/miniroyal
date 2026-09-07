@@ -292,13 +292,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (pollinationsKey) {
-      // 1. Try multi-image neural edits with candidate models
+      // 1. Multi-image neural edits. Only models that actually read the input
+      // images are listed here. Text-to-image models (flux.1-schnell etc.)
+      // silently ignore the person/garment images and invent a different
+      // child, which is exactly the reported bug.
       const configuredModel = process.env.TRYON_MODEL?.trim();
       const candidateModels = [
         ...(configuredModel && configuredModel !== "seedream" && configuredModel !== "kontext" ? [configuredModel] : []),
-        "black-forest-labs/flux.1-schnell",
-        "MarcosFRG/flux-1-schnell",
-        "pollinations/midijourney",
+        "tongyi-mai/z-image-turbo",
+        "black-forest-labs/flux.1-kontext-pro",
+        "microsoft/mai-image-2.5-flash",
       ];
 
       for (const tryOnModel of candidateModels) {
@@ -341,40 +344,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 2. Fallback: Generate full AI photorealistic image via /v1/images/generations with flux.1-schnell
-      try {
-        const genRes = await fetch(DEFAULT_POLLINATIONS_GEN_URL, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${pollinationsKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "black-forest-labs/flux.1-schnell",
-            prompt,
-            size: "1024x1024",
-            n: 1,
-          }),
-          cache: "no-store",
-          signal: AbortSignal.timeout(TRYON_REQUEST_TIMEOUT_MS),
-        });
-        const genData = await genRes.json().catch(() => null);
-        const rawB64 = genData?.data?.[0]?.b64_json;
-        const rawUrl = genData?.data?.[0]?.url;
-        const genImageUrl = rawB64
-          ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
-          : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
-
-        if (genRes.ok && genImageUrl) {
-          if (!access.unlimited && access.customer?.id) {
-            await recordTryonSuccess(access.customer.id, productId);
-          }
-          const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-          return NextResponse.json({ success: true, imageUrl: genImageUrl, provider: "pollinations-flux-gen", remaining: finalRemaining, unlimited: access.unlimited });
-        }
-      } catch (genError) {
-        console.warn("Pollinations generation fallback error:", genError);
-      }
+      // 2. No text-to-image fallback: without the real person photo the model
+      // would invent a different child, which users correctly see as a bug.
+      // A clean, actionable error is better than a wrong image.
     }
 
     return NextResponse.json(
