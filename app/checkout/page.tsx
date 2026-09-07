@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "../lib/cart";
 import { formatToman } from "../lib/utils";
 import Link from "next/link";
 import { ShieldCheck, MapPin, Truck, CreditCard } from "lucide-react";
+import AddressMapPicker from "../components/AddressMapPicker";
+
+type CityOption = { id: number; name: string; province: string; provinceId: number };
+
+const FREE_SHIPPING_THRESHOLD = 500000;
+const DEFAULT_SHIPPING_COST = 45000;
 
 function useIsMounted() {
   return useSyncExternalStore(
@@ -30,23 +36,121 @@ export default function CheckoutPage() {
   const [shippingProvider, setShippingProvider] = useState<"tipax" | "post" | "peyk">("tipax");
   const [paymentMethod, setPaymentMethod] = useState<"zarinpal" | "cod">("zarinpal");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [cities, setCities] = useState<Array<{ id: number; name: string; province: string }>>([]);
+  const [cities, setCities] = useState<CityOption[]>([]);
+  const [provinces, setProvinces] = useState<string[]>([]);
   const [citiesError, setCitiesError] = useState("");
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-  const [locationMessage, setLocationMessage] = useState("");
+
+  // Shipping quote state
+  const [quoteStatus, setQuoteStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [quotedShippingCost, setQuotedShippingCost] = useState<number | null>(null);
+  const [quoteError, setQuoteError] = useState("");
 
   useEffect(() => {
     fetch("/api/shipping/tipax/cities", { cache: "force-cache" })
-      .then(async (response) => { const data = await response.json(); if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست."); const nextCities = Array.isArray(data.cities) ? data.cities : []; setCities(nextCities); if (!nextCities.some((item: { province?: string }) => item.province)) { setProvince(""); setCity(""); } })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "فهرست شهرها در دسترس نیست.");
+        const nextCities: CityOption[] = Array.isArray(data.cities) ? data.cities : [];
+        setCities(nextCities);
+        setProvinces(Array.isArray(data.provinces) && data.provinces.length ? data.provinces : [...new Set(nextCities.map((item) => item.province).filter(Boolean))]);
+      })
       .catch((error) => setCitiesError(error instanceof Error ? error.message : "فهرست شهرها در دسترس نیست."));
   }, []);
 
-  const selectCurrentLocation = () => {
-    if (!navigator.geolocation) { setLocationMessage("مرورگر شما موقعیت مکانی را پشتیبانی نمی‌کند."); return; }
-    setLocationMessage("در حال دریافت موقعیت شما...");
-    navigator.geolocation.getCurrentPosition((position) => { setLatitude(position.coords.latitude); setLongitude(position.coords.longitude); setLocationMessage("موقعیت فعلی ثبت شد؛ آدرس پستی را هم کامل وارد کنید."); }, () => setLocationMessage("دسترسی به موقعیت ممکن نشد؛ مجوز مرورگر را فعال کنید."), { enableHighAccuracy: true, timeout: 10000 });
-  };
+  const cityOptions = useMemo(() => {
+    if (!province) return [];
+    return cities.filter((item) => item.province === province).sort((a, b) => a.name.localeCompare(b.name, "fa"));
+  }, [cities, province]);
+
+  const selectCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      if (!latitude && !longitude) return;
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude);
+        setLongitude(position.coords.longitude);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [latitude, longitude]);
+
+  const handlePickOnMap = useCallback((lat: number, lng: number) => {
+    setLatitude(lat);
+    setLongitude(lng);
+  }, []);
+
+  // استعلام هزینه ارسال بر اساس شهر مقصد هر وقت شهر انتخاب شد یا روش ارسال عوض شد
+  const subtotal = getRawSubtotal();
+  const discount = getDiscountAmount();
+  const itemsTotalWeightGrams = useMemo(
+    () => items.reduce((sum, item) => sum + Math.max(200, Math.round(Number((item as { product?: { weightGrams?: number } }).product?.weightGrams || 500))) * item.quantity, 0),
+    [items]
+  );
+
+  useEffect(() => {
+    if (!city || subtotal <= 0) {
+      setQuoteStatus("idle");
+      setQuotedShippingCost(null);
+      setQuoteError("");
+      return;
+    }
+    if (subtotal >= FREE_SHIPPING_THRESHOLD) {
+      setQuoteStatus("ready");
+      setQuotedShippingCost(0);
+      setQuoteError("");
+      return;
+    }
+    let cancelled = false;
+    setQuoteStatus("loading");
+    setQuoteError("");
+    fetch("/api/shipping/postex/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        city,
+        totalValue: subtotal - discount,
+        totalWeight: Math.max(0.1, itemsTotalWeightGrams / 1000),
+        paymentType: paymentMethod === "cod" ? "COD" : "SENDER",
+      }),
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "استعلام هزینه ارسال ناموفق بود.");
+        if (cancelled) return;
+        const raw = data.data;
+        // استخراج مبلغ از پاسخ پستکس (ساختارهای مختلف ممکن)
+        const candidates: unknown[] = [];
+        const collect = (value: unknown, depth = 0) => {
+          if (!value || typeof value !== "object" || depth > 4) return;
+          if (Array.isArray(value)) { value.forEach((entry) => collect(entry, depth + 1)); return; }
+          const record = value as Record<string, unknown>;
+          for (const key of ["price", "amount", "quote_price", "quotePrice", "total_price", "totalPrice", "shipping_price", "shippingPrice", "cost", "delivery_price", "deliveryPrice"]) {
+            if (record[key] !== undefined && record[key] !== null) candidates.push(record[key]);
+          }
+          for (const key of Object.keys(record)) collect(record[key], depth + 1);
+        };
+        collect(raw);
+        const numeric = candidates.map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0);
+        if (numeric === undefined) throw new Error("پاسخ استعلام هزینه ارسال قابل خواندن نبود.");
+        if (cancelled) return;
+        // پستکس مبالغ را به ریال (×10 تومان) برمی‌گرداند
+        const toman = numeric > 1000000 ? Math.round(numeric / 10) : Math.round(numeric);
+        setQuotedShippingCost(Math.min(toman, 500000));
+        setQuoteStatus("ready");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setQuoteStatus("error");
+        setQuotedShippingCost(null);
+        setQuoteError(error instanceof Error ? error.message : "استعلام هزینه ارسال ناموفق بود.");
+      });
+    return () => { cancelled = true; };
+  }, [city, subtotal, discount, itemsTotalWeightGrams, paymentMethod]);
 
   useEffect(() => {
     if (!city.trim().replace(/ي/g, "ی").includes("اصفهان") && paymentMethod === "cod") setPaymentMethod("zarinpal");
@@ -65,10 +169,8 @@ export default function CheckoutPage() {
     );
   }
 
-  const subtotal = getRawSubtotal();
-  const discount = getDiscountAmount();
-  const freeShipping = subtotal >= 500000;
-  const shippingCost = freeShipping ? 0 : 45000;
+  const freeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
+  const shippingCost = freeShipping ? 0 : quotedShippingCost !== null ? quotedShippingCost : DEFAULT_SHIPPING_COST;
   const finalTotal = getFinalTotal() + shippingCost;
 
   const normalizeDigits = (value: string) =>
@@ -82,7 +184,15 @@ export default function CheckoutPage() {
       alert("لطفاً نام گیرنده و آدرس را تکمیل کنید.");
       return;
     }
-    if (!/^09\d{9}$/.test(cleanPhone)) {
+    if (!province) {
+      alert("لطفاً استان را انتخاب کنید.");
+      return;
+    }
+    if (!city) {
+      alert("لطفاً شهر را انتخاب کنید.");
+      return;
+    }
+    if (/^09\d{9}$/.test(cleanPhone) === false) {
       alert("شماره موبایل معتبر نیست. مثال: ۰۹۱۲۳۴۵۶۷۸۹");
       return;
     }
@@ -164,9 +274,56 @@ export default function CheckoutPage() {
                 />
               </div>
 
-              <div><label className="block text-xs font-bold text-stone-700">استان *</label>{cities.length && cities.some((item) => item.province) ? <select required value={province} onChange={(e) => { setProvince(e.target.value); setCity(""); }} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب استان</option>{[...new Set(cities.map((item) => item.province).filter(Boolean))].map((item) => <option key={item} value={item}>{item}</option>)}</select> : <input type="text" required value={province} onChange={(e) => setProvince(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}</div>
+              <div>
+                <label className="block text-xs font-bold text-stone-700">استان *</label>
+                {provinces.length > 0 ? (
+                  <select
+                    required
+                    value={province}
+                    onChange={(e) => { setProvince(e.target.value); setCity(""); }}
+                    className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"
+                  >
+                    <option value="">انتخاب استان</option>
+                    {provinces.map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: اصفهان"
+                    value={province}
+                    onChange={(e) => { setProvince(e.target.value); setCity(""); }}
+                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
+                  />
+                )}
+              </div>
 
-              <div><label className="block text-xs font-bold text-stone-700">شهر *</label>{cities.length ? <select required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500"><option value="">انتخاب شهر</option>{cities.filter((item) => !cities.some((candidate) => candidate.province) || !province || item.province === province).map((item) => <option key={`${item.id}-${item.name}`} value={item.name}>{item.name}</option>)}</select> : <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500" />}{citiesError && <p className="mt-1 text-[10px] text-amber-700">{citiesError}؛ شهر را دستی وارد کنید.</p>}</div>
+              <div>
+                <label className="block text-xs font-bold text-stone-700">شهر *</label>
+                {cityOptions.length > 0 ? (
+                  <select
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    disabled={!province}
+                    className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-violet-500 disabled:bg-stone-50 disabled:text-stone-400"
+                  >
+                    <option value="">{province ? "انتخاب شهر" : "ابتدا استان را انتخاب کنید"}</option>
+                    {cityOptions.map((item) => <option key={`${item.id}-${item.name}`} value={item.name}>{item.name}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder={province ? "نام شهر" : "ابتدا استان را انتخاب کنید"}
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    disabled={Boolean(provinces.length) && !province}
+                    className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500 disabled:bg-stone-50 disabled:text-stone-400"
+                  />
+                )}
+                {citiesError && <p className="mt-1 text-[10px] text-amber-700">{citiesError}؛ شهر را دستی وارد کنید.</p>}
+              </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-stone-700">آدرس دقیق پستی *</label>
@@ -185,13 +342,31 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   required
+                  inputMode="numeric"
                   placeholder="۱۲۳۴۵۶۷۸۹۰"
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 text-xs outline-none focus:border-violet-500"
                 />
               </div>
-              <div className="sm:col-span-2 rounded-2xl border border-violet-100 bg-violet-50/60 p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-bold text-violet-950">ثبت موقعیت روی نقشه</p><p className="mt-1 text-[10px] text-violet-800">موقعیت فعلی برای دقت ارسال ذخیره می‌شود؛ آدرس پستی را هم کامل بنویسید.</p></div><button type="button" onClick={selectCurrentLocation} className="rounded-xl bg-violet-700 px-3 py-2 text-[11px] font-bold text-white">استفاده از موقعیت فعلی</button></div>{locationMessage && <p className="mt-2 text-[10px] font-semibold text-violet-800">{locationMessage}</p>}{latitude !== null && longitude !== null && <a className="mt-2 block text-[10px] text-violet-700 underline" href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=18/${latitude}/${longitude}`} target="_blank" rel="noreferrer">مشاهده موقعیت ثبت‌شده روی نقشه</a>}</div>
+
+              <div className="sm:col-span-2">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-stone-700">انتخاب آدرس روی نقشه *</p>
+                    <p className="mt-0.5 text-[10px] text-stone-500">موقعیت دقیق روی نقشه ثبت می‌شود تا مرسوله سریع‌تر به دست شما برسد.</p>
+                  </div>
+                  <button type="button" onClick={selectCurrentLocation} className="rounded-xl border border-violet-200 bg-white px-3 py-2 text-[11px] font-bold text-violet-700 hover:bg-violet-50">
+                    استفاده از موقعیت فعلی من
+                  </button>
+                </div>
+                <AddressMapPicker latitude={latitude} longitude={longitude} onPick={handlePickOnMap} />
+                {latitude !== null && longitude !== null && (
+                  <p className="mt-2 text-[10px] font-semibold text-emerald-700">
+                    موقعیت ثبت شد: {latitude.toFixed(5)}، {longitude.toFixed(5)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -229,15 +404,30 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <span className="text-xs font-bold text-violet-700">
-                    {shippingProvider === m.id
-                      ? (shippingCost === 0 ? "رایگان" : formatToman(shippingCost))
+                    {!city
+                      ? "پس از انتخاب شهر"
                       : freeShipping
                         ? "رایگان"
-                        : formatToman(45000)}
+                        : quoteStatus === "loading"
+                          ? "در حال محاسبه..."
+                          : shippingCost === 0
+                            ? "رایگان"
+                            : formatToman(shippingCost)}
                   </span>
                 </label>
               ))}
             </div>
+
+            {!city && (
+              <p className="mt-3 text-[10px] font-semibold text-stone-500">برای محاسبه دقیق هزینه ارسال، ابتدا استان و شهر را انتخاب کنید.</p>
+            )}
+            {quoteStatus === "loading" && <p className="mt-3 text-[10px] font-semibold text-violet-700">هزینه ارسال بر اساس آدرس شما در حال محاسبه است...</p>}
+            {quoteStatus === "error" && city && !freeShipping && (
+              <p className="mt-3 text-[10px] font-semibold text-amber-700">استعلام آنلاین هزینه ارسال ممکن نشد؛ هزینه پیش‌فرض {formatToman(DEFAULT_SHIPPING_COST)} اعمال می‌شود. {quoteError}</p>
+            )}
+            {quoteStatus === "ready" && !freeShipping && quotedShippingCost !== null && (
+              <p className="mt-3 text-[10px] font-semibold text-emerald-700">هزینه ارسال بر اساس آدرس انتخابی شما محاسبه شد.</p>
+            )}
           </div>
 
           {/* روش پرداخت */}
@@ -343,18 +533,24 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-stone-600">
                 <span>هزینه ارسال:</span>
                 <span className="font-bold text-stone-900">
-                  {shippingCost === 0 ? "رایگان" : formatToman(shippingCost)}
+                  {!city
+                    ? "پس از انتخاب شهر"
+                    : quoteStatus === "loading" && !freeShipping
+                      ? "در حال محاسبه..."
+                      : shippingCost === 0
+                        ? "رایگان"
+                        : formatToman(shippingCost)}
                 </span>
               </div>
               <div className="flex justify-between text-sm font-black text-violet-700 border-t border-stone-100 pt-3">
                 <span>مبلغ نهایی:</span>
-                <span>{formatToman(finalTotal)}</span>
+                <span>{quoteStatus === "loading" && !freeShipping ? "..." : formatToman(finalTotal)}</span>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || quoteStatus === "loading"}
               className="mt-6 w-full rounded-2xl bg-violet-700 py-3.5 text-xs font-bold text-white shadow-xl shadow-violet-200 transition hover:bg-violet-800 disabled:opacity-50"
             >
               {isSubmitting ? "در حال ثبت سفارش..." : "تأیید نهایی و پرداخت سفارش 🔒"}
