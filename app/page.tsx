@@ -123,11 +123,11 @@ export default async function HomePage() {
       <section aria-label="خدمات و تضمین‌های مینی رویال" className="mx-auto site-container px-4">
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {TRUST_ITEMS.map((item) => (
-            <li key={item.title} className="flex items-start gap-3 rounded-2xl border border-stone-200/80 bg-white/85 p-4">
-              <item.icon className="mt-0.5 size-5 shrink-0 text-violet-700" aria-hidden="true" />
+            <li key={item.title} className="flex items-start gap-3 rounded-2xl border border-stone-200/90 bg-white p-4 shadow-sm">
+              <item.icon className="mt-0.5 size-5 shrink-0 text-amber-800" aria-hidden="true" />
               <div>
-                <p className="text-xs font-black text-stone-900">{item.title}</p>
-                <p className="mt-1 text-[11px] leading-6 text-stone-500">{item.text}</p>
+                <p className="text-xs font-black text-stone-950">{item.title}</p>
+                <p className="mt-1 text-[11px] leading-6 text-stone-600 font-medium">{item.text}</p>
               </div>
             </li>
           ))}
@@ -138,15 +138,15 @@ export default async function HomePage() {
       <section aria-labelledby="categories-heading" className="mx-auto site-container px-4">
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-stone-200 pb-4">
           <div>
-            <p className="fashion-kicker text-[10px] font-black">Kids fashion edit</p>
-            <h2 id="categories-heading" className="mt-2 text-xl font-black text-stone-900 sm:text-2xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-800">Kids fashion edit</p>
+            <h2 id="categories-heading" className="mt-1.5 text-xl font-black text-stone-950 sm:text-2xl">
               دسته‌بندی‌های پوشاک کودک و نوجوان
             </h2>
-            <p className="mt-1 text-xs text-stone-500">
+            <p className="mt-1 text-xs text-stone-600">
               از نوزادی تا نوجوانی؛ هر دسته با زیرمجموعهٔ دقیق و جدول سایز سانتی‌متری
             </p>
           </div>
-          <Link href="/shop" className="inline-flex items-center gap-1 text-xs font-black text-violet-700 hover:underline">
+          <Link href="/shop" className="inline-flex items-center gap-1.5 text-xs font-black text-amber-900 hover:text-stone-950">
             کاتالوگ کامل
             <ArrowLeft className="size-3.5" />
           </Link>
@@ -156,9 +156,9 @@ export default async function HomePage() {
           {PRIMARY_GROUPS.map((group) => {
             const children = kidsCategories.filter((category) => category.parentSlug === group.parentSlug);
             return (
-              <article key={group.parentSlug} className="fashion-surface overflow-hidden rounded-3xl">
+              <article key={group.parentSlug} className="fashion-surface overflow-hidden rounded-2xl">
                 <Link href={`/category/${group.parentSlug}`} className="group block">
-                  <div className="aspect-[4/3] overflow-hidden bg-stone-100">
+                  <div className="aspect-[4/3] overflow-hidden bg-[#f4efe8]">
                     <img
                       src={group.image}
                       alt={`خرید ${group.name}`}
@@ -166,11 +166,11 @@ export default async function HomePage() {
                       height={420}
                       loading="lazy"
                       decoding="async"
-                      className="editorial-image size-full object-cover transition duration-500 group-hover:scale-105"
+                      className="editorial-image size-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="text-sm font-black text-stone-900 group-hover:text-violet-700">{group.name}</h3>
+                    <h3 className="text-sm font-black text-stone-900 group-hover:text-amber-800 transition">{group.name}</h3>
                     <p className="mt-1 text-[11px] text-stone-500">{group.hint}</p>
                   </div>
                 </Link>
@@ -179,7 +179,7 @@ export default async function HomePage() {
                     <li key={category.slug}>
                       <Link
                         href={`/category/${category.slug}`}
-                        className="block truncate text-[11px] font-semibold text-stone-600 transition hover:text-violet-700"
+                        className="block truncate text-[11px] font-semibold text-stone-600 transition hover:text-amber-900"
                       >
                         {category.name}
                       </Link>
@@ -218,26 +218,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* بنر پرو آنلاین */}
+      {/* بنر پرو آنلاین با پالت رویال و ادیتوریال */}
       <section aria-labelledby="tryon-heading" className="mx-auto site-container px-4">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-l from-violet-900 via-fuchsia-900 to-stone-900 p-8 text-white shadow-2xl sm:p-10">
+        <div className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-stone-950 p-8 text-white shadow-xl sm:p-10">
           <div className="relative z-10 flex flex-col items-center justify-between gap-6 md:flex-row md:items-center">
             <div className="space-y-3 text-center md:text-right">
-              <span className="rounded-full border border-violet-500/30 bg-violet-700/80 px-3.5 py-1 text-xs font-bold text-violet-200">
-                پرو آنلاین سایز
+              <span className="rounded-full border border-amber-400/40 bg-amber-400/10 px-3.5 py-1 text-xs font-black text-amber-300">
+                پرو هوشمند اختصاصی مینی رویال
               </span>
-              <h2 id="tryon-heading" className="text-2xl font-black sm:text-3xl">
-                نمی‌دانی چه سایزی برای فرزندت مناسب است؟
+              <h2 id="tryon-heading" className="text-2xl font-black text-amber-50 sm:text-3xl">
+                درباره انتخاب سایز مناسب فرزندتان مطمئن نیستید؟
               </h2>
               <p className="max-w-xl text-xs leading-7 text-stone-300 sm:text-sm">
-                قد و وزن فرزندت را وارد کن؛ پرو آنلاین سایز مناسب را بر اساس اندازه‌های واقعی و راهنمای هر لباس پیشنهاد می‌دهد.
+                قد، وزن و سن را وارد کنید؛ پرو آنلاین هوشمند، دقیق‌ترین سایز را بر اساس الگو و قواره واقعی هر لباس استخراج و پیشنهاد می‌کند.
               </p>
             </div>
             <Link
               href="/virtual-tryon"
-              className="shrink-0 rounded-2xl bg-white px-8 py-4 text-xs font-black text-violet-900 shadow-xl transition hover:scale-105 hover:bg-amber-300 sm:text-sm"
+              className="shrink-0 rounded-xl bg-amber-400 px-8 py-3.5 text-xs font-black text-stone-950 shadow-lg transition hover:scale-105 hover:bg-amber-300 sm:text-sm"
             >
-              شروع پرو آنلاین
+              شروع پرو آنلاین سایز ✨
             </Link>
           </div>
         </div>
@@ -246,20 +246,21 @@ export default async function HomePage() {
       {/* نظرات مشتریان */}
       <section aria-labelledby="reviews-heading" className="mx-auto site-container px-4">
         <div className="border-b border-stone-200 pb-4">
-          <h2 id="reviews-heading" className="text-xl font-black text-stone-900 sm:text-2xl">
+          <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">Customer stories</span>
+          <h2 id="reviews-heading" className="mt-1 text-xl font-black text-stone-950 sm:text-2xl">
             تجربهٔ مشتری‌های مینی رویال
           </h2>
-          <p className="mt-1 text-xs text-stone-500">بازخورد خانواده‌ها دربارهٔ سایز، کیفیت پارچه و ارسال</p>
+          <p className="mt-1 text-xs text-stone-600">بازخورد خانواده‌ها دربارهٔ دقت سایز، کیفیت پارچه و بسته‌بندی نفیس</p>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {REVIEWS.map((review) => (
-            <figure key={review.name} className="fashion-surface rounded-3xl p-5">
+            <figure key={review.name} className="fashion-surface rounded-2xl p-5">
               <div className="flex items-center gap-1" aria-label={`امتیاز ${review.rating} از ۵`}>
                 {Array.from({ length: 5 }, (_, index) => (
                   <Star
                     key={index}
                     aria-hidden="true"
-                    className={`size-4 ${index < review.rating ? "fill-amber-400 text-amber-400" : "text-stone-300"}`}
+                    className={`size-4 ${index < review.rating ? "fill-amber-500 text-amber-500" : "text-stone-300"}`}
                   />
                 ))}
               </div>

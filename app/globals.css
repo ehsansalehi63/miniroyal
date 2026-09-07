@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fffaf3;
-  --foreground: #201b24;
-  --brand: #5b21b6;
-  --brand-deep: #241333;
-  --ink-muted: #746b78;
+  --background: #faf8f5;
+  --foreground: #1c1917;
+  --brand: #4c1d95;
+  --brand-deep: #1e112a;
+  --brand-gold: #c29d59;
+  --ink-muted: #6b635b;
 }
 
 body {
   background:
-    radial-gradient(circle at 6% 0%, rgba(245, 158, 11, 0.11), transparent 26rem),
-    radial-gradient(circle at 95% 14%, rgba(124, 58, 237, 0.09), transparent 28rem),
+    radial-gradient(circle at 10% 0%, rgba(194, 157, 89, 0.07), transparent 32rem),
+    radial-gradient(circle at 90% 12%, rgba(76, 29, 149, 0.05), transparent 30rem),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-vazirmatn), ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
@@ -31,7 +33,7 @@ main::before {
   height: 22rem;
   pointer-events: none;
   content: "";
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), transparent);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), transparent);
 }
 
 button,
@@ -51,16 +53,17 @@ img {
 }
 
 .fashion-surface {
-  border: 1px solid rgba(214, 211, 209, 0.78);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 22px 65px rgba(36, 19, 51, 0.08);
-  backdrop-filter: blur(16px);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  border: 1px solid rgba(229, 224, 216, 0.85);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px -10px rgba(44, 24, 16, 0.05);
+  backdrop-filter: blur(12px);
+  transition: border-color 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1), transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fashion-surface:hover {
-  border-color: rgba(124, 58, 237, 0.25);
-  box-shadow: 0 26px 75px rgba(36, 19, 51, 0.13);
+  border-color: rgba(194, 157, 89, 0.45);
+  box-shadow: 0 20px 40px -12px rgba(44, 24, 16, 0.1);
+  transform: translateY(-2px);
 }
 
 .fashion-kicker {
@@ -326,8 +329,8 @@ img {
   z-index: 5;
   pointer-events: none;
   background:
-    linear-gradient(to left, rgba(11, 7, 17, .94) 0%, rgba(11, 7, 17, .82) 34%, rgba(11, 7, 17, .18) 64%, rgba(11, 7, 17, .5) 100%),
-    radial-gradient(120% 90% at 50% 50%, transparent 46%, rgba(6, 3, 12, .8) 100%);
+    linear-gradient(to left, rgba(11, 7, 17, .96) 0%, rgba(11, 7, 17, .88) 45%, rgba(11, 7, 17, .35) 75%, rgba(11, 7, 17, .65) 100%),
+    radial-gradient(120% 90% at 50% 50%, transparent 46%, rgba(6, 3, 12, .85) 100%);
 }
 
 .hero-bar {

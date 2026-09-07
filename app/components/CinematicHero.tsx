@@ -7,8 +7,8 @@ import type { HomeSlide } from "../lib/homeConfig";
 
 interface CinematicHeroProps {
   slides: HomeSlide[];
-  /** اگر فایل ویدیوی لوکال موجود باشد، به‌جای صحنهٔ انیمیشنی پخش می‌شود. */
-  videoSrc: string | null;
+  /** اگر فایل ویدیوی لوکال موجود باشد */
+  videoSrc?: string | null;
 }
 
 /**
@@ -24,7 +24,7 @@ interface CinematicHeroProps {
  * اگر public/video/hero.mp4 (یا hero.webm) وجود داشته باشد، همان ویدیو پخش
  * می‌شود و این صحنه فقط به‌عنوان poster/جایگزین باقی می‌ماند.
  */
-export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) {
+export default function CinematicHero({ slides, videoSrc: _videoSrc }: CinematicHeroProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -93,42 +93,31 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
         style={{ transform: `translate3d(${tilt.x * 10}px, ${tilt.y * 8}px, 0)` }}
       >
         <div className="hero-frame">
-          {videoSrc ? (
-            <video
-              className="hero-media is-active"
-              src={videoSrc}
-              poster="/images/hero-poster.webp"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label="ویدیوی معرفی کالکشن مینی رویال"
+          {slides.map((item, itemIndex) => (
+            <img
+              key={item.id}
+              src={item.image}
+              alt={`${item.title} — ${item.subtitle}`}
+              width={1280}
+              height={720}
+              decoding="async"
+              loading={itemIndex === 0 ? "eager" : "lazy"}
+              fetchPriority={itemIndex === 0 ? "high" : "auto"}
+              className={`hero-media hero-kenburns ${itemIndex === index ? "is-active" : ""}`}
             />
-          ) : (
-            slides.map((item, itemIndex) => (
-              <img
-                key={item.id}
-                src={item.image}
-                alt={`${item.title} — ${item.subtitle}`}
-                width={1280}
-                height={714}
-                decoding="async"
-                loading={itemIndex === 0 ? "eager" : "lazy"}
-                fetchPriority={itemIndex === 0 ? "high" : "auto"}
-                className={`hero-media hero-kenburns ${itemIndex === index ? "is-active" : ""}`}
-              />
-            ))
-          )}
-          <span className="hero-caption">{slide.title}</span>
+          ))}
+          <span className="hero-caption">
+            <span className="text-amber-400 font-bold ml-1.5">{slide.badge}</span>
+            <span>{slide.title}</span>
+          </span>
         </div>
-        {/* بازتاب کف استودیو — از نسخهٔ سبک تصویر تا پهنای باند هدر نرود */}
+        {/* بازتاب کف استودیو */}
         <img
           src={slide.thumb}
           alt=""
           aria-hidden="true"
           width={560}
-          height={313}
+          height={315}
           className="hero-reflection"
           decoding="async"
           loading="lazy"
@@ -142,36 +131,35 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
       <div className="hero-bar hero-bar-bottom" aria-hidden="true" />
 
       {/* ── ۵. متن و فراخوان‌ها ──────────────────────────────────── */}
-      <div className="relative z-20 grid min-h-[520px] items-center gap-10 px-6 py-20 sm:min-h-[600px] sm:px-12 lg:grid-cols-[1.05fr_.95fr] lg:px-16">
+      <div className="relative z-20 grid min-h-[520px] items-center gap-10 px-6 py-16 sm:min-h-[600px] sm:px-12 lg:grid-cols-[1.1fr_.9fr] lg:px-16">
         <div className="max-w-xl">
-          <p className="hero-kicker">MINI ROYAL · NEW EDIT</p>
-          <h1 className="mt-5 text-3xl font-black leading-[1.25] sm:text-5xl">
-            پوشاک کودک و نوجوان
-            <span className="mt-2 block bg-gradient-to-l from-amber-200 via-white to-violet-200 bg-clip-text text-lg font-extrabold text-transparent sm:text-2xl">
-              با پرو آنلاین سایز و جدول سانتی‌متری
-            </span>
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3.5 py-1 text-[11px] font-black tracking-wider text-amber-300 backdrop-blur-md">
+            <span>✨</span>
+            <span>{slide.badge}</span>
+          </div>
+          <h1 className="mt-4 text-3xl font-black leading-[1.3] text-white sm:text-4xl lg:text-5xl">
+            {slide.title}
           </h1>
-          <p aria-live="polite" className="mt-6 max-w-lg text-sm leading-8 text-stone-300 sm:text-base">
+          <p aria-live="polite" className="mt-4 max-w-lg text-sm leading-8 text-stone-200 font-medium sm:text-base sm:leading-8">
             {slide.subtitle}
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center gap-3.5">
             <Link
               href={slide.ctaLink}
-              className="inline-flex items-center gap-3 rounded-full border-2 border-amber-200 bg-amber-300 px-7 py-4 text-xs font-black text-stone-950 shadow-[0_18px_45px_rgba(0,0,0,.5)] transition hover:border-amber-100 hover:bg-amber-200"
+              className="inline-flex items-center gap-2.5 rounded-xl bg-amber-400 px-7 py-3.5 text-xs font-black text-stone-950 shadow-lg shadow-amber-950/40 transition hover:bg-amber-300 active:scale-[0.98]"
             >
-              {slide.ctaText}
+              <span>{slide.ctaText}</span>
               <ArrowLeft className="size-4" />
             </Link>
             <Link
               href="/virtual-tryon"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-l from-violet-600 to-fuchsia-600 px-6 py-4 text-xs font-black text-white shadow-[0_14px_35px_rgba(124,58,237,.45)] ring-2 ring-white/20 transition hover:-translate-y-0.5 hover:from-violet-500 hover:to-fuchsia-500"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-stone-900/80 px-6 py-3.5 text-xs font-black text-white shadow-md backdrop-blur-md transition hover:bg-stone-800 active:scale-[0.98]"
             >
-              <Sparkles className="size-4" />
-              شروع پرو آنلاین سایز
+              <Sparkles className="size-4 text-amber-400" />
+              <span>پرو آنلاین سایز کودک</span>
             </Link>
           </div>
-
         </div>
 
         {/* ستون دوم فضای صحنه را نگه می‌دارد تا متن روی سوژه نیفتد */}
@@ -179,13 +167,13 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
       </div>
 
       {/* ── ۶. کنترل‌های اسلاید ──────────────────────────────────── */}
-      <div className="absolute bottom-7 left-6 z-30 flex items-center gap-2 sm:left-12">
+      <div className="absolute bottom-6 left-6 z-30 flex items-center gap-2 sm:left-12">
         <button
           type="button"
           onClick={() => setPaused((value) => !value)}
           aria-label={paused ? "پخش خودکار اسلایدها" : "توقف اسلایدها"}
           aria-pressed={paused}
-          className="grid size-9 place-items-center rounded-full border border-white/25 bg-white/10 text-white transition hover:border-amber-300"
+          className="grid size-9 place-items-center rounded-xl border border-white/20 bg-stone-950/60 text-white backdrop-blur-md transition hover:border-amber-400"
         >
           {paused ? <Play className="size-4" /> : <Pause className="size-4" />}
         </button>
@@ -193,7 +181,7 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
           type="button"
           onClick={() => go(-1)}
           aria-label="اسلاید قبلی"
-          className="grid size-9 place-items-center rounded-full border border-white/25 bg-white/10 text-white transition hover:border-amber-300"
+          className="grid size-9 place-items-center rounded-xl border border-white/20 bg-stone-950/60 text-white backdrop-blur-md transition hover:border-amber-400"
         >
           <ChevronRight className="size-4" />
         </button>
@@ -204,14 +192,18 @@ export default function CinematicHero({ slides, videoSrc }: CinematicHeroProps) 
             onClick={() => setIndex(itemIndex)}
             aria-label={`اسلاید ${itemIndex + 1}: ${item.title}`}
             aria-current={itemIndex === index}
-            className={`h-1.5 rounded-full transition-all ${itemIndex === index ? "w-10 bg-amber-300" : "w-5 bg-white/35 hover:bg-white/60"}`}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              itemIndex === index
+                ? "w-8 bg-amber-400 shadow-sm shadow-amber-400/50"
+                : "w-3 bg-white/30 hover:bg-white/60"
+            }`}
           />
         ))}
         <button
           type="button"
           onClick={() => go(1)}
           aria-label="اسلاید بعدی"
-          className="grid size-9 place-items-center rounded-full border border-white/25 bg-white/10 text-white transition hover:border-amber-300"
+          className="grid size-9 place-items-center rounded-xl border border-white/20 bg-stone-950/60 text-white backdrop-blur-md transition hover:border-amber-400"
         >
           <ChevronLeft className="size-4" />
         </button>
