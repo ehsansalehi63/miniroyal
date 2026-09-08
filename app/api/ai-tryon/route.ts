@@ -251,6 +251,7 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
   return null;
 }
 
+// Replicate IDM-VTON Native Virtual Try-On Integration
 async function callReplicateIdmVton(personImage: string, garmentImage: string): Promise<string | null> {
   const token = (
     process.env.REPLICATE_API_TOKEN ||
