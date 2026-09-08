@@ -251,6 +251,113 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
   return null;
 }
 
+async function callReplicateIdmVton(personImage: string, garmentImage: string): Promise<string | null> {
+  const token = (
+    process.env.REPLICATE_API_TOKEN ||
+    process.env.REPLICATE_API_KEY ||
+    process.env.REPLICATE_TOKEN ||
+    process.env.REPLICATE_KEY ||
+    process.env.REPLICATEKEY ||
+    process.env.REPLICATE
+  )?.trim();
+  if (!token) return null;
+
+  try {
+    const createRes = await fetch("https://api.replicate.com/v1/predictions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Prefer: "wait=40",
+      },
+      body: JSON.stringify({
+        version: "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985",
+        input: {
+          human_img: personImage,
+          garm_img: garmentImage,
+          category: "upper_body",
+          crop: false,
+          steps: 30,
+        },
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+
+    if (!createRes.ok) {
+      const errText = await createRes.text().catch(() => "");
+      console.warn("Replicate creation failed:", createRes.status, errText);
+      return null;
+    }
+
+    let prediction = await createRes.json();
+    const startTime = Date.now();
+
+    while (prediction.status !== "succeeded" && prediction.status !== "failed" && prediction.status !== "canceled") {
+      if (Date.now() - startTime > 45000) break;
+      await new Promise((r) => setTimeout(r, 2000));
+      const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!pollRes.ok) break;
+      prediction = await pollRes.json();
+    }
+
+    if (prediction.status === "succeeded") {
+      const output = prediction.output;
+      if (typeof output === "string" && output.startsWith("http")) return output;
+      if (Array.isArray(output) && typeof output[0] === "string" && output[0].startsWith("http")) return output[0];
+    }
+  } catch (err) {
+    console.warn("Replicate try-on error:", err);
+  }
+  return null;
+}
+
+async function callSegmindIdmVton(personImage: string, garmentImage: string): Promise<string | null> {
+  const segmindKey = process.env.SEGMIND_API_KEY;
+  if (!segmindKey) return null;
+
+  try {
+    const res = await fetch("https://api.segmind.com/v1/idm-vton", {
+      method: "POST",
+      headers: {
+        "x-api-key": segmindKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        human_img: personImage,
+        garm_img: garmentImage,
+        category: "upper_body",
+        crop: false,
+        steps: 30,
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      console.warn("Segmind call failed:", res.status, errText);
+      return null;
+    }
+
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("image/")) {
+      const buffer = await res.arrayBuffer();
+      const b64 = Buffer.from(buffer).toString("base64");
+      return `data:${contentType};base64,${b64}`;
+    }
+
+    const json = await res.json().catch(() => null);
+    if (json?.image) {
+      return json.image.startsWith("data:") ? json.image : `data:image/jpeg;base64,${json.image}`;
+    }
+  } catch (err) {
+    console.warn("Segmind try-on error:", err);
+  }
+  return null;
+}
+
 async function createStudioTryonComposite(personDataUri: string, garmentDataUri: string): Promise<string> {
   const sharp = (await import("sharp")).default;
   const personMatch = personDataUri.match(/^data:([^;]+);base64,(.+)$/);
@@ -330,6 +437,15 @@ async function createStudioTryonComposite(personDataUri: string, garmentDataUri:
 }
 
 export async function POST(request: NextRequest) {
+  const replicateToken = (
+    process.env.REPLICATE_API_TOKEN ||
+    process.env.REPLICATE_API_KEY ||
+    process.env.REPLICATE_TOKEN ||
+    process.env.REPLICATE_KEY ||
+    process.env.REPLICATEKEY ||
+    process.env.REPLICATE
+  )?.trim();
+  const segmindKey = process.env.SEGMIND_API_KEY;
   const pollinationsKey = process.env.POLLINATIONS_API_KEY;
   const aihubmixKey = process.env.AIHUBMIX_API_KEY;
 
@@ -350,6 +466,42 @@ export async function POST(request: NextRequest) {
     const access = await authorizeTryon(productId);
     if (!access.ok) {
       return NextResponse.json({ success: false, code: access.status === 401 ? "AUTH_REQUIRED" : "TRYON_QUOTA_EXCEEDED", error: access.error, remaining: access.remaining }, { status: access.status });
+    }
+
+    // 1. Replicate IDM-VTON (World standard virtual try-on, 100% preserves face and fits garment)
+    if (replicateToken) {
+      const replicateImage = await callReplicateIdmVton(personImage, garmentImage);
+      if (replicateImage) {
+        if (!access.unlimited && access.customer?.id) {
+          await recordTryonSuccess(access.customer.id, productId);
+        }
+        const newRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+        return NextResponse.json({
+          success: true,
+          imageUrl: replicateImage,
+          provider: "replicate-idm-vton",
+          remaining: newRemaining,
+          unlimited: access.unlimited,
+        });
+      }
+    }
+
+    // 2. Segmind IDM-VTON (100 free daily API calls)
+    if (segmindKey) {
+      const segmindImage = await callSegmindIdmVton(personImage, garmentImage);
+      if (segmindImage) {
+        if (!access.unlimited && access.customer?.id) {
+          await recordTryonSuccess(access.customer.id, productId);
+        }
+        const newRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+        return NextResponse.json({
+          success: true,
+          imageUrl: segmindImage,
+          provider: "segmind-idm-vton",
+          remaining: newRemaining,
+          unlimited: access.unlimited,
+        });
+      }
     }
 
     const fallbackPrompt = `Professional virtual try-on for a children's clothing store. Use the second image as the exact garment reference and replace only the visible clothing on the person in the first image. Preserve the child's face, hair, body proportions, pose, hands, background, lighting and identity. Keep the exact garment color, pattern, logo placement and construction. Make the fit natural for the child's body; do not invent accessories, text, logos, extra limbs or a different garment. Requested catalog size: ${requestedSize || "not specified"}.`;
