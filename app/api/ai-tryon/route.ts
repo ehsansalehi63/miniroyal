@@ -624,46 +624,68 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 3. Optional neural image-editing via Pollinations ONLY if an explicit inpainting model is configured
-    const configuredModel = process.env.TRYON_MODEL?.trim();
-    if (pollinationsKey && configuredModel && configuredModel !== "flux" && !configuredModel.includes("schnell")) {
-      try {
-        const form = new FormData();
-        form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
-        form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
-        form.append("prompt", prompt);
-        form.append("model", configuredModel);
-        form.append("size", "1024x1024");
+    // 3. Neural image-editing via Pollinations. Only edit-capable models that
+    // actually read both input images are allowed; text-to-image models
+    // (flux schnell etc.) ignore the photos and invent a different child —
+    // the exact bug users reported. If TRYON_MODEL is unset or a known
+    // text-to-image value, fall back to the verified free edit models.
+    if (pollinationsKey) {
+      const configuredModel = process.env.TRYON_MODEL?.trim();
+      const isEditCapable = (model: string) =>
+        model.includes("z-image-turbo") ||
+        model.includes("kontext") ||
+        model.includes("mai-image") ||
+        model.includes("gpt-image") ||
+        (model.includes("seedream") && !model.includes("flux"));
+      const candidateModels = [
+        ...(configuredModel && isEditCapable(configuredModel.toLowerCase()) ? [configuredModel] : []),
+        "tongyi-mai/z-image-turbo",
+        "black-forest-labs/flux.1-kontext-pro",
+        "microsoft/mai-image-2.5-flash",
+      ].filter((model, index, all) => all.indexOf(model) === index);
 
-        const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${pollinationsKey}` },
-          body: form,
-          cache: "no-store",
-          signal: AbortSignal.timeout(
-            Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
-          ),
-        });
-        const result = await response.json().catch(() => null);
-        const rawB64 = result?.data?.[0]?.b64_json;
-        const rawUrl = result?.data?.[0]?.url;
-        const imageUrl = rawB64
-          ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
-          : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
+      for (const tryOnModel of candidateModels) {
+        try {
+          const form = new FormData();
+          form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
+          form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
+          form.append("prompt", prompt);
+          form.append("model", tryOnModel);
+          form.append("size", "1024x1024");
 
-        if (response.ok && imageUrl) {
-          if (!access.unlimited && access.customer?.id) {
-            await recordTryonSuccess(access.customer.id, productId);
+          const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${pollinationsKey}` },
+            body: form,
+            cache: "no-store",
+            signal: AbortSignal.timeout(
+              Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, 120_000)
+            ),
+          });
+          const result = await response.json().catch(() => null);
+          const rawB64 = result?.data?.[0]?.b64_json;
+          const rawUrl = result?.data?.[0]?.url;
+          const imageUrl = rawB64
+            ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
+            : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
+
+          if (response.ok && imageUrl) {
+            if (!access.unlimited && access.customer?.id) {
+              await recordTryonSuccess(access.customer.id, productId);
+            }
+            const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+            return NextResponse.json({ success: true, imageUrl, provider: `pollinations-${tryOnModel}`, remaining: finalRemaining, unlimited: access.unlimited });
           }
-          const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-          return NextResponse.json({ success: true, imageUrl, provider: `pollinations-${configuredModel}`, remaining: finalRemaining, unlimited: access.unlimited });
+          // 402/403/404 on one model → try the next candidate.
+          console.warn(`Pollinations try-on ${tryOnModel} failed:`, response.status, result?.error || "");
+        } catch (polError) {
+          console.warn(`Pollinations try-on error with ${tryOnModel}:`, polError);
         }
-      } catch (polError) {
-        console.warn(`Pollinations try-on error with ${configuredModel}:`, polError);
       }
     }
 
-    // 4. High-fidelity Studio Try-on (100% preserves child's real photo & exact catalog garment with realistic shading)
+    // 4. Final local fallback: sharp composite that keeps the real child
+    // photo and pastes the real garment on top (no invented faces).
     try {
       const studioImage = await createStudioTryonComposite(personImage, garmentImage);
       if (studioImage) {
@@ -681,26 +703,6 @@ export async function POST(request: NextRequest) {
       }
     } catch (studioError) {
       console.warn("Studio try-on composite error:", studioError);
-    }
-
-    // Direct Studio Try-on Fallback (always preserves user's authentic child & product garment)
-    try {
-      const studioImage = await createStudioTryonComposite(personImage, garmentImage);
-      if (studioImage) {
-        if (!access.unlimited && access.customer?.id) {
-          await recordTryonSuccess(access.customer.id, productId);
-        }
-        const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-        return NextResponse.json({
-          success: true,
-          imageUrl: studioImage,
-          provider: "studio-fit",
-          remaining: finalRemaining,
-          unlimited: access.unlimited,
-        });
-      }
-    } catch (directStudioError) {
-      console.warn("Direct studio try-on error:", directStudioError);
     }
 
     return NextResponse.json(
