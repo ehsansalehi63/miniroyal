@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeTryon, recordTryonSuccess } from "@/app/lib/tryon-usage";
+import { getProductById } from "@/app/lib/catalog";
 
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
 const DEFAULT_POLLINATIONS_GEN_URL = "https://gen.pollinations.ai/v1/images/generations";
@@ -251,8 +252,42 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
   return null;
 }
 
+// Upload image to Replicate Files API to prevent 413 Payload Too Large
+async function uploadToReplicateFiles(dataUriOrUrl: string, token: string): Promise<string> {
+  if (dataUriOrUrl.startsWith("http://") || dataUriOrUrl.startsWith("https://")) {
+    return dataUriOrUrl;
+  }
+  const match = dataUriOrUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) return dataUriOrUrl;
+
+  try {
+    const mimeType = match[1] || "image/jpeg";
+    const buffer = Buffer.from(match[2], "base64");
+    const formData = new FormData();
+    formData.append("content", new Blob([buffer], { type: mimeType }), "image.jpg");
+
+    const uploadRes = await fetch("https://api.replicate.com/v1/files", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (uploadRes.ok) {
+      const json = await uploadRes.json();
+      const fileUrl = json.urls?.get || json.url;
+      if (typeof fileUrl === "string" && fileUrl.startsWith("http")) {
+        return fileUrl;
+      }
+    }
+  } catch (err) {
+    console.warn("Replicate file upload error, falling back to original data:", err);
+  }
+  return dataUriOrUrl;
+}
+
 // Replicate IDM-VTON Native Virtual Try-On Integration
-async function callReplicateIdmVton(personImage: string, garmentImage: string): Promise<string | null> {
+async function callReplicateIdmVton(personImage: string, garmentImage: string, category = "upper_body"): Promise<string | null> {
   const token = (
     process.env.REPLICATE_API_TOKEN ||
     process.env.REPLICATE_API_KEY ||
@@ -264,25 +299,66 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string): 
   if (!token) return null;
 
   try {
-    const createRes = await fetch("https://api.replicate.com/v1/predictions", {
+    // 1. Upload base64 images to Replicate hosted storage to prevent 413 Payload Too Large
+    const [humanImg, garmImg] = await Promise.all([
+      uploadToReplicateFiles(personImage, token),
+      uploadToReplicateFiles(garmentImage, token),
+    ]);
+
+    const validCategory = category === "dresses" || category === "lower_body" ? category : "upper_body";
+    const inputPayload = {
+      human_img: humanImg,
+      garm_img: garmImg,
+      category: validCategory,
+      crop: false,
+      steps: 30,
+    };
+
+    // 2. Try official model endpoint first
+    let createRes = await fetch("https://api.replicate.com/v1/models/cuuupid/idm-vton/predictions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        Prefer: "wait=40",
+        Prefer: "wait=60",
       },
-      body: JSON.stringify({
-        version: "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985",
-        input: {
-          human_img: personImage,
-          garm_img: garmentImage,
-          category: "upper_body",
-          crop: false,
-          steps: 30,
-        },
-      }),
-      signal: AbortSignal.timeout(45000),
+      body: JSON.stringify({ input: inputPayload }),
+      signal: AbortSignal.timeout(70000),
     });
+
+    if (!createRes.ok && createRes.status !== 422) {
+      // Fallback to standard predictions endpoint with known version hash
+      createRes = await fetch("https://api.replicate.com/v1/predictions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Prefer: "wait=60",
+        },
+        body: JSON.stringify({
+          version: "c3565f104948f25da6675a40b953d03822180879646b9a528e5784ea731518f9",
+          input: inputPayload,
+        }),
+        signal: AbortSignal.timeout(70000),
+      });
+    }
+
+    if (!createRes.ok) {
+      // Fallback to older version hash
+      createRes = await fetch("https://api.replicate.com/v1/predictions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Prefer: "wait=60",
+        },
+        body: JSON.stringify({
+          version: "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985",
+          input: inputPayload,
+        }),
+        signal: AbortSignal.timeout(70000),
+      });
+    }
 
     if (!createRes.ok) {
       const errText = await createRes.text().catch(() => "");
@@ -291,11 +367,16 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string): 
     }
 
     let prediction = await createRes.json();
-    const startTime = Date.now();
+    if (prediction.status === "succeeded") {
+      const output = prediction.output;
+      if (typeof output === "string" && output.startsWith("http")) return output;
+      if (Array.isArray(output) && typeof output[0] === "string" && output[0].startsWith("http")) return output[0];
+    }
 
+    const startTime = Date.now();
     while (prediction.status !== "succeeded" && prediction.status !== "failed" && prediction.status !== "canceled") {
-      if (Date.now() - startTime > 45000) break;
-      await new Promise((r) => setTimeout(r, 2000));
+      if (Date.now() - startTime > 75000) break;
+      await new Promise((r) => setTimeout(r, 2500));
       const pollRes = await fetch(`https://api.replicate.com/v1/predictions/${prediction.id}`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(10000),
@@ -315,11 +396,12 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string): 
   return null;
 }
 
-async function callSegmindIdmVton(personImage: string, garmentImage: string): Promise<string | null> {
+async function callSegmindIdmVton(personImage: string, garmentImage: string, category = "upper_body"): Promise<string | null> {
   const segmindKey = process.env.SEGMIND_API_KEY;
   if (!segmindKey) return null;
 
   try {
+    const validCategory = category === "dresses" || category === "lower_body" ? category : "upper_body";
     const res = await fetch("https://api.segmind.com/v1/idm-vton", {
       method: "POST",
       headers: {
@@ -329,7 +411,7 @@ async function callSegmindIdmVton(personImage: string, garmentImage: string): Pr
       body: JSON.stringify({
         human_img: personImage,
         garm_img: garmentImage,
-        category: "upper_body",
+        category: validCategory,
         crop: false,
         steps: 30,
       }),
@@ -469,9 +551,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, code: access.status === 401 ? "AUTH_REQUIRED" : "TRYON_QUOTA_EXCEEDED", error: access.error, remaining: access.remaining }, { status: access.status });
     }
 
+    // Determine try-on garment category for realistic anatomical fitting
+    let tryonCategory = "upper_body";
+    if (body.category === "dresses" || body.category === "lower_body" || body.category === "upper_body") {
+      tryonCategory = body.category;
+    } else if (productId) {
+      try {
+        const p = await getProductById(productId);
+        if (p) {
+          const text = (p.title + " " + (p.categoryName || "")).toLowerCase();
+          if (/پیراهن|سارافون|سرهمی|مجلسی|dress|jumpsuit|overall/.test(text)) {
+            tryonCategory = "dresses";
+          } else if (/شلوار|دامن|شلوارک|pant|skirt|short/.test(text)) {
+            tryonCategory = "lower_body";
+          }
+        }
+      } catch {
+        // Fallback to upper_body
+      }
+    }
+
     // 1. Replicate IDM-VTON (World standard virtual try-on, 100% preserves face and fits garment)
     if (replicateToken) {
-      const replicateImage = await callReplicateIdmVton(personImage, garmentImage);
+      const replicateImage = await callReplicateIdmVton(personImage, garmentImage, tryonCategory);
       if (replicateImage) {
         if (!access.unlimited && access.customer?.id) {
           await recordTryonSuccess(access.customer.id, productId);
@@ -489,7 +591,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Segmind IDM-VTON (100 free daily API calls)
     if (segmindKey) {
-      const segmindImage = await callSegmindIdmVton(personImage, garmentImage);
+      const segmindImage = await callSegmindIdmVton(personImage, garmentImage, tryonCategory);
       if (segmindImage) {
         if (!access.unlimited && access.customer?.id) {
           await recordTryonSuccess(access.customer.id, productId);
@@ -522,75 +624,63 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (pollinationsKey) {
-      // 1. Try multi-image neural edits with candidate models
-      const configuredModel = process.env.TRYON_MODEL?.trim();
-      const candidateModels = [
-        ...(configuredModel && configuredModel !== "seedream" && configuredModel !== "kontext" ? [configuredModel] : []),
-        "black-forest-labs/flux.1-schnell",
-        "MarcosFRG/flux-1-schnell",
-        "pollinations/midijourney",
-      ];
-
-      for (const tryOnModel of candidateModels) {
-        try {
-          const form = new FormData();
-          form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
-          form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
-          form.append("prompt", prompt);
-          form.append("model", tryOnModel);
-          form.append("size", "1024x1024");
-
-          const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${pollinationsKey}` },
-            body: form,
-            cache: "no-store",
-            signal: AbortSignal.timeout(
-              Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
-            ),
-          });
-          const result = await response.json().catch(() => null);
-          const rawB64 = result?.data?.[0]?.b64_json;
-          const rawUrl = result?.data?.[0]?.url;
-          const imageUrl = rawB64
-            ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
-            : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
-
-          if (response.ok && imageUrl) {
-            if (!access.unlimited && access.customer?.id) {
-              await recordTryonSuccess(access.customer.id, productId);
-            }
-            const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-            return NextResponse.json({ success: true, imageUrl, provider: `pollinations-${tryOnModel}`, remaining: finalRemaining, unlimited: access.unlimited });
-          }
-          if (response.status === 402 || response.status === 403) {
-            continue;
-          }
-        } catch (polError) {
-          console.warn(`Pollinations try-on error with ${tryOnModel}:`, polError);
-        }
-      }
-
-      // 2. High-fidelity Studio Try-On: Authentically fit the exact catalog garment onto the customer's real child
+    // 3. Optional neural image-editing via Pollinations ONLY if an explicit inpainting model is configured
+    const configuredModel = process.env.TRYON_MODEL?.trim();
+    if (pollinationsKey && configuredModel && configuredModel !== "flux" && !configuredModel.includes("schnell")) {
       try {
-        const studioImage = await createStudioTryonComposite(personImage, garmentImage);
-        if (studioImage) {
+        const form = new FormData();
+        form.append("image", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
+        form.append("image", dataUriToBlob(garmentImage, "image/png"), "garment.png");
+        form.append("prompt", prompt);
+        form.append("model", configuredModel);
+        form.append("size", "1024x1024");
+
+        const response = await fetch(process.env.TRYON_API_URL || DEFAULT_TRYON_URL, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${pollinationsKey}` },
+          body: form,
+          cache: "no-store",
+          signal: AbortSignal.timeout(
+            Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
+          ),
+        });
+        const result = await response.json().catch(() => null);
+        const rawB64 = result?.data?.[0]?.b64_json;
+        const rawUrl = result?.data?.[0]?.url;
+        const imageUrl = rawB64
+          ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
+          : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
+
+        if (response.ok && imageUrl) {
           if (!access.unlimited && access.customer?.id) {
             await recordTryonSuccess(access.customer.id, productId);
           }
           const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-          return NextResponse.json({
-            success: true,
-            imageUrl: studioImage,
-            provider: "studio-fit",
-            remaining: finalRemaining,
-            unlimited: access.unlimited,
-          });
+          return NextResponse.json({ success: true, imageUrl, provider: `pollinations-${configuredModel}`, remaining: finalRemaining, unlimited: access.unlimited });
         }
-      } catch (studioError) {
-        console.warn("Studio try-on composite error:", studioError);
+      } catch (polError) {
+        console.warn(`Pollinations try-on error with ${configuredModel}:`, polError);
       }
+    }
+
+    // 4. High-fidelity Studio Try-on (100% preserves child's real photo & exact catalog garment with realistic shading)
+    try {
+      const studioImage = await createStudioTryonComposite(personImage, garmentImage);
+      if (studioImage) {
+        if (!access.unlimited && access.customer?.id) {
+          await recordTryonSuccess(access.customer.id, productId);
+        }
+        const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+        return NextResponse.json({
+          success: true,
+          imageUrl: studioImage,
+          provider: "studio-fit",
+          remaining: finalRemaining,
+          unlimited: access.unlimited,
+        });
+      }
+    } catch (studioError) {
+      console.warn("Studio try-on composite error:", studioError);
     }
 
     // Direct Studio Try-on Fallback (always preserves user's authentic child & product garment)
