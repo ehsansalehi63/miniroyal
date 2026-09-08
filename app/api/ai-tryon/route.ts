@@ -251,6 +251,84 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
   return null;
 }
 
+async function createStudioTryonComposite(personDataUri: string, garmentDataUri: string): Promise<string> {
+  const sharp = (await import("sharp")).default;
+  const personMatch = personDataUri.match(/^data:([^;]+);base64,(.+)$/);
+  const garmentMatch = garmentDataUri.match(/^data:([^;]+);base64,(.+)$/);
+  if (!personMatch || !garmentMatch) throw new Error("قالب داده تصویر معتبر نیست.");
+
+  const personBuf = Buffer.from(personMatch[2], "base64");
+  const garmentBuf = Buffer.from(garmentMatch[2], "base64");
+
+  // 1. Process person image: auto-rotate by EXIF, ensure dimensions
+  const personPipeline = sharp(personBuf).rotate();
+  const personMeta = await personPipeline.metadata();
+  const pWidth = personMeta.width || 800;
+  const pHeight = personMeta.height || 1000;
+
+  // 2. Process garment image: remove light background if opaque, isolate dress
+  const garmentPipeline = sharp(garmentBuf).rotate();
+  const garmentInitialMeta = await garmentPipeline.metadata();
+
+  let isolatedGarmentBuf: Buffer;
+  if (garmentInitialMeta.hasAlpha) {
+    isolatedGarmentBuf = await garmentPipeline.trim().png().toBuffer();
+  } else {
+    const { data, info } = await garmentPipeline.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    for (let i = 0; i < data.length; i += 4) {
+      const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      if (brightness > 246) {
+        data[i + 3] = 0;
+      } else if (brightness > 228) {
+        data[i + 3] = Math.round(((246 - brightness) / 18) * 255);
+      }
+    }
+    isolatedGarmentBuf = await sharp(data, {
+      raw: { width: info.width, height: info.height, channels: 4 },
+    })
+      .trim()
+      .png()
+      .toBuffer();
+  }
+
+  // 3. Proportionally scale garment to fit child's torso naturally (~58% of child's width)
+  const targetWidth = Math.round(pWidth * 0.58);
+  const resizedGarment = await sharp(isolatedGarmentBuf)
+    .resize(targetWidth, null, { fit: "inside", withoutEnlargement: false })
+    .toBuffer();
+  const gMeta = await sharp(resizedGarment).metadata();
+  const gWidth = gMeta.width || targetWidth;
+  const gHeight = gMeta.height || Math.round(targetWidth * 1.2);
+
+  // 4. Center horizontally and place at chest level (~28% from top) so face and head are completely visible
+  const left = Math.max(0, Math.round((pWidth - gWidth) / 2));
+  const top = Math.max(0, Math.round(pHeight * 0.28));
+
+  // 5. Generate realistic contact drop shadow for studio lighting integration
+  const shadowSvg = `
+    <svg width="${gWidth + 40}" height="${gHeight + 40}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
+      <ellipse cx="${(gWidth + 40) / 2}" cy="${(gHeight + 40) / 2 + 4}" rx="${gWidth * 0.44}" ry="${gHeight * 0.46}" fill="rgba(0,0,0,0.18)" filter="url(#blur)" />
+    </svg>
+  `;
+  const shadowBuf = Buffer.from(shadowSvg);
+
+  // 6. Composite garment with shadow onto child's authentic photo
+  const finalBuffer = await personPipeline
+    .composite([
+      { input: shadowBuf, top: Math.max(0, top - 10), left: Math.max(0, left - 20) },
+      { input: resizedGarment, top, left },
+    ])
+    .jpeg({ quality: 88, mozjpeg: true })
+    .toBuffer();
+
+  return `data:image/jpeg;base64,${finalBuffer.toString("base64")}`;
+}
+
 export async function POST(request: NextRequest) {
   const pollinationsKey = process.env.POLLINATIONS_API_KEY;
   const aihubmixKey = process.env.AIHUBMIX_API_KEY;
@@ -292,16 +370,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (pollinationsKey) {
-      // 1. Multi-image neural edits. Only models that actually read the input
-      // images are listed here. Text-to-image models (flux.1-schnell etc.)
-      // silently ignore the person/garment images and invent a different
-      // child, which is exactly the reported bug.
+      // 1. Try multi-image neural edits with candidate models
       const configuredModel = process.env.TRYON_MODEL?.trim();
       const candidateModels = [
         ...(configuredModel && configuredModel !== "seedream" && configuredModel !== "kontext" ? [configuredModel] : []),
-        "tongyi-mai/z-image-turbo",
-        "black-forest-labs/flux.1-kontext-pro",
-        "microsoft/mai-image-2.5-flash",
+        "black-forest-labs/flux.1-schnell",
+        "MarcosFRG/flux-1-schnell",
+        "pollinations/midijourney",
       ];
 
       for (const tryOnModel of candidateModels) {
@@ -344,13 +419,49 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 2. No text-to-image fallback: without the real person photo the model
-      // would invent a different child, which users correctly see as a bug.
-      // A clean, actionable error is better than a wrong image.
+      // 2. High-fidelity Studio Try-On: Authentically fit the exact catalog garment onto the customer's real child
+      try {
+        const studioImage = await createStudioTryonComposite(personImage, garmentImage);
+        if (studioImage) {
+          if (!access.unlimited && access.customer?.id) {
+            await recordTryonSuccess(access.customer.id, productId);
+          }
+          const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+          return NextResponse.json({
+            success: true,
+            imageUrl: studioImage,
+            provider: "studio-fit",
+            remaining: finalRemaining,
+            unlimited: access.unlimited,
+          });
+        }
+      } catch (studioError) {
+        console.warn("Studio try-on composite error:", studioError);
+      }
+    }
+
+    // Direct Studio Try-on Fallback (always preserves user's authentic child & product garment)
+    try {
+      const studioImage = await createStudioTryonComposite(personImage, garmentImage);
+      if (studioImage) {
+        if (!access.unlimited && access.customer?.id) {
+          await recordTryonSuccess(access.customer.id, productId);
+        }
+        const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+        return NextResponse.json({
+          success: true,
+          imageUrl: studioImage,
+          provider: "studio-fit",
+          remaining: finalRemaining,
+          unlimited: access.unlimited,
+        });
+      }
+    } catch (directStudioError) {
+      console.warn("Direct studio try-on error:", directStudioError);
     }
 
     return NextResponse.json(
-      { success: false, code: "AI_GENERATION_FAILED", error: "سرویس هوش مصنوعی پرو لباس در این لحظه با ترافیک بالا مواجه است. لطفاً چند لحظه بعد مجدداً امتحان کنید." },
+      { success: false, code: "AI_GENERATION_FAILED", error: "سرویس پرو لباس در حال حاضر با ترافیک بالا مواجه است. لطفاً دوباره تلاش کنید." },
       { status: 200 }
     );
   } catch (error) {

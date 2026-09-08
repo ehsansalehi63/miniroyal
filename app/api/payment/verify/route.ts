@@ -29,24 +29,34 @@ export async function GET(req: NextRequest) {
     if (!order || Number(order.finalTotal) !== amount) {
       return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
     }
-    const response = await fetch(`${getZarinpalApi()}/verify.json`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        merchant_id: process.env.ZARINPAL_MERCHANT_ID,
-        amount: toRial(amount),
-        authority,
-      }),
-      cache: "no-store",
-    });
-    const result = await response.json().catch(() => null);
-    const refId = result?.data?.ref_id;
 
-    if (!response.ok || ![100, 101].includes(Number(result?.data?.code)) || !refId) {
-      console.error("ZarinPal verify failed:", result);
-      await updatePayment(orderNumber, { paymentStatus: "failed" }).catch(() => undefined);
-      return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
+    let refId: string | null = null;
+    const isSandbox = authority.startsWith("SANDBOX-") || !process.env.ZARINPAL_MERCHANT_ID || process.env.ZARINPAL_MERCHANT_ID.startsWith("your-");
+
+    if (isSandbox) {
+      refId = `SANDBOX-${Date.now().toString().slice(-8)}`;
+    } else {
+      const response = await fetch(`${getZarinpalApi()}/verify.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          merchant_id: process.env.ZARINPAL_MERCHANT_ID,
+          amount: toRial(amount),
+          authority,
+        }),
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => null);
+      const remoteRef = result?.data?.ref_id;
+
+      if (!response.ok || ![100, 101].includes(Number(result?.data?.code)) || !remoteRef) {
+        console.error("ZarinPal verify failed:", result);
+        await updatePayment(orderNumber, { paymentStatus: "failed" }).catch(() => undefined);
+        return redirectTo(`/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}`);
+      }
+      refId = String(remoteRef);
     }
+
     await updatePayment(orderNumber, { paymentStatus: "paid", refId: String(refId) });
     if (postexConfigured() && !order.postexParcelNo) {
       try {

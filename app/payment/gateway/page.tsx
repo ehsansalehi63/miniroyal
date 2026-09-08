@@ -22,14 +22,32 @@ function PaymentGatewayContent() {
       body: JSON.stringify({ orderNumber, amount }),
     })
       .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok || !data.success || !data.paymentUrl) {
-          throw new Error(data.error || "خطا در ایجاد تراکنش");
+        const contentType = response.headers.get("content-type") || "";
+        let data: { success?: boolean; paymentUrl?: string; error?: string } = {};
+
+        if (contentType.includes("application/json")) {
+          data = await response.json().catch(() => ({
+            success: false,
+            error: "پاسخ نامعتبر از سرور درگاه پرداخت.",
+          }));
+        } else {
+          data = {
+            success: false,
+            error: "سرور درگاه پرداخت در دسترس نیست. لطفاً بعداً تلاش کنید یا از روش کارت به کارت استفاده نمایید.",
+          };
+        }
+
+        if (!data.success || !data.paymentUrl) {
+          throw new Error(data.error || "خطا در برقراری ارتباط با درگاه پرداخت.");
         }
         if (!cancelled) window.location.assign(data.paymentUrl);
       })
       .catch((error: Error) => {
-        if (!cancelled) router.replace(`/payment/verify?status=failed&message=${encodeURIComponent(error.message)}`);
+        if (!cancelled) {
+          router.replace(
+            `/payment/verify?status=failed&orderNumber=${encodeURIComponent(orderNumber)}&message=${encodeURIComponent(error.message)}`
+          );
+        }
       });
     return () => {
       cancelled = true;
