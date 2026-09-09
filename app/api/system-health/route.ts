@@ -59,6 +59,7 @@ export async function GET() {
   // وضعیت ثابت «ok» پنهان می‌ماند؛ حالا کمبود کلید، سلامت را error می‌کند.
   const tryonWiring = describeTryonWiring();
   const configuredProviders = [
+    tryonWiring.geminiFree > 0 && `Gemini رایگان (${tryonWiring.geminiFree} کلید)`,
     tryonWiring.replicate && "Replicate",
     tryonWiring.aihubmix && "AIHubMix",
     tryonWiring.pollinations && "Pollinations",
@@ -69,7 +70,7 @@ export async function GET() {
     detail:
       configuredProviders.length > 0
         ? `موتور AI پرو آنلاین متصل است (${configuredProviders.join("، ")})؛ مدل انتخابی: ${tryonWiring.tryonModel || "خودکار (چندمرجعی)"}.`
-        : "هیچ کلید AI برای پرو آنلاین روی هاست تنظیم نشده است؛ حداقل یکی از POLLINATIONS_API_KEY یا AIHUBMIX_API_KEY لازم است.",
+        : "هیچ کلید AI برای پرو آنلاین روی هاست تنظیم نشده است؛ حداقل کلید رایگان GEMINI_API_KEY (یا یکی از POLLINATIONS_API_KEY / AIHUBMIX_API_KEY) لازم است.",
   };
 
   // ۴. وضعیت درگاه پرداخت زرین‌پال

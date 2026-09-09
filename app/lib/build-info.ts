@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { geminiKeys } from "./tryon-gemini";
+
 export interface BuildInfo {
   commit: string | null;
   branch: string | null;
@@ -31,6 +33,7 @@ export async function getBuildInfo(): Promise<BuildInfo> {
  *  configured model NAME only — never key material. Safe for public status. */
 export function describeTryonWiring() {
   return {
+    geminiFree: geminiKeys().length,
     replicate: Boolean(
       process.env.REPLICATE_API_TOKEN ||
         process.env.REPLICATE_API_KEY ||

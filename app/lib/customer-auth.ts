@@ -8,7 +8,11 @@ const scrypt = promisify(nodeScrypt);
 const COOKIE_NAME = "miniroyal_customer_session";
 const SESSION_DAYS = 30;
 const OTP_MINUTES = 10;
+// Schema DDL is idempotent but must not run on every request: the blind ALTER
+// below fails with "Duplicate column" on every call and spams the logs.
+let customerSchemaReady = false;
 async function ensureCustomerSchema() {
+  if (customerSchemaReady) return;
   await pool.execute(`
     CREATE TABLE IF NOT EXISTS customers (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -41,6 +45,7 @@ async function ensureCustomerSchema() {
       INDEX idx_customer_otps_expiry (expires_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  customerSchemaReady = true;
 }
 
 function otpHash(phone: string, code: string) {

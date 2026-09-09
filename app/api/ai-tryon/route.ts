@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeTryon, recordTryonSuccess } from "@/app/lib/tryon-usage";
+import { callGeminiTryon, geminiKeys } from "@/app/lib/tryon-gemini";
 import { getProductById } from "@/app/lib/catalog";
 
 /**
@@ -40,9 +41,13 @@ import { getProductById } from "@/app/lib/catalog";
  *      Short aliases from TRYON_MODEL (e.g. "seedream") are resolved via
  *      the live catalog to their canonical multi-reference id.
  *
- *   D. Failures are classified (NO_PROVIDERS_CONFIGURED / CREDITS_EXHAUSTED /
- *      UNVERIFIED_RESULTS / ...) in the `reason` field so the customer and
+ *   D. Failures are classified (NO_PROVIDERS_CONFIGURED / CREDITS_EXHAUSTED / INVALID_API_KEYS / BILLING_AND_ERRORS / UNVERIFIED_RESULTS / ...)
+ *      in the `reason` field so the customer and
  *      the operator can see WHY nothing was produced.
+ *   E. FREE-FIRST ordering: Gemini AI Studio free tier (no card, ~500/day,
+ *      multi-key rotation on quota errors) is always tried before the paid
+ *      providers, so normal shop days cost $0 and paid fallbacks only cover
+ *      quota-exceeded spikes. Same prompt, same identity guard.
  */
 
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
@@ -76,8 +81,16 @@ function shortDetail(value: unknown, fallback: string): string {
 }
 
 function looksLikeBalanceError(status: number | undefined, detail: string): boolean {
-  if (status === 402) return true;
-  return /balance|insufficient|arrear|quota|credit|pollen|payment required|free tier/i.test(detail);
+  if (status === 402 || status === 429) return true;
+  return /balance|insufficient|arrear|quota|credit|pollen|payment|free tier|throttl|rate limit|too many requests/i.test(detail);
+}
+
+function looksLikeAuthError(status: number | undefined, detail: string): boolean {
+  if (status === 401) return true;
+  if (status === 403) {
+    return /unauthori[sz]ed|invalid.*key|api key|access denied|forbidden|credential/i.test(detail);
+  }
+  return false;
 }
 
 /**
@@ -446,7 +459,7 @@ function buildTryonPrompt(requestedSize: string, kind: TryonKind) {
   if (kind === "accessory") {
     return `Photorealistic image EDIT task. You are given exactly two images. Image 1 is a real photo of a child. Image 2 is the exact accessory product (hat, bag, shoes, socks, gloves, scarf or similar). Edit image 1 by placing the EXACT accessory from image 2 on the child in the physically correct spot (e.g. hat on the head, bag in the hand or on the shoulder, shoes on the feet). Keep the accessory's exact color, pattern, material, shape, straps and logos from image 2 — do not redesign it. Keep the child's face, identity, hair, skin tone, body, pose, existing clothes, background and lighting from image 1 completely unchanged — the output must be the SAME photo as image 1, not a new rendering. Do NOT generate a new or different child, do NOT invent people, text, watermarks or extra objects. The output must look like one seamless realistic photograph of the same child wearing that exact accessory. ${sizeNote}`;
   }
-  return `Photorealistic image EDIT task. You are given exactly two images. Image 1 is a real photo of a child. Image 2 is the exact garment product from our catalog. Edit image 1 by replacing ONLY the visible clothing on the child's body with the EXACT garment from image 2, fitted naturally to the child's body and pose as if the child is really wearing it. Keep the garment's exact color, pattern, fabric texture, seams, cut and logo placement from image 2 — do not redesign it. Keep the child's face, identity, hair, skin tone, hands, body proportions, pose, background and lighting from image 1 completely unchanged — the output must be the SAME photo as image 1, not a new rendering. Do NOT generate a new or different child, do NOT invent people, accessories, text, watermarks, extra limbs or a different garment. The output must look like one seamless realistic photograph of the same child wearing that exact garment. ${sizeNote}`;
+  return `Photorealistic image EDIT task. You are given exactly two images. Image 1 is a real photo of a child. Image 2 is the exact garment product from our catalog. Edit image 1 by dressing the child in the EXACT garment from image 2, fitted naturally to the child's body and pose as a fully-clothed, family-safe catalog photo, as if the child is really wearing it. Keep the garment's exact color, pattern, fabric texture, seams, cut and logo placement from image 2 — do not redesign it. Keep the child's face, identity, hair, skin tone, hands, body proportions, pose, background and lighting from image 1 completely unchanged — the output must be the SAME photo as image 1, not a new rendering. Do NOT generate a new or different child, do NOT invent people, accessories, text, watermarks, extra limbs or a different garment. The output must look like one seamless realistic photograph of the same fully-clothed child wearing that exact garment. ${sizeNote}`;
 }
 
 async function improvePromptWithOpenRouter(personImage: string, garmentImage: string, requestedSize: string) {
@@ -630,9 +643,9 @@ async function callAihubmix(
     const detail = shortDetail(result?.error, `native predictions failed (${response.status})`);
     console.warn("AIHubMix native try-on failed:", response.status, result?.error || result);
     attempts.push({ provider: "aihubmix-native", status: response.status, detail });
-    if (looksLikeBalanceError(response.status, detail)) {
-      return null;
-    }
+    // Always fall through to the legacy /v1/images/edits chain: free-tier
+    // models (e.g. gpt-image-2-free) may still work even when the native
+    // endpoint reports insufficient balance.
   } catch (error) {
     const detail = shortDetail(error, "native predictions unreachable");
     console.warn("AIHubMix native try-on exception:", error);
@@ -903,6 +916,7 @@ export async function POST(request: NextRequest) {
   const segmindKey = process.env.SEGMIND_API_KEY;
   const pollinationsKey = process.env.POLLINATIONS_API_KEY;
   const aihubmixKey = process.env.AIHUBMIX_API_KEY;
+  const geminiConfigured = geminiKeys().length > 0;
 
   try {
     const body = await request.json();
@@ -1006,6 +1020,15 @@ export async function POST(request: NextRequest) {
         unlimited: access.unlimited,
       });
     };
+
+    // 0. Gemini FREE tier (AI Studio keys, no card, ~500/day) — always tried
+    //    FIRST so normal days cost $0. Handles garments and accessories with
+    //    the same edit prompt. Quota/safety failures fall through to paid.
+    if (geminiKeys().length > 0) {
+      const geminiImage = await callGeminiTryon(personImage, garmentImage, prompt, stats.attempts);
+      const response = await respondWithResult(geminiImage, "gemini-free");
+      if (response) return response;
+    }
 
     // 1. Replicate IDM-VTON — dedicated virtual try-on model. Edits the real
     //    child photo and fits the exact garment onto the body (garments only).
@@ -1127,11 +1150,25 @@ export async function POST(request: NextRequest) {
     //  - CREDITS_EXHAUSTED: every provider refused for balance/quota reasons.
     //  - UNVERIFIED_RESULTS: providers answered but no result was a faithful
     //    edit of the customer's own photo (all rejected by the identity guard).
-    const noKeys = !replicateToken && !segmindKey && !aihubmixKey && !pollinationsKey;
+    const noKeys =
+      !geminiConfigured && !replicateToken && !segmindKey && !aihubmixKey && !pollinationsKey;
     const creditsExhausted =
       !noKeys &&
       stats.attempts.length > 0 &&
       stats.attempts.every((a) => looksLikeBalanceError(a.status, a.detail));
+    const authFailed =
+      !noKeys &&
+      !creditsExhausted &&
+      stats.attempts.length > 0 &&
+      stats.attempts.every((a) => looksLikeAuthError(a.status, a.detail));
+    // Mixed bag: some providers hit billing/rate limits while others failed
+    // differently (seen live: 429 + 402 + 400-moderation together). Topping
+    // up is still the most actionable fix, so it gets its own reason.
+    const billingAmongErrors =
+      !noKeys &&
+      !creditsExhausted &&
+      !authFailed &&
+      stats.attempts.some((a) => looksLikeBalanceError(a.status, a.detail));
     let reason = "AI_FAILED";
     let message =
       "اتصال به سرویس هوش مصنوعی پرو آنلاین در حال حاضر برقرار نشد و هیچ تصویری تولید نشد. ما فقط عکس واقعی کودک شما را با همان محصول ترکیب می‌کنیم و هرگز عکس جایگزین یا ساختگی نمایش نمی‌دهیم. لطفاً لحظاتی دیگر دوباره تلاش کنید.";
@@ -1143,6 +1180,14 @@ export async function POST(request: NextRequest) {
       reason = "CREDITS_EXHAUSTED";
       message =
         "اعتبار هوش مصنوعی پرو آنلاین به پایان رسیده و تصویری تولید نشد. ما فقط عکس واقعی کودک شما را با همان محصول ترکیب می‌کنیم و هرگز عکس جایگزین نمایش نمی‌دهیم. لطفاً بعداً دوباره تلاش کنید یا موضوع را به پشتیبانی فروشگاه اطلاع دهید.";
+    } else if (authFailed) {
+      reason = "INVALID_API_KEYS";
+      message =
+        "اتصال سرویس هوش مصنوعی پرو آنلاین با خطای احراز هویت مواجه شد و تصویری تولید نشد. لطفاً این موضوع را با همین پیام به پشتیبانی فروشگاه اطلاع دهید تا کلید اتصال بررسی شود.";
+    } else if (billingAmongErrors) {
+      reason = "BILLING_AND_ERRORS";
+      message =
+        "برخی سرویس‌های هوش مصنوعی با اتمام اعتبار یا سقف مصرف مواجه شدند و بقیه هم نتوانستند ترکیب را انجام دهند؛ تصویری تولید نشد. لطفاً بعداً دوباره تلاش کنید یا موضوع را به پشتیبانی فروشگاه اطلاع دهید تا حساب‌ها شارژ شوند.";
     } else if (stats.unverified > 0) {
       reason = "UNVERIFIED_RESULTS";
       message =
@@ -1152,6 +1197,7 @@ export async function POST(request: NextRequest) {
       "AI try-on unavailable: no provider returned a verified edit of the customer photo.",
       JSON.stringify({
         reason,
+        geminiFree: geminiConfigured,
         replicate: Boolean(replicateToken),
         segmind: Boolean(segmindKey),
         aihubmix: Boolean(aihubmixKey),
@@ -1166,6 +1212,14 @@ export async function POST(request: NextRequest) {
         code: "AI_TRYON_UNAVAILABLE",
         reason,
         error: message,
+        // Safe per-provider failure summary (names + HTTP statuses + short
+        // provider messages only — never keys or image bytes) so a failure
+        // can be diagnosed from the browser without server-log access.
+        attempts: stats.attempts.map((a) => ({
+          provider: a.provider,
+          status: a.status ?? null,
+          detail: a.detail,
+        })),
       },
       { status: 200 }
     );

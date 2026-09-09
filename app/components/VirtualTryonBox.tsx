@@ -211,7 +211,7 @@ export default function VirtualTryonBox({ product, customer }: Props) {
         }),
       });
       const responseText = await response.text();
-      let data: { success?: boolean; imageUrl?: string; error?: string; code?: string; reason?: string; remaining?: number | null; unlimited?: boolean; notice?: string } = {};
+      let data: { success?: boolean; imageUrl?: string; error?: string; code?: string; reason?: string; attempts?: Array<{ provider: string; status: number | null; detail: string }>; remaining?: number | null; unlimited?: boolean; notice?: string } = {};
       try {
         data = JSON.parse(responseText);
       } catch {
@@ -227,6 +227,9 @@ export default function VirtualTryonBox({ product, customer }: Props) {
       if (!response.ok || !data.success || !data.imageUrl) {
         // سیاست سخت‌گیرانه: اگر اتصال هوش مصنوعی برقرار نشد، فقط پیام خطای
         // صادقانه نمایش داده می‌شود؛ هیچ عکس جایگزین/ساختگی ساخته نمی‌شود.
+        // علت دقیق (امن، بدون کلید) در کنسول مرورگر لاگ می‌شود تا برای
+        // پشتیبانی قابل ارسال باشد.
+        console.warn("[tryon-failure]", { code: data.code, reason: data.reason, attempts: data.attempts });
         throw new Error(
           data.error ||
             "اتصال به سرویس هوش مصنوعی برقرار نشد و تصویری تولید نشد. لطفاً دوباره تلاش کنید."
