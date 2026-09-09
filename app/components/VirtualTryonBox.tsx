@@ -262,6 +262,7 @@ export default function VirtualTryonBox({ product, customer }: Props) {
   return (
     <section
       dir="rtl"
+      data-tryon-version="2"
       className="relative overflow-hidden rounded-[28px] border border-amber-500/30 bg-[#0d0c0b]/95 p-5 text-white shadow-[0_25px_70px_-15px_rgba(0,0,0,0.9)] backdrop-blur-2xl ring-1 ring-amber-400/15 sm:p-8"
     >
       {/* هاله نور پس‌زمینه مزون اختصاصی */}
