@@ -40,17 +40,16 @@
 
 ```text
 عکس کاربر + عکس محصول
-        ↓
-Dahl Vision (اختیاری)
-        ↓ در صورت نبود/خطا
-OpenRouter Vision (اختیاری)
-        ↓
-prompt دقیق پرو
-        ↓
-AIHubMix Image Edit (اولویت) یا Pollinations (fallback)
-        ↓
-نتیجهٔ بزرگ زیر توضیحات عکس کاربر
+         ↓
+Gemini رایگان AI Studio (اولویت اول، ~۵۰۰/روز، چرخش چندکلید)
+        ↓ در صورت سقف/خطا
+Replicate IDM-VTON (لباس) → Segmind → AIHubMix → Pollinations چندمرجعی
+         ↓
+گارد هویت (رد عکس ساختگی) → نتیجهٔ واقعی
 ```
+
+تحلیل Dahl/OpenRouter Vision فقط وقتی اجرا می‌شود که
+`TRYON_USE_VISION_PROMPT=true` باشد (پیش‌فرض false).
 
 برای پرو دو تصویر باید به مدل image-edit ارسال شوند. اگر مقدار قدیمی
 `TRYON_MODEL=kontext` در Hostinger باشد، چون آن مدل فقط ۱ عکس مرجع می‌پذیرد،

@@ -4,7 +4,10 @@ import { currentCustomer } from "./customer-auth";
 const DEFAULT_LIMIT = 5;
 const DEFAULT_WINDOW_DAYS = 30;
 
+// CREATE TABLE IF NOT EXISTS on every quota check is wasteful; once per process is enough.
+let tryonSchemaReady = false;
 async function ensureTryonUsageSchema() {
+  if (tryonSchemaReady) return;
   await pool.execute(`
     CREATE TABLE IF NOT EXISTS tryon_usage (
       id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -14,6 +17,7 @@ async function ensureTryonUsageSchema() {
       INDEX idx_tryon_usage_customer_date (customer_id, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  tryonSchemaReady = true;
 }
 
 function isAdmin(customer: { role?: string; phone?: string }) {
