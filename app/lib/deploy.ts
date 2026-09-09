@@ -65,13 +65,23 @@ export async function performDeploy(payload: Pick<DeployRecord, "commit" | "bran
     const steps: Array<[string, string[], number]> = [
       ["git", ["fetch", "origin", payload.branch], 60_000],
       ["git", ["pull", "--ff-only", "origin", payload.branch], 60_000],
-      ["npm", ["ci", "--prefer-offline", "--no-audit"], 180_000],
-      ["npm", ["run", "build"], 300_000],
     ];
     for (const [command, args, timeout] of steps) {
       const result = await run(command, args, repoPath, timeout);
       if (result.exitCode !== 0) throw new Error(`${command} failed: ${result.stderr.slice(-1000)}`);
     }
+    // npm ci fails when package-lock is out of sync with package.json; fall
+    // back to npm install (same as scripts/deploy-hostinger.sh) instead of
+    // failing the whole deploy.
+    const ci = await run("npm", ["ci", "--prefer-offline", "--no-audit"], repoPath, 180_000);
+    if (ci.exitCode !== 0) {
+      const install = await run("npm", ["install", "--no-audit", "--no-fund"], repoPath, 240_000);
+      if (install.exitCode !== 0) {
+        throw new Error(`npm install failed: ${(ci.stderr + install.stderr).slice(-1000)}`);
+      }
+    }
+    const build = await run("npm", ["run", "build"], repoPath, 300_000);
+    if (build.exitCode !== 0) throw new Error(`npm run build failed: ${build.stderr.slice(-1000)}`);
     const restartCommand = (process.env.RESTART_COMMAND || "pm2 restart miniroyal").trim().split(/\s+/);
     const restart = await run(restartCommand[0], restartCommand.slice(1), repoPath, 30_000);
     if (restart.exitCode !== 0) throw new Error(`restart failed: ${restart.stderr.slice(-1000)}`);

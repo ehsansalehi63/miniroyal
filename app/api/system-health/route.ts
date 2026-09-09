@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { inspectDatabase, query } from "@/app/lib/mysql";
 import { getFeaturedProducts } from "@/app/lib/catalog";
 import { describeSmsConfig } from "@/app/lib/sms";
+import { describeTryonWiring } from "@/app/lib/build-info";
 
 export async function GET() {
   const timestamp = new Date().toISOString();
@@ -51,6 +52,24 @@ export async function GET() {
   checks["virtual_tryon"] = {
     status: "ok",
     detail: "الگوریتم Smart Fit و راهنمای انتخاب سایز آماده به کار است.",
+  };
+
+  // ۳ب. اتصال واقعی موتور AI پرو آنلاین — فقط presence کلیدها (بدون افشای مقدار).
+  // قبلاً این بخش اصلاً بررسی نمی‌شد و خرابی AI (کلید ناقص/ناموجود) پشت
+  // وضعیت ثابت «ok» پنهان می‌ماند؛ حالا کمبود کلید، سلامت را error می‌کند.
+  const tryonWiring = describeTryonWiring();
+  const configuredProviders = [
+    tryonWiring.replicate && "Replicate",
+    tryonWiring.aihubmix && "AIHubMix",
+    tryonWiring.pollinations && "Pollinations",
+    tryonWiring.segmind && "Segmind",
+  ].filter(Boolean) as string[];
+  checks["ai_tryon_providers"] = {
+    status: configuredProviders.length > 0 ? "ok" : "error",
+    detail:
+      configuredProviders.length > 0
+        ? `موتور AI پرو آنلاین متصل است (${configuredProviders.join("، ")})؛ مدل انتخابی: ${tryonWiring.tryonModel || "خودکار (چندمرجعی)"}.`
+        : "هیچ کلید AI برای پرو آنلاین روی هاست تنظیم نشده است؛ حداقل یکی از POLLINATIONS_API_KEY یا AIHUBMIX_API_KEY لازم است.",
   };
 
   // ۴. وضعیت درگاه پرداخت زرین‌پال

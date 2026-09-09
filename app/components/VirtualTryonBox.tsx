@@ -49,7 +49,11 @@ function fileToDataUrl(file: Blob) {
   });
 }
 
-function compressImage(source: string, maxSide = 1024, quality = 0.72) {
+function compressImage(source: string, maxSide = 832, quality = 0.68) {
+  // Two photos (child + garment) travel in ONE JSON POST through Hostinger's
+  // front proxy, so each side is capped (~1.6MB) to stay far below typical
+  // shared-hosting request-body limits (413) while keeping enough detail
+  // for the AI edit + identity verification (which downscales anyway).
   return new Promise<string>((resolve, reject) => {
     const image = new Image();
     image.onload = () => {
@@ -64,8 +68,8 @@ function compressImage(source: string, maxSide = 1024, quality = 0.72) {
       }
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
       let encoded = canvas.toDataURL("image/jpeg", quality);
-      for (const nextQuality of [0.62, 0.52, 0.42]) {
-        if (encoded.length <= 2_800_000) break;
+      for (const nextQuality of [0.6, 0.52, 0.44]) {
+        if (encoded.length <= 1_600_000) break;
         encoded = canvas.toDataURL("image/jpeg", nextQuality);
       }
       resolve(encoded);
@@ -207,7 +211,7 @@ export default function VirtualTryonBox({ product, customer }: Props) {
         }),
       });
       const responseText = await response.text();
-      let data: { success?: boolean; imageUrl?: string; error?: string; code?: string; remaining?: number | null; unlimited?: boolean; notice?: string } = {};
+      let data: { success?: boolean; imageUrl?: string; error?: string; code?: string; reason?: string; remaining?: number | null; unlimited?: boolean; notice?: string } = {};
       try {
         data = JSON.parse(responseText);
       } catch {

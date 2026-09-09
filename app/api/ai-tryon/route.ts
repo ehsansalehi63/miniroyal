@@ -32,6 +32,17 @@ import { getProductById } from "@/app/lib/catalog";
  *      answers with an honest error (success:false) — never a local
  *      composite, sticker overlay or self-invented picture, and quota is
  *      not consumed.
+ *
+ *   C. Every candidate must accept BOTH photos (max_reference_images >= 2
+ *      when the catalog reports it). Single-reference editors such as
+ *      flux.1-kontext-pro (alias "kontext") are skipped: they cannot see
+ *      the person and the garment together and would ignore the product.
+ *      Short aliases from TRYON_MODEL (e.g. "seedream") are resolved via
+ *      the live catalog to their canonical multi-reference id.
+ *
+ *   D. Failures are classified (NO_PROVIDERS_CONFIGURED / CREDITS_EXHAUSTED /
+ *      UNVERIFIED_RESULTS / ...) in the `reason` field so the customer and
+ *      the operator can see WHY nothing was produced.
  */
 
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
@@ -48,18 +59,45 @@ const EDIT_MODEL_TIMEOUT_MS = 120_000;
 
 type TryonKind = "garment" | "accessory";
 
+/** One failed provider call, recorded only with safe metadata (HTTP status +
+ *  a short provider message — never API keys or image bytes). Used to tell
+ *  the customer WHY try-on failed instead of a mystery generic error. */
+type ProviderAttempt = { provider: string; status?: number; detail: string };
+
+function shortDetail(value: unknown, fallback: string): string {
+  const text =
+    typeof value === "string"
+      ? value
+      : typeof (value as { message?: unknown })?.message === "string"
+        ? String((value as { message: string }).message)
+        : "";
+  const clean = text.replace(/\s+/g, " ").trim().slice(0, 160);
+  return clean || fallback;
+}
+
+function looksLikeBalanceError(status: number | undefined, detail: string): boolean {
+  if (status === 402) return true;
+  return /balance|insufficient|arrear|quota|credit|pollen|payment required|free tier/i.test(detail);
+}
+
 /**
  * Curated Pollinations edit models — verified against the live catalog
- * (GET https://gen.pollinations.ai/v1/models) on 2026-09-09:
- * each of these has input_modalities [text, image] → output image.
+ * (GET https://gen.pollinations.ai/v1/models and /image/models) on 2026-09-09:
+ * each of these has input_modalities [text, image] → output image AND
+ * max_reference_images >= 2 (try-on always sends TWO photos: person + garment).
  * Ordered by identity-preservation quality for person+garment edits.
+ *
+ * NOTE: black-forest-labs/flux.1-kontext-pro (alias "kontext") is deliberately
+ * NOT in this list: it only accepts ONE reference image (max_reference_images: 1),
+ * so it cannot receive person + garment together and would ignore the product.
  */
 const POLLINATIONS_EDIT_CANDIDATES = [
   "google/gemini-3.1-flash-image", // nanobanana-2: multi-image edit, excellent identity preservation
   "google/gemini-2.5-flash-image", // nanobanana: proven for try-on style edits
-  "black-forest-labs/flux.1-kontext-pro", // instruction-based image editing
   "bytedance/seedream-4.5", // reference-image editing
+  "bytedance/seedream-4.0", // alias "seedream": photorealistic multi-reference editing
   "openai/gpt-image-1-mini", // OpenAI edits, faithful but slower
+  "openai/gpt-image-2", // premium multi-reference editing
 ];
 
 /**
@@ -78,33 +116,57 @@ const GENERATOR_MODEL_PATTERNS = [
   "dall-e",
 ];
 
-let modelCatalogCache: { at: number; editCapable: Set<string> } | null = null;
+type ModelCatalog = {
+  editCapable: Set<string>;
+  singleRefOnly: Set<string>;
+  /** short alias (e.g. "seedream", "kontext") → canonical model id */
+  aliases: Map<string, string>;
+};
+
+let modelCatalogCache: { at: number; catalog: ModelCatalog } | null = null;
 
 /** Pollinations' model catalog is public (no auth). Cache it for 1 hour. */
-async function fetchEditCapableCatalog(): Promise<Set<string> | null> {
+async function fetchEditCapableCatalog(): Promise<ModelCatalog | null> {
   if (modelCatalogCache && Date.now() - modelCatalogCache.at < 3_600_000) {
-    return modelCatalogCache.editCapable;
+    return modelCatalogCache.catalog;
   }
   try {
     const res = await fetch(POLLINATIONS_MODELS_URL, {
       signal: AbortSignal.timeout(15_000),
       cache: "no-store",
     });
-    if (!res.ok) return modelCatalogCache?.editCapable || null;
+    if (!res.ok) return modelCatalogCache?.catalog || null;
     const data = await res.json();
     const models = Array.isArray(data) ? data : data?.data || [];
-    const set = new Set<string>();
+    const editCapable = new Set<string>();
+    const singleRefOnly = new Set<string>();
+    const aliases = new Map<string, string>();
     for (const m of models) {
       const id = String(m?.id || m?.name || "").toLowerCase();
       const input = Array.isArray(m?.input_modalities) ? m.input_modalities : [];
       const output = Array.isArray(m?.output_modalities) ? m.output_modalities : [];
-      if (id && input.includes("image") && output.includes("image")) set.add(id);
+      for (const a of Array.isArray(m?.aliases) ? m.aliases : []) {
+        const alias = String(a || "").toLowerCase();
+        if (alias && id && !aliases.has(alias)) aliases.set(alias, id);
+      }
+      if (id && input.includes("image") && output.includes("image")) {
+        editCapable.add(id);
+        // Try-on always sends TWO reference photos. Models that accept only
+        // one (e.g. flux.1-kontext-pro) cannot do try-on — track them so the
+        // caller can skip them instead of sending a doomed request.
+        const maxRefs = Number(m?.max_reference_images);
+        if (Number.isFinite(maxRefs) && maxRefs < 2) singleRefOnly.add(id);
+      }
     }
-    if (set.size > 0) modelCatalogCache = { at: Date.now(), editCapable: set };
-    return set.size > 0 ? set : modelCatalogCache?.editCapable || null;
+    if (editCapable.size > 0) {
+      const catalog = { editCapable, singleRefOnly, aliases };
+      modelCatalogCache = { at: Date.now(), catalog };
+      return catalog;
+    }
+    return modelCatalogCache?.catalog || null;
   } catch (err) {
     console.warn("Pollinations model catalog unavailable:", err instanceof Error ? err.message : err);
-    return modelCatalogCache?.editCapable || null;
+    return modelCatalogCache?.catalog || null;
   }
 }
 
@@ -119,26 +181,43 @@ function staticEditCapable(model: string) {
   return /kontext|nanobanana|gemini-[\d.]+.*image|gpt-image|seedream|qwen-image|mai-image|p-image-edit|wan-[\d.]+-image|nova-canvas|flux\.2/.test(m);
 }
 
+/** Resolve a configured short alias (e.g. TRYON_MODEL=seedream) to the canonical
+ *  model id using the live catalog. Unknown names pass through unchanged. */
+function resolveModelId(model: string, catalog: ModelCatalog | null): string {
+  const id = model.toLowerCase();
+  return catalog?.aliases.get(id) || model;
+}
+
 /** A model may only be used if it is NOT a known generator AND (per the live
- *  catalog when reachable) actually accepts image input. */
+ *  catalog when reachable) actually accepts image input. Single-reference
+ *  models (max_reference_images < 2) are rejected for try-on because the
+ *  person photo AND the garment photo must both reach the model. */
 async function isEditCapableModel(model: string): Promise<boolean> {
   if (isKnownGenerator(model)) return false;
   const catalog = await fetchEditCapableCatalog();
-  if (catalog) return catalog.has(model.toLowerCase());
+  if (catalog) {
+    const id = resolveModelId(model, catalog).toLowerCase();
+    if (isKnownGenerator(id)) return false;
+    if (!catalog.editCapable.has(id)) return false;
+    if (catalog.singleRefOnly.has(id)) return false;
+    return true;
+  }
   return staticEditCapable(model);
 }
 
 /** If curated candidates vanish from the catalog in the future, rebuild a
- *  candidate list from the live catalog, preferring known edit vendors. */
-function candidatesFromCatalog(catalog: Set<string>): string[] {
-  const ids = [...catalog];
+ *  candidate list from the live catalog, preferring known edit vendors.
+ *  Single-reference models are excluded (try-on needs 2 reference photos). */
+function candidatesFromCatalog(catalog: ModelCatalog): string[] {
+  const ids = [...catalog.editCapable].filter((id) => !catalog.singleRefOnly.has(id));
   const pick = (re: RegExp) => ids.filter((id) => re.test(id)).slice(0, 3);
   return [
     ...pick(/^google\/gemini-[\d.]+-flash(-lite)?-image$/),
     ...pick(/^google\/gemini-[\d.]+-pro-image$/),
-    ...pick(/kontext/),
     ...pick(/^bytedance\/seedream-[\d.]+$/),
     ...pick(/^openai\/gpt-image-[\d.]+(-mini)?$/),
+    ...pick(/^qwen\/qwen-image/),
+    ...pick(/^alibaba\/wan-[\d.]+-image(-pro)?$/),
   ];
 }
 
@@ -497,14 +576,18 @@ async function improvePrompt(personImage: string, garmentImage: string, requeste
   }
 }
 
-async function callAihubmix(personImage: string, garmentImage: string, prompt: string) {
+async function callAihubmix(
+  personImage: string,
+  garmentImage: string,
+  prompt: string,
+  attempts: ProviderAttempt[] = []
+) {
   const apiKey = process.env.AIHUBMIX_API_KEY;
   if (!apiKey) return null;
 
   // The native AIHubMix protocol accepts an image array: image[0] is the
   // person photo and image[1] is the exact product reference.
-  const nativeModel =
-    process.env.AIHUBMIX_TRYON_MODEL?.trim() || DEFAULT_AIHUBMIX_TRYON_MODEL;
+  // (Per official docs the model id travels in the URL, not in `input`.)
   const nativeUrl =
     process.env.AIHUBMIX_TRYON_URL?.trim() || DEFAULT_AIHUBMIX_TRYON_URL;
   try {
@@ -516,7 +599,6 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
       },
       body: JSON.stringify({
         input: {
-          model: nativeModel,
           prompt,
           image: [personImage, garmentImage],
           size: "2K",
@@ -545,12 +627,16 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
     if (response.ok && isValidTryonResult(imageUrl, personImage, garmentImage)) {
       return imageUrl;
     }
+    const detail = shortDetail(result?.error, `native predictions failed (${response.status})`);
     console.warn("AIHubMix native try-on failed:", response.status, result?.error || result);
-    if (response.status === 402 || response.status === 403 || String(result?.error?.message || "").toLowerCase().includes("balance")) {
+    attempts.push({ provider: "aihubmix-native", status: response.status, detail });
+    if (looksLikeBalanceError(response.status, detail)) {
       return null;
     }
   } catch (error) {
+    const detail = shortDetail(error, "native predictions unreachable");
     console.warn("AIHubMix native try-on exception:", error);
+    attempts.push({ provider: "aihubmix-native", detail });
   }
 
   // Legacy /v1/images/edits compatibility (Hostinger values, older providers).
@@ -579,8 +665,13 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) {
+        const detail = shortDetail(result?.error, `images/edits failed (${response.status})`);
         console.warn("AIHubMix image provider failed:", model, response.status, result?.error);
-        if (response.status === 402 || response.status === 403 || String(result?.error?.message || "").toLowerCase().includes("balance")) {
+        attempts.push({ provider: `aihubmix-${model}`, status: response.status, detail });
+        // Only a REAL balance problem aborts the whole AIHubMix chain; a 404
+        // (unknown model id) or a per-model 403 falls through to the next
+        // fallback model instead of giving up.
+        if (looksLikeBalanceError(response.status, detail)) {
           return null;
         }
         continue;
@@ -590,8 +681,11 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
         ? `data:image/png;base64,${output.b64_json}`
         : typeof output?.url === "string" ? output.url : null;
       if (isValidTryonResult(imageUrl, personImage, garmentImage)) return imageUrl;
+      attempts.push({ provider: `aihubmix-${model}`, status: response.status, detail: "empty or echo result" });
     } catch (error) {
+      const detail = shortDetail(error, "images/edits unreachable");
       console.warn("AIHubMix image provider exception:", model, error);
+      attempts.push({ provider: `aihubmix-${model}`, detail });
     }
   }
   return null;
@@ -632,7 +726,12 @@ async function uploadToReplicateFiles(dataUriOrUrl: string, token: string): Prom
 }
 
 // Replicate IDM-VTON Native Virtual Try-On Integration (garments only)
-async function callReplicateIdmVton(personImage: string, garmentImage: string, category = "upper_body"): Promise<string | null> {
+async function callReplicateIdmVton(
+  personImage: string,
+  garmentImage: string,
+  category = "upper_body",
+  attempts: ProviderAttempt[] = []
+): Promise<string | null> {
   const token = getReplicateToken();
   if (!token) return null;
 
@@ -651,6 +750,14 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string, c
       steps: 30,
     };
 
+    // 1) Official model endpoint (always the latest public version — no hash needed).
+    // 2) Pinned version hashes as fallback. 3b032a70… is a confirmed public
+    //    cuuupid/idm-vton version; the others are kept for compatibility.
+    const versionFallbacks = [
+      "3b032a70c29aef7b9c3222f2e40b71660201d8c288336475ba326f3ca278a3e1",
+      "c3565f104948f25da6675a40b953d03822180879646b9a528e5784ea731518f9",
+      "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985",
+    ];
     let createRes = await fetch("https://api.replicate.com/v1/models/cuuupid/idm-vton/predictions", {
       method: "POST",
       headers: {
@@ -662,7 +769,8 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string, c
       signal: AbortSignal.timeout(70000),
     });
 
-    if (!createRes.ok && createRes.status !== 422) {
+    for (const version of versionFallbacks) {
+      if (createRes.ok) break;
       createRes = await fetch("https://api.replicate.com/v1/predictions", {
         method: "POST",
         headers: {
@@ -670,26 +778,7 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string, c
           "Content-Type": "application/json",
           Prefer: "wait=60",
         },
-        body: JSON.stringify({
-          version: "c3565f104948f25da6675a40b953d03822180879646b9a528e5784ea731518f9",
-          input: inputPayload,
-        }),
-        signal: AbortSignal.timeout(70000),
-      });
-    }
-
-    if (!createRes.ok) {
-      createRes = await fetch("https://api.replicate.com/v1/predictions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Prefer: "wait=60",
-        },
-        body: JSON.stringify({
-          version: "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985",
-          input: inputPayload,
-        }),
+        body: JSON.stringify({ version, input: inputPayload }),
         signal: AbortSignal.timeout(70000),
       });
     }
@@ -697,6 +786,11 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string, c
     if (!createRes.ok) {
       const errText = await createRes.text().catch(() => "");
       console.warn("Replicate creation failed:", createRes.status, errText);
+      attempts.push({
+        provider: "replicate-idm-vton",
+        status: createRes.status,
+        detail: shortDetail(errText, `prediction creation failed (${createRes.status})`),
+      });
       return null;
     }
 
@@ -724,14 +818,24 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string, c
       if (typeof output === "string" && output.startsWith("http")) return output;
       if (Array.isArray(output) && typeof output[0] === "string" && output[0].startsWith("http")) return output[0];
     }
+    attempts.push({
+      provider: "replicate-idm-vton",
+      detail: `prediction ended with status "${prediction.status || "unknown"}"`,
+    });
   } catch (err) {
     console.warn("Replicate try-on error:", err);
+    attempts.push({ provider: "replicate-idm-vton", detail: shortDetail(err, "replicate unreachable") });
   }
   return null;
 }
 
 // Segmind IDM-VTON (garments only)
-async function callSegmindIdmVton(personImage: string, garmentImage: string, category = "upper_body"): Promise<string | null> {
+async function callSegmindIdmVton(
+  personImage: string,
+  garmentImage: string,
+  category = "upper_body",
+  attempts: ProviderAttempt[] = []
+): Promise<string | null> {
   const segmindKey = process.env.SEGMIND_API_KEY;
   if (!segmindKey) return null;
 
@@ -756,6 +860,11 @@ async function callSegmindIdmVton(personImage: string, garmentImage: string, cat
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
       console.warn("Segmind call failed:", res.status, errText);
+      attempts.push({
+        provider: "segmind-idm-vton",
+        status: res.status,
+        detail: shortDetail(errText, `segmind call failed (${res.status})`),
+      });
       return null;
     }
 
@@ -770,8 +879,10 @@ async function callSegmindIdmVton(personImage: string, garmentImage: string, cat
     if (json?.image) {
       return json.image.startsWith("data:") ? json.image : `data:image/jpeg;base64,${json.image}`;
     }
+    attempts.push({ provider: "segmind-idm-vton", status: res.status, detail: "empty result" });
   } catch (err) {
     console.warn("Segmind try-on error:", err);
+    attempts.push({ provider: "segmind-idm-vton", detail: shortDetail(err, "segmind unreachable") });
   }
   return null;
 }
@@ -861,12 +972,27 @@ export async function POST(request: NextRequest) {
     // Output size matched to the customer photo's aspect ratio.
     const outputSize = await personAspectSize(personImage);
 
+    // Per-request failure accounting (safe metadata only). Lets the final error
+    // tell the customer WHY nothing was produced (no keys / empty AI balance /
+    // unverified results) instead of a mystery generic message.
+    const stats = { attempts: [] as ProviderAttempt[], unverified: 0 };
+
     // Shared success responder: validates the AI output (sanity + identity),
     // records quota and returns the photorealistic edit result.
     const respondWithResult = async (imageUrl: unknown, provider: string) => {
-      if (!isValidTryonResult(imageUrl, personImage, garmentImage)) return null;
+      if (!isValidTryonResult(imageUrl, personImage, garmentImage)) {
+        if (typeof imageUrl === "string" && imageUrl.length > 0) {
+          stats.unverified++;
+          stats.attempts.push({ provider, detail: "provider result failed validation (echo or malformed)" });
+        }
+        return null;
+      }
       const genuine = await verifyIdentity(personImage, imageUrl, provider);
-      if (!genuine) return null;
+      if (!genuine) {
+        stats.unverified++;
+        stats.attempts.push({ provider, detail: "provider result rejected by identity verification" });
+        return null;
+      }
       if (!access.unlimited && access.customer?.id) {
         await recordTryonSuccess(access.customer.id, productId);
       }
@@ -884,7 +1010,7 @@ export async function POST(request: NextRequest) {
     // 1. Replicate IDM-VTON — dedicated virtual try-on model. Edits the real
     //    child photo and fits the exact garment onto the body (garments only).
     if (replicateToken && tryonKind === "garment") {
-      const replicateImage = await callReplicateIdmVton(personImage, garmentImage, tryonCategory);
+      const replicateImage = await callReplicateIdmVton(personImage, garmentImage, tryonCategory, stats.attempts);
       const response = await respondWithResult(replicateImage, "replicate-idm-vton");
       if (response) return response;
     }
@@ -913,16 +1039,27 @@ export async function POST(request: NextRequest) {
     //    (flux.1-schnell) is a generator.
     if (pollinationsKey) {
       const catalog = await fetchEditCapableCatalog();
-      const configuredModel = process.env.TRYON_MODEL?.trim();
+      const configuredRaw = process.env.TRYON_MODEL?.trim();
+      // Resolve short aliases from Hostinger (e.g. TRYON_MODEL=seedream) to
+      // the canonical id so the admin's choice is honored when it is valid.
+      const configuredModel = configuredRaw ? resolveModelId(configuredRaw, catalog) : "";
       const configuredOk = configuredModel ? await isEditCapableModel(configuredModel) : false;
-      if (configuredModel && !configuredOk) {
+      if (configuredRaw && !configuredOk) {
         console.warn(
-          `TRYON_MODEL="${configuredModel}" is a text-to-image generator or not image-input capable — skipped (it would invent a different child).`
+          `TRYON_MODEL="${configuredRaw}" is a text-to-image generator, single-reference-only, or not image-input capable — skipped (verified multi-reference edit models are used instead).`
         );
+        stats.attempts.push({
+          provider: `pollinations-config(${configuredRaw})`,
+          detail: "configured model skipped: generator, single-reference-only, or unknown",
+        });
       }
       let curated = POLLINATIONS_EDIT_CANDIDATES;
       if (catalog) {
-        const inCatalog = POLLINATIONS_EDIT_CANDIDATES.filter((m) => catalog.has(m.toLowerCase()));
+        const inCatalog = POLLINATIONS_EDIT_CANDIDATES.filter(
+          (m) =>
+            catalog.editCapable.has(m.toLowerCase()) &&
+            !catalog.singleRefOnly.has(m.toLowerCase())
+        );
         curated = inCatalog.length > 0 ? inCatalog : candidatesFromCatalog(catalog).slice(0, 5);
       }
       const candidateModels = [
@@ -961,13 +1098,22 @@ export async function POST(request: NextRequest) {
             if (successResponse) return successResponse;
             // Provider answered but the result failed sanity or the identity
             // guard (echo of an input / invented child) → next model.
+            // (respondWithResult already recorded the rejection in stats.)
             console.warn(`Pollinations ${tryOnModel} result rejected by verification; trying next model.`);
             continue;
           }
-          // 402/403/404/5xx on one model → try the next candidate.
+          // 402/403/404/5xx on one model → record and try the next candidate.
+          const detail = response.ok
+            ? "empty result"
+            : shortDetail(result?.error, `try-on failed (${response.status})`);
           console.warn(`Pollinations try-on ${tryOnModel} failed:`, response.status, result?.error || "");
+          stats.attempts.push({ provider: `pollinations-${tryOnModel}`, status: response.status, detail });
         } catch (polError) {
           console.warn(`Pollinations try-on error with ${tryOnModel}:`, polError);
+          stats.attempts.push({
+            provider: `pollinations-${tryOnModel}`,
+            detail: shortDetail(polError, "request failed"),
+          });
         }
       }
     }
@@ -975,32 +1121,71 @@ export async function POST(request: NextRequest) {
     // ✋ STRICT POLICY: no local composite, no sticker overlay, no invented
     // image. If no edit provider returned a verified edit of the customer's
     // own photo, answer honestly. Quota is NOT consumed.
+    //
+    // The `reason` field tells the customer/operator WHY nothing was produced:
+    //  - NO_PROVIDERS_CONFIGURED: no AI key exists on the host at all.
+    //  - CREDITS_EXHAUSTED: every provider refused for balance/quota reasons.
+    //  - UNVERIFIED_RESULTS: providers answered but no result was a faithful
+    //    edit of the customer's own photo (all rejected by the identity guard).
+    const noKeys = !replicateToken && !segmindKey && !aihubmixKey && !pollinationsKey;
+    const creditsExhausted =
+      !noKeys &&
+      stats.attempts.length > 0 &&
+      stats.attempts.every((a) => looksLikeBalanceError(a.status, a.detail));
+    let reason = "AI_FAILED";
+    let message =
+      "اتصال به سرویس هوش مصنوعی پرو آنلاین در حال حاضر برقرار نشد و هیچ تصویری تولید نشد. ما فقط عکس واقعی کودک شما را با همان محصول ترکیب می‌کنیم و هرگز عکس جایگزین یا ساختگی نمایش نمی‌دهیم. لطفاً لحظاتی دیگر دوباره تلاش کنید.";
+    if (noKeys) {
+      reason = "NO_PROVIDERS_CONFIGURED";
+      message =
+        "سرویس هوش مصنوعی پرو آنلاین روی هاست پیکربندی نشده است (کلید اتصال AI تنظیم نشده) و تصویری تولید نشد. لطفاً موضوع را به پشتیبانی فروشگاه اطلاع دهید.";
+    } else if (creditsExhausted) {
+      reason = "CREDITS_EXHAUSTED";
+      message =
+        "اعتبار هوش مصنوعی پرو آنلاین به پایان رسیده و تصویری تولید نشد. ما فقط عکس واقعی کودک شما را با همان محصول ترکیب می‌کنیم و هرگز عکس جایگزین نمایش نمی‌دهیم. لطفاً بعداً دوباره تلاش کنید یا موضوع را به پشتیبانی فروشگاه اطلاع دهید.";
+    } else if (stats.unverified > 0) {
+      reason = "UNVERIFIED_RESULTS";
+      message =
+        "مدل هوش مصنوعی نتوانست عکس کودک شما را با همان لباس به‌صورت واقعی ترکیب کند، پس هیچ تصویر جایگزینی نمایش داده نشد. لطفاً با عکس روشن‌تر و تمام‌قد دیگری دوباره تلاش کنید.";
+    }
     console.error(
       "AI try-on unavailable: no provider returned a verified edit of the customer photo.",
       JSON.stringify({
+        reason,
         replicate: Boolean(replicateToken),
         segmind: Boolean(segmindKey),
         aihubmix: Boolean(aihubmixKey),
         pollinations: Boolean(pollinationsKey),
         kind: tryonKind,
+        attempts: stats.attempts,
       })
     );
     return NextResponse.json(
       {
         success: false,
         code: "AI_TRYON_UNAVAILABLE",
-        error:
-          "اتصال به سرویس هوش مصنوعی پرو آنلاین در حال حاضر برقرار نشد و هیچ تصویری تولید نشد. ما فقط عکس واقعی کودک شما را با همان محصول ترکیب می‌کنیم و هرگز عکس جایگزین یا ساختگی نمایش نمی‌دهیم. لطفاً لحظاتی دیگر دوباره تلاش کنید.",
+        reason,
+        error: message,
       },
       { status: 200 }
     );
   } catch (error) {
     console.error("AI try-on error:", error);
-    const message = error instanceof Error && error.name === "TimeoutError"
+    const isTimeout = error instanceof Error && error.name === "TimeoutError";
+    const isTooLarge = error instanceof Error && error.message === "Image is too large.";
+    const message = isTimeout
       ? "زمان پاسخ سرویس هوش مصنوعی تمام شد و تصویری تولید نشد. لطفاً دوباره با عکس کوچک‌تر امتحان کنید."
-      : error instanceof Error && error.message === "Image is too large."
+      : isTooLarge
       ? "حجم هر تصویر برای پردازش باید کمتر از ۸ مگابایت باشد."
       : "خطا در اتصال به سرویس هوش مصنوعی پرو آنلاین؛ هیچ تصویری تولید نشد. لطفاً دوباره تلاش کنید.";
-    return NextResponse.json({ success: false, code: "AI_TRYON_UNAVAILABLE", error: message }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: false,
+        code: "AI_TRYON_UNAVAILABLE",
+        reason: isTimeout ? "TIMEOUT" : isTooLarge ? "IMAGE_TOO_LARGE" : "REQUEST_FAILED",
+        error: message,
+      },
+      { status: 200 }
+    );
   }
 }

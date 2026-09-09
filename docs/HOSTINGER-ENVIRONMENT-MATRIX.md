@@ -52,8 +52,10 @@
 | `AIHUBMIX_TIMEOUT_MS` | timeout درخواست تصویر | AIHubMix |
 | `POLLINATIONS_API_KEY` | موتور fallback تولید تصویر | پرو آنلاین |
 | `TRYON_API_URL` | endpoint fallback پرو | Pollinations یا provider سازگار |
-| `TRYON_MODEL` | مدل image-edit چندمرجعی؛ توصیه: `seedream` | پرو آنلاین |
+| `TRYON_MODEL` | مدل image-edit چندمرجعی؛ توصیه: `seedream` (⚠️ مقدار `kontext` فقط ۱ عکس می‌پذیرد و برای پرو ۲عکسی خودکار skip می‌شود) | پرو آنلاین |
 | `TRYON_TIMEOUT_MS` | timeout تولید پرو | پرو آنلاین |
+| `REPLICATE_API_TOKEN` | کلید مدل تخصصی VTON لباس (اختیاری؛ اولویت اول برای لباس) | پرو آنلاین |
+| `SEGMIND_API_KEY` | کلید جایگزین VTON لباس (اختیاری) | پرو آنلاین |
 
 ## متغیرهای پایهٔ قالب
 

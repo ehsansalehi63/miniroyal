@@ -53,8 +53,12 @@ AIHubMix Image Edit (اولویت) یا Pollinations (fallback)
 ```
 
 برای پرو دو تصویر باید به مدل image-edit ارسال شوند. اگر مقدار قدیمی
-`TRYON_MODEL=kontext` در Hostinger باشد، کد مسیر پرو آن را به مدل چندمرجعی
-پیش‌فرض تبدیل می‌کند؛ مقدار توصیه‌شده `seedream` است.
+`TRYON_MODEL=kontext` در Hostinger باشد، چون آن مدل فقط ۱ عکس مرجع می‌پذیرد،
+کد آن را skip و از مدل‌های چندمرجعی تأییدشده (gemini/seedream/gpt-image) استفاده
+می‌کند؛ مقدار توصیه‌شده `seedream` است. علت دقیق هر شکست پرو در فیلد `reason`
+پاسخ API برمی‌گردد و حضور کلیدها در `/api/system-status` (بخش `aiTryon`) و
+`/admin/health` قابل مشاهده است؛ کامیت مستقرشده هم در `deployment.commit` همان
+مسیر گزارش می‌شود.
 
 ## دیتابیس
 

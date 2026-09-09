@@ -35,6 +35,7 @@ export default function AdminHealthPage() {
       case "database": return Database;
       case "catalog": return ShoppingBag;
       case "virtual_tryon": return Sparkles;
+      case "ai_tryon_providers": return ShieldCheck;
       case "payment_gateway": return CreditCard;
       case "sms_gateway": return MessageSquare;
       case "github_webhook": return Server;
@@ -48,6 +49,7 @@ export default function AdminHealthPage() {
       case "database": return "دیتابیس MySQL و جداول";
       case "catalog": return "کاتالوگ محصولات";
       case "virtual_tryon": return "پرو آنلاین هوشمند (Smart Fit)";
+      case "ai_tryon_providers": return "موتور AI پرو آنلاین (کلیدها و مدل)";
       case "payment_gateway": return "درگاه پرداخت زرین‌پال";
       case "sms_gateway": return "سامانه پیامک و کد OTP";
       case "github_webhook": return "دیپلوی اتوماتیک Webhook";
