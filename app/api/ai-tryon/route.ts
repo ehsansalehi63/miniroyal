@@ -2,8 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { authorizeTryon, recordTryonSuccess } from "@/app/lib/tryon-usage";
 import { getProductById } from "@/app/lib/catalog";
 
+/**
+ * MiniRoyal Online Try-On — STRICT EDIT-ONLY POLICY
+ * --------------------------------------------------
+ * The ONLY acceptable result is a new photorealistic AI image created by
+ * combining the customer's own photo (person) with the exact product photo
+ * (garment/accessory) worn on the body:
+ *
+ *   1. The child's face, hair, skin, body, pose, background and lighting
+ *      must remain the customer's real photo — never an invented person.
+ *   2. The product must remain exactly the uploaded catalog item —
+ *      color, pattern, seams, logos and accessories unchanged.
+ *
+ * Therefore every provider below is an IMAGE-EDIT / VTON endpoint that
+ * receives BOTH photos as inputs. There is no text-to-image path anywhere
+ * in this file, and if the AI connection fails the API returns an explicit
+ * error (success:false) — it never falls back to a local composite, sticker
+ * overlay or any self-invented generated picture.
+ */
+
 const DEFAULT_TRYON_URL = "https://gen.pollinations.ai/v1/images/edits";
-const DEFAULT_POLLINATIONS_GEN_URL = "https://gen.pollinations.ai/v1/images/generations";
 const MAX_DATA_URI_LENGTH = 11_000_000;
 const DEFAULT_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_DAHL_URL = "https://inference.dahl.global/v1/chat/completions";
@@ -12,13 +30,43 @@ const DEFAULT_AIHUBMIX_URL = "https://aihubmix.com/v1/images/edits";
 const DEFAULT_AIHUBMIX_TRYON_URL =
   "https://aihubmix.com/v1/models/doubao/doubao-seedream-4-5/predictions";
 const DEFAULT_AIHUBMIX_TRYON_MODEL = "doubao-seedream-4-5";
-const TRYON_REQUEST_TIMEOUT_MS = 25_000;
+const EDIT_MODEL_TIMEOUT_MS = 120_000;
+
+type TryonKind = "garment" | "accessory";
 
 function dataUriToBlob(value: string, fallbackType: string) {
   const match = value.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) throw new Error("Invalid image data.");
   if (value.length > MAX_DATA_URI_LENGTH) throw new Error("Image is too large.");
   return new Blob([Buffer.from(match[2], "base64")], { type: match[1] || fallbackType });
+}
+
+/**
+ * Guard applied to EVERY provider result before it is shown to the customer.
+ * A result is accepted only if it is a usable image reference and it is not a
+ * byte-for-byte echo of the inputs (which would mean the model ignored the
+ * product or did nothing at all).
+ */
+function isValidTryonResult(
+  imageUrl: unknown,
+  personImage: string,
+  garmentImage: string
+): imageUrl is string {
+  if (typeof imageUrl !== "string" || imageUrl.length < 100) return false;
+  const isHttp = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
+  const isDataUri = /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(imageUrl);
+  if (!isHttp && !isDataUri) return false;
+  if (imageUrl === personImage || imageUrl === garmentImage) return false;
+  return true;
+}
+
+/** Strict edit-only prompt: dress the real child from photo #1 in the exact item from photo #2. */
+function buildTryonPrompt(requestedSize: string, kind: TryonKind) {
+  const sizeNote = requestedSize ? `Requested catalog size: ${requestedSize}.` : "";
+  if (kind === "accessory") {
+    return `Photorealistic image EDIT task. You are given exactly two images. Image 1 is a real photo of a child. Image 2 is the exact accessory product (hat, bag, shoes, socks, gloves, scarf or similar). Edit image 1 by placing the EXACT accessory from image 2 on the child in the physically correct spot (e.g. hat on the head, bag in the hand or on the shoulder, shoes on the feet). Keep the accessory's exact color, pattern, material, shape, straps and logos from image 2 — do not redesign it. Keep the child's face, identity, hair, skin tone, body, pose, existing clothes, background and lighting from image 1 completely unchanged. Do NOT generate a new or different child, do NOT invent people, text, watermarks or extra objects. The output must look like one seamless realistic photograph of the same child wearing that exact accessory. ${sizeNote}`;
+  }
+  return `Photorealistic image EDIT task. You are given exactly two images. Image 1 is a real photo of a child. Image 2 is the exact garment product from our catalog. Edit image 1 by replacing ONLY the visible clothing on the child's body with the EXACT garment from image 2, fitted naturally to the child's body and pose as if the child is really wearing it. Keep the garment's exact color, pattern, fabric texture, seams, cut and logo placement from image 2 — do not redesign it. Keep the child's face, identity, hair, skin tone, hands, body proportions, pose, background and lighting from image 1 completely unchanged. Do NOT generate a new or different child, do NOT invent people, accessories, text, watermarks, extra limbs or a different garment. The output must look like one seamless realistic photograph of the same child wearing that exact garment. ${sizeNote}`;
 }
 
 async function improvePromptWithOpenRouter(personImage: string, garmentImage: string, requestedSize: string) {
@@ -40,7 +88,7 @@ async function improvePromptWithOpenRouter(personImage: string, garmentImage: st
         content: [
           {
             type: "text",
-            text: `Analyze the first image as the child/person and the second image as the exact garment. Return only a concise English image-edit prompt for a virtual try-on. Preserve identity, face, hair, pose, hands, body proportions, background and lighting. Replace only visible clothing with the exact garment, including color, pattern, seams and logos. Do not invent accessories or text. Requested catalog size: ${requestedSize || "not specified"}.`,
+            text: `Analyze the first image as the child/person and the second image as the exact garment or accessory. Return only a concise English image-EDIT prompt for a virtual try-on that edits the first photo. Preserve identity, face, hair, pose, hands, body proportions, background and lighting of the child in the first photo. Put the exact item from the second photo on the child, including its color, pattern, seams and logos. Never describe generating a new person. Requested catalog size: ${requestedSize || "not specified"}.`,
           },
           { type: "image_url", image_url: { url: personImage } },
           { type: "image_url", image_url: { url: garmentImage } },
@@ -75,7 +123,7 @@ async function improvePromptWithDahl(personImage: string, garmentImage: string, 
         content: [
           {
             type: "text",
-            text: `Analyze the first image as the child/person and the second image as the exact garment. Return only a concise English image-edit prompt for a children's virtual try-on. Preserve identity, face, hair, pose, hands, body proportions, background and lighting. Replace only visible clothing with the exact garment, including color, pattern, seams and logos. Do not invent accessories or text. Requested catalog size: ${requestedSize || "not specified"}.`,
+            text: `Analyze the first image as the child/person and the second image as the exact garment or accessory. Return only a concise English image-EDIT prompt for a children's virtual try-on that edits the first photo. Preserve identity, face, hair, pose, hands, body proportions, background and lighting of the child in the first photo. Put the exact item from the second photo on the child, including its color, pattern, seams and logos. Never describe generating a new person. Requested catalog size: ${requestedSize || "not specified"}.`,
           },
           { type: "image_url", image_url: { url: personImage } },
           { type: "image_url", image_url: { url: garmentImage } },
@@ -110,7 +158,7 @@ async function improvePromptWithAgentRouter(personImage: string, garmentImage: s
         content: [
           {
             type: "text",
-            text: `Analyze the first image as the child/person and the second image as the exact garment. Return only a concise English virtual try-on edit prompt. Preserve identity, face, hair, pose, hands, body proportions, background and lighting. Replace only the visible clothing with the exact garment. Requested catalog size: ${requestedSize || "not specified"}.`,
+            text: `Analyze the first image as the child/person and the second image as the exact garment or accessory. Return only a concise English image-EDIT prompt for a virtual try-on that edits the first photo. Preserve identity, face, hair, pose, hands, body proportions, background and lighting of the child. Put the exact item from the second photo on the child. Never describe generating a new person. Requested catalog size: ${requestedSize || "not specified"}.`,
           },
           { type: "image_url", image_url: { url: personImage } },
           { type: "image_url", image_url: { url: garmentImage } },
@@ -154,7 +202,7 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
 
   // The native AIHubMix image-generation protocol accepts an image array.
   // This is essential for try-on: image[0] is the person and image[1] is the
-  // exact garment reference. The legacy /v1/images/edits protocol only
+  // exact product reference. The legacy /v1/images/edits protocol only
   // documents a single `image` field and can silently ignore the second one.
   const nativeModel =
     process.env.AIHUBMIX_TRYON_MODEL?.trim() || DEFAULT_AIHUBMIX_TRYON_MODEL;
@@ -182,7 +230,7 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(
-        Math.min(Number(process.env.AIHUBMIX_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
+        Math.min(Number(process.env.AIHUBMIX_TIMEOUT_MS) || EDIT_MODEL_TIMEOUT_MS, EDIT_MODEL_TIMEOUT_MS)
       ),
     });
     const result = await response.json().catch(() => null);
@@ -195,7 +243,7 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
           : output?.base64
             ? `data:image/png;base64,${output.base64}`
             : output?.url || output?.image_url || output?.image;
-    if (response.ok && typeof imageUrl === "string" && imageUrl.length > 100) {
+    if (response.ok && isValidTryonResult(imageUrl, personImage, garmentImage)) {
       return imageUrl;
     }
     console.warn("AIHubMix native try-on failed:", response.status, result?.error || result);
@@ -227,7 +275,7 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
         body: form,
         cache: "no-store",
         signal: AbortSignal.timeout(
-          Math.min(Number(process.env.AIHUBMIX_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, TRYON_REQUEST_TIMEOUT_MS)
+          Math.min(Number(process.env.AIHUBMIX_TIMEOUT_MS) || EDIT_MODEL_TIMEOUT_MS, EDIT_MODEL_TIMEOUT_MS)
         ),
       });
       const result = await response.json().catch(() => null);
@@ -242,9 +290,9 @@ async function callAihubmix(personImage: string, garmentImage: string, prompt: s
       const imageUrl = output?.b64_json
         ? `data:image/png;base64,${output.b64_json}`
         : typeof output?.url === "string" ? output.url : null;
-      // Never report a byte-for-byte copy of the customer photo as a
+      // Never report a byte-for-byte copy of an input photo as a
       // successful try-on result.
-      if (imageUrl && imageUrl !== personImage) return imageUrl;
+      if (isValidTryonResult(imageUrl, personImage, garmentImage)) return imageUrl;
     } catch (error) {
       console.warn("AIHubMix image provider exception:", model, error);
     }
@@ -286,7 +334,7 @@ async function uploadToReplicateFiles(dataUriOrUrl: string, token: string): Prom
   return dataUriOrUrl;
 }
 
-// Replicate IDM-VTON Native Virtual Try-On Integration
+// Replicate IDM-VTON Native Virtual Try-On Integration (garments only)
 async function callReplicateIdmVton(personImage: string, garmentImage: string, category = "upper_body"): Promise<string | null> {
   const token = (
     process.env.REPLICATE_API_TOKEN ||
@@ -396,6 +444,7 @@ async function callReplicateIdmVton(personImage: string, garmentImage: string, c
   return null;
 }
 
+// Segmind IDM-VTON (garments only)
 async function callSegmindIdmVton(personImage: string, garmentImage: string, category = "upper_body"): Promise<string | null> {
   const segmindKey = process.env.SEGMIND_API_KEY;
   if (!segmindKey) return null;
@@ -441,86 +490,8 @@ async function callSegmindIdmVton(personImage: string, garmentImage: string, cat
   return null;
 }
 
-async function createStudioTryonComposite(personDataUri: string, garmentDataUri: string): Promise<string> {
-  const sharp = (await import("sharp")).default;
-  const personMatch = personDataUri.match(/^data:([^;]+);base64,(.+)$/);
-  const garmentMatch = garmentDataUri.match(/^data:([^;]+);base64,(.+)$/);
-  if (!personMatch || !garmentMatch) throw new Error("قالب داده تصویر معتبر نیست.");
-
-  const personBuf = Buffer.from(personMatch[2], "base64");
-  const garmentBuf = Buffer.from(garmentMatch[2], "base64");
-
-  // 1. Process person image: auto-rotate by EXIF, ensure dimensions
-  const personPipeline = sharp(personBuf).rotate();
-  const personMeta = await personPipeline.metadata();
-  const pWidth = personMeta.width || 800;
-  const pHeight = personMeta.height || 1000;
-
-  // 2. Process garment image: remove light background if opaque, isolate dress
-  const garmentPipeline = sharp(garmentBuf).rotate();
-  const garmentInitialMeta = await garmentPipeline.metadata();
-
-  let isolatedGarmentBuf: Buffer;
-  if (garmentInitialMeta.hasAlpha) {
-    isolatedGarmentBuf = await garmentPipeline.trim().png().toBuffer();
-  } else {
-    const { data, info } = await garmentPipeline.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    for (let i = 0; i < data.length; i += 4) {
-      const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      if (brightness > 246) {
-        data[i + 3] = 0;
-      } else if (brightness > 228) {
-        data[i + 3] = Math.round(((246 - brightness) / 18) * 255);
-      }
-    }
-    isolatedGarmentBuf = await sharp(data, {
-      raw: { width: info.width, height: info.height, channels: 4 },
-    })
-      .trim()
-      .png()
-      .toBuffer();
-  }
-
-  // 3. Proportionally scale garment to fit child's torso naturally (~58% of child's width)
-  const targetWidth = Math.round(pWidth * 0.58);
-  const resizedGarment = await sharp(isolatedGarmentBuf)
-    .resize(targetWidth, null, { fit: "inside", withoutEnlargement: false })
-    .toBuffer();
-  const gMeta = await sharp(resizedGarment).metadata();
-  const gWidth = gMeta.width || targetWidth;
-  const gHeight = gMeta.height || Math.round(targetWidth * 1.2);
-
-  // 4. Center horizontally and place at chest level (~28% from top) so face and head are completely visible
-  const left = Math.max(0, Math.round((pWidth - gWidth) / 2));
-  const top = Math.max(0, Math.round(pHeight * 0.28));
-
-  // 5. Generate realistic contact drop shadow for studio lighting integration
-  const shadowSvg = `
-    <svg width="${gWidth + 40}" height="${gHeight + 40}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="6" />
-        </filter>
-      </defs>
-      <ellipse cx="${(gWidth + 40) / 2}" cy="${(gHeight + 40) / 2 + 4}" rx="${gWidth * 0.44}" ry="${gHeight * 0.46}" fill="rgba(0,0,0,0.18)" filter="url(#blur)" />
-    </svg>
-  `;
-  const shadowBuf = Buffer.from(shadowSvg);
-
-  // 6. Composite garment with shadow onto child's authentic photo
-  const finalBuffer = await personPipeline
-    .composite([
-      { input: shadowBuf, top: Math.max(0, top - 10), left: Math.max(0, left - 20) },
-      { input: resizedGarment, top, left },
-    ])
-    .jpeg({ quality: 88, mozjpeg: true })
-    .toBuffer();
-
-  return `data:image/jpeg;base64,${finalBuffer.toString("base64")}`;
-}
-
-export async function POST(request: NextRequest) {
-  const replicateToken = (
+function getReplicateToken() {
+  return (
     process.env.REPLICATE_API_TOKEN ||
     process.env.REPLICATE_API_KEY ||
     process.env.REPLICATE_TOKEN ||
@@ -528,6 +499,10 @@ export async function POST(request: NextRequest) {
     process.env.REPLICATEKEY ||
     process.env.REPLICATE
   )?.trim();
+}
+
+export async function POST(request: NextRequest) {
+  const replicateToken = getReplicateToken();
   const segmindKey = process.env.SEGMIND_API_KEY;
   const pollinationsKey = process.env.POLLINATIONS_API_KEY;
   const aihubmixKey = process.env.AIHUBMIX_API_KEY;
@@ -541,7 +516,7 @@ export async function POST(request: NextRequest) {
 
     if (!personImage || !garmentImage) {
       return NextResponse.json(
-        { success: false, error: "تصویر کودک و تصویر لباس هر دو الزامی هستند." },
+        { success: false, error: "تصویر کودک و تصویر محصول هر دو الزامی هستند." },
         { status: 400 }
       );
     }
@@ -551,84 +526,101 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, code: access.status === 401 ? "AUTH_REQUIRED" : "TRYON_QUOTA_EXCEEDED", error: access.error, remaining: access.remaining }, { status: access.status });
     }
 
-    // Determine try-on garment category for realistic anatomical fitting
+    // Classify the product so the right edit path is used:
+    // - garments (top/bottom/dress) can use dedicated IDM-VTON models
+    // - accessories (hat, bag, shoes, ...) must use the general image-edit
+    //   models with an accessory prompt, because IDM-VTON only fits clothes.
     let tryonCategory = "upper_body";
+    let tryonKind: TryonKind = "garment";
     if (body.category === "dresses" || body.category === "lower_body" || body.category === "upper_body") {
       tryonCategory = body.category;
-    } else if (productId) {
+    }
+    if (body.kind === "accessory") {
+      tryonKind = "accessory";
+    }
+    if (productId) {
       try {
         const p = await getProductById(productId);
         if (p) {
-          const text = (p.title + " " + (p.categoryName || "")).toLowerCase();
-          if (/پیراهن|سارافون|سرهمی|مجلسی|dress|jumpsuit|overall/.test(text)) {
-            tryonCategory = "dresses";
-          } else if (/شلوار|دامن|شلوارک|pant|skirt|short/.test(text)) {
-            tryonCategory = "lower_body";
+          if (p.tryOnAsset?.layerType === "accessory") {
+            tryonKind = "accessory";
+          }
+          const text = `${p.title} ${p.categoryName || ""} ${p.categorySlug || ""}`.toLowerCase();
+          if (!body.category && tryonKind === "garment") {
+            if (/پیراهن|سارافون|سرهمی|مجلسی|dress|jumpsuit|overall/.test(text)) {
+              tryonCategory = "dresses";
+            } else if (/شلوار|دامن|شلوارک|pant|skirt|short/.test(text)) {
+              tryonCategory = "lower_body";
+            }
+          }
+          if (
+            tryonKind === "garment" &&
+            // A product is only treated as an accessory when its title/category
+            // has no clothing keyword at all (e.g. "ست سرهمی و کلاه" stays a
+            // garment because سرهمی is clothing).
+            !/پیراهن|سارافون|سرهمی|مجلسی|شلوار|دامن|تیشرت|بلوز|کاپشن|هودی|کت|ژاکت|لباس|ست |dress|jumpsuit|overall|pant|skirt|shirt|hoodie|jacket|coat/.test(text) &&
+            /کلاه|کیف|کفش|جوراب|دستکش|شال|روسری|کمربند|پاپیون|اکسسوری|hat|cap\b|bag|shoe|sock|glove|scarf|belt|accessor/.test(text)
+          ) {
+            tryonKind = "accessory";
           }
         }
       } catch {
-        // Fallback to upper_body
+        // Keep defaults (upper_body garment)
       }
     }
 
-    // 1. Replicate IDM-VTON (World standard virtual try-on, 100% preserves face and fits garment)
-    if (replicateToken) {
-      const replicateImage = await callReplicateIdmVton(personImage, garmentImage, tryonCategory);
-      if (replicateImage) {
-        if (!access.unlimited && access.customer?.id) {
-          await recordTryonSuccess(access.customer.id, productId);
-        }
-        const newRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-        return NextResponse.json({
-          success: true,
-          imageUrl: replicateImage,
-          provider: "replicate-idm-vton",
-          remaining: newRemaining,
-          unlimited: access.unlimited,
-        });
-      }
-    }
-
-    // 2. Segmind IDM-VTON (100 free daily API calls)
-    if (segmindKey) {
-      const segmindImage = await callSegmindIdmVton(personImage, garmentImage, tryonCategory);
-      if (segmindImage) {
-        if (!access.unlimited && access.customer?.id) {
-          await recordTryonSuccess(access.customer.id, productId);
-        }
-        const newRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-        return NextResponse.json({
-          success: true,
-          imageUrl: segmindImage,
-          provider: "segmind-idm-vton",
-          remaining: newRemaining,
-          unlimited: access.unlimited,
-        });
-      }
-    }
-
-    const fallbackPrompt = `Professional virtual try-on for a children's clothing store. Use the second image as the exact garment reference and replace only the visible clothing on the person in the first image. Preserve the child's face, hair, body proportions, pose, hands, background, lighting and identity. Keep the exact garment color, pattern, logo placement and construction. Make the fit natural for the child's body; do not invent accessories, text, logos, extra limbs or a different garment. Requested catalog size: ${requestedSize || "not specified"}.`;
-    let prompt = fallbackPrompt;
+    // Build the strict edit-only prompt for the general edit models.
+    let prompt = buildTryonPrompt(requestedSize, tryonKind);
     if (process.env.TRYON_USE_VISION_PROMPT === "true") {
-      prompt = (await improvePrompt(personImage, garmentImage, requestedSize)) || fallbackPrompt;
+      prompt = (await improvePrompt(personImage, garmentImage, requestedSize)) || prompt;
     }
 
+    // Shared success responder: validates the AI output, records quota and
+    // returns the photorealistic edit result.
+    const respondWithResult = async (imageUrl: unknown, provider: string) => {
+      if (!isValidTryonResult(imageUrl, personImage, garmentImage)) return null;
+      if (!access.unlimited && access.customer?.id) {
+        await recordTryonSuccess(access.customer.id, productId);
+      }
+      const newRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
+      return NextResponse.json({
+        success: true,
+        imageUrl,
+        provider,
+        remaining: newRemaining,
+        unlimited: access.unlimited,
+      });
+    };
+
+    // 1. Replicate IDM-VTON — world-standard virtual try-on. Edits the real
+    //    child photo and fits the exact garment onto the body (garments only).
+    if (replicateToken && tryonKind === "garment") {
+      const replicateImage = await callReplicateIdmVton(personImage, garmentImage, tryonCategory);
+      const response = await respondWithResult(replicateImage, "replicate-idm-vton");
+      if (response) return response;
+    }
+
+    // 2. Segmind IDM-VTON — same edit-only VTON model (garments only).
+    if (segmindKey && tryonKind === "garment") {
+      const segmindImage = await callSegmindIdmVton(personImage, garmentImage, tryonCategory);
+      const response = await respondWithResult(segmindImage, "segmind-idm-vton");
+      if (response) return response;
+    }
+
+    // 3. AIHubMix — edit models that receive BOTH photos (person + product)
+    //    and edit the person photo. Works for garments and accessories.
     if (aihubmixKey) {
       const aihubmixImage = await callAihubmix(personImage, garmentImage, prompt);
-      if (aihubmixImage) {
-        if (!access.unlimited && access.customer?.id) {
-          await recordTryonSuccess(access.customer.id, productId);
-        }
-        const newRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-        return NextResponse.json({ success: true, imageUrl: aihubmixImage, provider: "aihubmix", remaining: newRemaining, unlimited: access.unlimited });
-      }
+      const response = await respondWithResult(aihubmixImage, "aihubmix");
+      if (response) return response;
     }
 
-    // 3. Neural image-editing via Pollinations. Only edit-capable models that
-    // actually read both input images are allowed; text-to-image models
-    // (flux schnell etc.) ignore the photos and invent a different child —
-    // the exact bug users reported. If TRYON_MODEL is unset or a known
-    // text-to-image value, fall back to the verified free edit models.
+    // 4. Neural image-EDITING via Pollinations /v1/images/edits. Only
+    //    edit-capable models that actually read both input images are
+    //    allowed; text-to-image models (flux schnell etc.) ignore the photos
+    //    and invent a different child — the exact bug users reported. If
+    //    TRYON_MODEL is unset or a known text-to-image value, the verified
+    //    free edit models are used instead.
     if (pollinationsKey) {
       const configuredModel = process.env.TRYON_MODEL?.trim();
       const isEditCapable = (model: string) =>
@@ -659,7 +651,7 @@ export async function POST(request: NextRequest) {
             body: form,
             cache: "no-store",
             signal: AbortSignal.timeout(
-              Math.min(Number(process.env.TRYON_TIMEOUT_MS) || TRYON_REQUEST_TIMEOUT_MS, 120_000)
+              Math.min(Number(process.env.TRYON_TIMEOUT_MS) || EDIT_MODEL_TIMEOUT_MS, EDIT_MODEL_TIMEOUT_MS)
             ),
           });
           const result = await response.json().catch(() => null);
@@ -669,12 +661,14 @@ export async function POST(request: NextRequest) {
             ? (rawB64.startsWith("data:") ? rawB64 : `data:image/jpeg;base64,${rawB64}`)
             : (typeof rawUrl === "string" && rawUrl.startsWith("http") ? rawUrl : null);
 
-          if (response.ok && imageUrl) {
-            if (!access.unlimited && access.customer?.id) {
-              await recordTryonSuccess(access.customer.id, productId);
+          if (response.ok) {
+            const successResponse = await respondWithResult(imageUrl, `pollinations-${tryOnModel}`);
+            if (successResponse) return successResponse;
+            if (imageUrl) {
+              // The provider answered but echoed an input or returned junk —
+              // never show that to the customer, try the next model.
+              console.warn(`Pollinations try-on ${tryOnModel} returned an unusable echo of the inputs; skipping.`);
             }
-            const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-            return NextResponse.json({ success: true, imageUrl, provider: `pollinations-${tryOnModel}`, remaining: finalRemaining, unlimited: access.unlimited });
           }
           // 402/403/404 on one model → try the next candidate.
           console.warn(`Pollinations try-on ${tryOnModel} failed:`, response.status, result?.error || "");
@@ -684,38 +678,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 4. Final local fallback: sharp composite that keeps the real child
-    // photo and pastes the real garment on top (no invented faces).
-    try {
-      const studioImage = await createStudioTryonComposite(personImage, garmentImage);
-      if (studioImage) {
-        if (!access.unlimited && access.customer?.id) {
-          await recordTryonSuccess(access.customer.id, productId);
-        }
-        const finalRemaining = access.unlimited || access.remaining === null ? null : Math.max(0, access.remaining - 1);
-        return NextResponse.json({
-          success: true,
-          imageUrl: studioImage,
-          provider: "studio-fit",
-          remaining: finalRemaining,
-          unlimited: access.unlimited,
-        });
-      }
-    } catch (studioError) {
-      console.warn("Studio try-on composite error:", studioError);
-    }
-
+    // ✋ STRICT POLICY: if the AI connection could not be established with ANY
+    // edit provider, we return an explicit failure. There is deliberately NO
+    // local composite, NO sticker overlay and NO self-generated image here —
+    // the customer must only ever see a real AI edit of their own photo with
+    // the exact product, or a clear honest error. Quota is NOT consumed.
+    console.error(
+      "AI try-on unavailable: every edit provider failed.",
+      JSON.stringify({
+        replicate: Boolean(replicateToken),
+        segmind: Boolean(segmindKey),
+        aihubmix: Boolean(aihubmixKey),
+        pollinations: Boolean(pollinationsKey),
+        kind: tryonKind,
+      })
+    );
     return NextResponse.json(
-      { success: false, code: "AI_GENERATION_FAILED", error: "سرویس پرو لباس در حال حاضر با ترافیک بالا مواجه است. لطفاً دوباره تلاش کنید." },
+      {
+        success: false,
+        code: "AI_TRYON_UNAVAILABLE",
+        error:
+          "اتصال به سرویس هوش مصنوعی پرو آنلاین در حال حاضر برقرار نشد و هیچ تصویری تولید نشد. ما فقط عکس واقعی کودک شما را با همان محصول ترکیب می‌کنیم و هرگز عکس جایگزین یا ساختگی نمایش نمی‌دهیم. لطفاً لحظاتی دیگر دوباره تلاش کنید.",
+      },
       { status: 200 }
     );
   } catch (error) {
     console.error("AI try-on error:", error);
     const message = error instanceof Error && error.name === "TimeoutError"
-      ? "زمان پاسخ سرویس تولید تصویر تمام شد. لطفاً دوباره با عکس کوچک‌تر امتحان کنید."
+      ? "زمان پاسخ سرویس هوش مصنوعی تمام شد و تصویری تولید نشد. لطفاً دوباره با عکس کوچک‌تر امتحان کنید."
       : error instanceof Error && error.message === "Image is too large."
       ? "حجم هر تصویر برای پردازش باید کمتر از ۸ مگابایت باشد."
-      : "خطا در سرویس پرو آنلاین. لطفاً عکس دیگری با نور بهتر امتحان کنید.";
-    return NextResponse.json({ success: false, error: message }, { status: 200 });
+      : "خطا در اتصال به سرویس هوش مصنوعی پرو آنلاین؛ هیچ تصویری تولید نشد. لطفاً دوباره تلاش کنید.";
+    return NextResponse.json({ success: false, code: "AI_TRYON_UNAVAILABLE", error: message }, { status: 200 });
   }
 }

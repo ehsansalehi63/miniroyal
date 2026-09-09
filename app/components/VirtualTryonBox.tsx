@@ -201,10 +201,13 @@ export default function VirtualTryonBox({ product, customer }: Props) {
           garmentImage: await compressImage(await sourceToDataUrl(product.tryOnAsset?.url ?? product.images[0])),
           productId: product.id,
           requestedSize: fit.size,
+          // محصولات اکسسوری (کلاه، کیف، کفش و...) با پرامپت اختصاصی اکسسوری
+          // در مدل‌های ویرایش تصویر پردازش شوند، نه مدل VTON لباس.
+          ...(product.tryOnAsset?.layerType === "accessory" ? { kind: "accessory" } : {}),
         }),
       });
       const responseText = await response.text();
-      let data: { success?: boolean; imageUrl?: string; error?: string; remaining?: number | null; unlimited?: boolean; notice?: string } = {};
+      let data: { success?: boolean; imageUrl?: string; error?: string; code?: string; remaining?: number | null; unlimited?: boolean; notice?: string } = {};
       try {
         data = JSON.parse(responseText);
       } catch {
@@ -218,7 +221,12 @@ export default function VirtualTryonBox({ product, customer }: Props) {
         throw new Error("پاسخ نامعتبر از سرویس پرو آنلاین دریافت شد.");
       }
       if (!response.ok || !data.success || !data.imageUrl) {
-        throw new Error(data.error || "تولید تصویر پرو انجام نشد.");
+        // سیاست سخت‌گیرانه: اگر اتصال هوش مصنوعی برقرار نشد، فقط پیام خطای
+        // صادقانه نمایش داده می‌شود؛ هیچ عکس جایگزین/ساختگی ساخته نمی‌شود.
+        throw new Error(
+          data.error ||
+            "اتصال به سرویس هوش مصنوعی برقرار نشد و تصویری تولید نشد. لطفاً دوباره تلاش کنید."
+        );
       }
       setScanProgress(100);
       setResultImage(data.imageUrl);
@@ -640,9 +648,19 @@ export default function VirtualTryonBox({ product, customer }: Props) {
             )}
 
             {error && (
-              <p className="mt-4 rounded-xl bg-rose-950/80 border border-rose-800/60 p-3 text-xs font-bold text-rose-200">
-                {error}
-              </p>
+              <div className="mt-4 rounded-xl border border-rose-800/60 bg-rose-950/80 p-3">
+                <p className="text-xs font-bold leading-6 text-rose-200">{error}</p>
+                {!busy && personImage && (
+                  <button
+                    type="button"
+                    onClick={runTryOn}
+                    className="mt-2.5 flex items-center gap-1.5 rounded-lg border border-rose-700/60 bg-rose-900/60 px-3 py-1.5 text-[11px] font-black text-rose-100 transition hover:bg-rose-800/70"
+                  >
+                    <RotateCcw className="size-3.5" />
+                    تلاش مجدد برای اتصال به سرویس هوش مصنوعی
+                  </button>
+                )}
+              </div>
             )}
 
             <div className="mt-5 flex gap-2">
