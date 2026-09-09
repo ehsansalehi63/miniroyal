@@ -974,8 +974,20 @@ async function callHfVton(
       `${spaceUrl}/gradio_api/call/try_on/${encodeURIComponent(queuedBody.event_id)}`,
       { cache: "no-store", signal: AbortSignal.timeout(timeout) }
     );
-    const sse = await result.text();
-    const complete = sse.match(/event:\s*complete\s*\ndata:\s*(.+)/s);
+    let sse = "";
+    if (result.body) {
+      const reader = result.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        sse += decoder.decode(chunk.value, { stream: true });
+        if (/event:\s*(complete|error)\s*\ndata:/s.test(sse)) break;
+      }
+    } else {
+      sse = await result.text();
+    }
+    const complete = sse.match(/event:\s*complete\s*\ndata:\s*([^\n\r]+(?:\n(?!event:).*)*)/s);
     if (!complete) {
       const errorEvent = sse.match(/event:\s*error\s*\ndata:\s*(.+)/s);
       attempts.push({ provider: "huggingface-vton", status: result.status, detail: shortDetail(errorEvent?.[1] || sse, "inference did not complete") });
