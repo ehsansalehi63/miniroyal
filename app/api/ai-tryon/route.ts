@@ -60,6 +60,9 @@ const DEFAULT_AIHUBMIX_URL = "https://aihubmix.com/v1/images/edits";
 const DEFAULT_AIHUBMIX_TRYON_URL =
   "https://aihubmix.com/v1/models/doubao/doubao-seedream-4-5/predictions";
 const DEFAULT_AIHUBMIX_TRYON_MODEL = "doubao-seedream-4-5";
+const DEFAULT_HF_VTON_SPACE_URL =
+  "https://ehsansalehi63-miniroyal-vton-free.hf.space";
+const HF_VTON_TIMEOUT_MS = 240_000;
 const EDIT_MODEL_TIMEOUT_MS = 120_000;
 
 type TryonKind = "garment" | "accessory";
@@ -911,11 +914,96 @@ function getReplicateToken() {
   )?.trim();
 }
 
+/** Free Hugging Face ZeroGPU fallback using the Space's Gradio 6 v2 API. */
+async function callHfVton(
+  personImage: string,
+  garmentImage: string,
+  category: string,
+  attempts: ProviderAttempt[]
+): Promise<string | null> {
+  const spaceUrl = (
+    process.env.HF_VTON_SPACE_URL || DEFAULT_HF_VTON_SPACE_URL
+  ).trim().replace(/\/$/, "");
+  if (!spaceUrl) return null;
+  const spaceCategory =
+    category === "lower_body" ? "bottoms" : category === "dresses" ? "one-pieces" : "tops";
+  const timeout = Math.min(
+    Number(process.env.HF_VTON_TIMEOUT_MS) || HF_VTON_TIMEOUT_MS,
+    HF_VTON_TIMEOUT_MS
+  );
+
+  try {
+    const uploadForm = new FormData();
+    uploadForm.append("files", dataUriToBlob(personImage, "image/jpeg"), "person.jpg");
+    uploadForm.append("files", dataUriToBlob(garmentImage, "image/png"), "garment.png");
+    const upload = await fetch(`${spaceUrl}/gradio_api/upload`, {
+      method: "POST",
+      body: uploadForm,
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeout),
+    });
+    const paths = await upload.json().catch(() => null);
+    if (!upload.ok || !Array.isArray(paths) || paths.length < 2) {
+      attempts.push({ provider: "huggingface-vton", status: upload.status, detail: shortDetail(paths, "image upload failed") });
+      return null;
+    }
+
+    const queued = await fetch(`${spaceUrl}/gradio_api/call/v2/try_on`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        person_image: { path: paths[0], meta: { _type: "gradio.FileData" } },
+        garment_image: { path: paths[1], meta: { _type: "gradio.FileData" } },
+        category: spaceCategory,
+        garment_photo_type: "flat-lay",
+        num_timesteps: 30,
+        guidance_scale: 1.5,
+        seed: Math.floor(Math.random() * 2_000_000_000),
+        segmentation_free: true,
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(30_000),
+    });
+    const queuedBody = await queued.json().catch(() => null);
+    if (!queued.ok || typeof queuedBody?.event_id !== "string") {
+      attempts.push({ provider: "huggingface-vton", status: queued.status, detail: shortDetail(queuedBody, "inference queue failed") });
+      return null;
+    }
+
+    const result = await fetch(
+      `${spaceUrl}/gradio_api/call/try_on/${encodeURIComponent(queuedBody.event_id)}`,
+      { cache: "no-store", signal: AbortSignal.timeout(timeout) }
+    );
+    const sse = await result.text();
+    const complete = sse.match(/event:\s*complete\s*\ndata:\s*(.+)/s);
+    if (!complete) {
+      const errorEvent = sse.match(/event:\s*error\s*\ndata:\s*(.+)/s);
+      attempts.push({ provider: "huggingface-vton", status: result.status, detail: shortDetail(errorEvent?.[1] || sse, "inference did not complete") });
+      return null;
+    }
+    const output = JSON.parse(complete[1].trim());
+    const file = Array.isArray(output) ? output[0] : null;
+    const imageUrl =
+      typeof file?.url === "string"
+        ? file.url
+        : typeof file?.path === "string"
+          ? `${spaceUrl}/gradio_api/file=${file.path}`
+          : null;
+    return typeof imageUrl === "string" && imageUrl.startsWith("http") ? imageUrl : null;
+  } catch (error) {
+    const detail = shortDetail(error, "Hugging Face Space unavailable");
+    console.warn("Hugging Face VTON failed:", detail);
+    attempts.push({ provider: "huggingface-vton", detail });
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const replicateToken = getReplicateToken();
   const segmindKey = process.env.SEGMIND_API_KEY;
   const pollinationsKey = process.env.POLLINATIONS_API_KEY;
   const aihubmixKey = process.env.AIHUBMIX_API_KEY;
+  const hfVtonSpace = (process.env.HF_VTON_SPACE_URL || DEFAULT_HF_VTON_SPACE_URL).trim();
   const geminiConfigured = geminiKeys().length > 0;
 
   try {
@@ -1024,6 +1112,12 @@ export async function POST(request: NextRequest) {
     // 0. Gemini FREE tier (AI Studio keys, no card, ~500/day) — always tried
     //    FIRST so normal days cost $0. Handles garments and accessories with
     //    the same edit prompt. Quota/safety failures fall through to paid.
+    if (hfVtonSpace && tryonKind === "garment") {
+      const hfImage = await callHfVton(personImage, garmentImage, tryonCategory, stats.attempts);
+      const response = await respondWithResult(hfImage, "huggingface-vton");
+      if (response) return response;
+    }
+
     if (geminiKeys().length > 0) {
       const geminiImage = await callGeminiTryon(personImage, garmentImage, prompt, stats.attempts);
       const response = await respondWithResult(geminiImage, "gemini-free");
@@ -1151,7 +1245,7 @@ export async function POST(request: NextRequest) {
     //  - UNVERIFIED_RESULTS: providers answered but no result was a faithful
     //    edit of the customer's own photo (all rejected by the identity guard).
     const noKeys =
-      !geminiConfigured && !replicateToken && !segmindKey && !aihubmixKey && !pollinationsKey;
+      !hfVtonSpace && !geminiConfigured && !replicateToken && !segmindKey && !aihubmixKey && !pollinationsKey;
     const creditsExhausted =
       !noKeys &&
       stats.attempts.length > 0 &&
