@@ -19,6 +19,7 @@ export default function CartPage() {
   const isMounted = useIsMounted();
   const [couponCode, setCouponCode] = useState("");
   const [couponFeedback, setCouponFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const {
     items,
@@ -48,11 +49,16 @@ export default function CartPage() {
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
   const freeShippingPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!couponCode.trim()) return;
-    const res = applyCoupon(couponCode);
-    setCouponFeedback(res);
+    if (!couponCode.trim() || couponBusy) return;
+    setCouponBusy(true);
+    try {
+      const res = await applyCoupon(couponCode);
+      setCouponFeedback(res);
+    } finally {
+      setCouponBusy(false);
+    }
   };
 
   if (items.length === 0) {

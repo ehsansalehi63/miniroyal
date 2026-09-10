@@ -37,7 +37,35 @@ export default function AdminSettingsPage() {
   const [buildInfo, setBuildInfo] = useState<{ version: string; buildTime: string } | null>(null);
   const [smsLive, setSmsLive] = useState<{ gateway: boolean; provider: string | null; mode: string | null } | null>(null);
 
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
   useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          const s = data.settings;
+          if (s.siteName) setSiteName(s.siteName);
+          if (s.tagline) setTagline(s.tagline);
+          if (s.phone) setPhone(s.phone);
+          if (s.mobile) setMobile(s.mobile);
+          if (s.address) setAddress(s.address);
+          if (s.announcementText) setAnnouncementText(s.announcementText);
+          if (s.heroTitle) setHeroTitle(s.heroTitle);
+          if (s.heroSubtitle) setHeroSubtitle(s.heroSubtitle);
+          if (s.freeShippingThreshold) setFreeShippingThreshold(Number(s.freeShippingThreshold));
+          if (s.baseShippingFee) setBaseShippingFee(Number(s.baseShippingFee));
+          if (s.activeGateway) setActiveGateway(s.activeGateway);
+          if (s.zarinpalMerchant) setZarinpalMerchant(s.zarinpalMerchant);
+          if (s.isSandbox !== undefined) setIsSandbox(Boolean(s.isSandbox));
+          if (s.smsProvider) setSmsProvider(s.smsProvider);
+          if (s.smsSenderLine) setSmsSenderLine(s.smsSenderLine);
+          if (s.smsPatternCode) setSmsPatternCode(s.smsPatternCode);
+        }
+      })
+      .catch(() => {});
+
     fetch("/api/system-status")
       .then((res) => res.json())
       .then((data) => {
@@ -56,10 +84,44 @@ export default function AdminSettingsPage() {
       });
   }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setSavingSettings(true);
+    setSaveError("");
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteName,
+          tagline,
+          phone,
+          mobile,
+          address,
+          announcementText,
+          heroTitle,
+          heroSubtitle,
+          freeShippingThreshold,
+          baseShippingFee,
+          activeGateway,
+          zarinpalMerchant,
+          isSandbox,
+          smsProvider,
+          smsSenderLine,
+          smsPatternCode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "ذخیره تنظیمات ناموفق بود.");
+      }
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3500);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "خطا در ذخیره تنظیمات");
+    } finally {
+      setSavingSettings(false);
+    }
   };
 
   const handleChangePassword = (e: React.FormEvent) => {
@@ -100,12 +162,19 @@ export default function AdminSettingsPage() {
         </div>
         <button
           onClick={handleSave}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-stone-950 px-6 py-3 text-xs font-black text-white shadow-lg transition hover:bg-stone-800"
+          disabled={savingSettings}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-stone-950 px-6 py-3 text-xs font-black text-white shadow-lg transition hover:bg-stone-800 disabled:opacity-50"
         >
           <Save className="size-4" />
-          <span>{isSaved ? "ذخیره شد! 🎉" : "ذخیره تغییرات سایت"}</span>
+          <span>{savingSettings ? "در حال ذخیره در دیتابیس..." : isSaved ? "ذخیره شد! 🎉" : "ذخیره تغییرات سایت"}</span>
         </button>
       </div>
+
+      {saveError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-bold text-rose-700">
+          {saveError}
+        </div>
+      )}
 
       {/* ۱. تغییر رمز عبور ادمین */}
       <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">

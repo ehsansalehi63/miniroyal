@@ -24,7 +24,7 @@ interface CartState {
   addItem: (product: Product, variant: Variant, quantity?: number) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
-  applyCoupon: (code: string) => { success: boolean; message: string };
+  applyCoupon: (code: string) => Promise<{ success: boolean; message: string }>;
   removeCoupon: () => void;
   clearCart: () => void;
   getTotalItems: () => number;
@@ -80,24 +80,42 @@ export const useCart = create<CartState>()(
         });
       },
 
-      applyCoupon: (code) => {
+      applyCoupon: async (code) => {
         const cleanCode = code.trim().toUpperCase();
-        const found = MOCK_COUPONS.find((c) => c.code === cleanCode);
-
-        if (!found) {
-          return { success: false, message: "کد تخفیف وارد شده معتبر نیست." };
-        }
-
         const subtotal = get().getRawSubtotal();
-        if (subtotal < found.minOrderAmount) {
-          return {
-            success: false,
-            message: `حداقل مبلغ سفارش برای این کد ${found.minOrderAmount.toLocaleString("fa-IR")} تومان است.`,
-          };
+        try {
+          const res = await fetch("/api/coupons/validate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: cleanCode, subtotal }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            return { success: false, message: data.message || "کد تخفیف معتبر نیست." };
+          }
+          set({
+            appliedCoupon: {
+              code: data.coupon.code,
+              discountType: data.coupon.discountType,
+              discountValue: data.coupon.discountValue,
+              minOrderAmount: data.coupon.minOrderAmount,
+            },
+          });
+          return { success: true, message: data.message || "کد تخفیف اعمال شد! 🎉" };
+        } catch {
+          const found = MOCK_COUPONS.find((c) => c.code === cleanCode);
+          if (!found) {
+            return { success: false, message: "کد تخفیف وارد شده معتبر نیست." };
+          }
+          if (subtotal < found.minOrderAmount) {
+            return {
+              success: false,
+              message: `حداقل مبلغ سفارش برای این کد ${found.minOrderAmount.toLocaleString("fa-IR")} تومان است.`,
+            };
+          }
+          set({ appliedCoupon: found });
+          return { success: true, message: "کد تخفیف با موفقیت اعمال شد! 🎉" };
         }
-
-        set({ appliedCoupon: found });
-        return { success: true, message: "کد تخفیف با موفقیت اعمال شد! 🎉" };
       },
 
       removeCoupon: () => set({ appliedCoupon: null }),

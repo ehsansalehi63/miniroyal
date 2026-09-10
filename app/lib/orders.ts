@@ -277,13 +277,60 @@ export async function updateOrderStatus(orderNumber: string, status: string) {
 }
 
 export async function listCustomers() {
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT c.id, c.full_name AS name, c.phone, c.created_at AS createdAt,
-      COUNT(o.id) AS ordersCount, COALESCE(SUM(o.final_amount), 0) AS totalSpent
-     FROM customers c
-     LEFT JOIN orders o ON o.customer_id = c.id
-     GROUP BY c.id
-     ORDER BY c.created_at DESC`
-  );
-  return rows;
+  try {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT c.id, c.full_name AS name, c.phone, c.email,
+        COALESCE(c.role, 'customer') AS role,
+        COALESCE(c.club_tier, 'bronze') AS clubTier,
+        COALESCE(c.club_points, 0) AS points,
+        COALESCE(c.is_active, 1) AS isActive,
+        c.created_at AS createdAt,
+        COUNT(o.id) AS ordersCount,
+        COALESCE(SUM(o.final_amount), 0) AS totalSpent
+       FROM customers c
+       LEFT JOIN orders o ON o.customer_id = c.id
+       GROUP BY c.id
+       ORDER BY c.created_at DESC`
+    );
+    return rows;
+  } catch {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT c.id, c.full_name AS name, c.phone, c.created_at AS createdAt,
+        COUNT(o.id) AS ordersCount, COALESCE(SUM(o.final_amount), 0) AS totalSpent
+       FROM customers c
+       LEFT JOIN orders o ON o.customer_id = c.id
+       GROUP BY c.id
+       ORDER BY c.created_at DESC`
+    );
+    return rows;
+  }
+}
+
+export async function updateCustomer(
+  id: number,
+  patch: { role?: string; clubTier?: string; points?: number; isActive?: boolean }
+) {
+  const fields: string[] = [];
+  const values: (string | number)[] = [];
+
+  if (patch.role && ["customer", "vip", "wholesale"].includes(patch.role)) {
+    fields.push("role = ?");
+    values.push(patch.role);
+  }
+  if (patch.clubTier && ["bronze", "silver", "gold"].includes(patch.clubTier)) {
+    fields.push("club_tier = ?");
+    values.push(patch.clubTier);
+  }
+  if (typeof patch.points === "number") {
+    fields.push("club_points = ?");
+    values.push(Math.max(0, Math.round(patch.points)));
+  }
+  if (typeof patch.isActive === "boolean") {
+    fields.push("is_active = ?");
+    values.push(patch.isActive ? 1 : 0);
+  }
+
+  if (!fields.length) return;
+  values.push(id);
+  await pool.execute(`UPDATE customers SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values);
 }
