@@ -216,8 +216,143 @@ export default function AdminReviewsPage() {
         </button>
       </div>
 
-      {/* لیست دیدگاه‌ها */}
-      <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+      {/* لیست دیدگاه‌ها در موبایل */}
+      <div className="block md:hidden space-y-3.5">
+        {filteredReviews.length === 0 ? (
+          <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center text-xs text-stone-400 shadow-sm">
+            {loading ? "در حال دریافت دیدگاه‌ها..." : "هیچ نظری در این بخش وجود ندارد."}
+          </div>
+        ) : (
+          filteredReviews.map((r) => (
+            <div
+              key={`mob-rev-${r.id}`}
+              className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm space-y-3"
+            >
+              {/* نام محصول و وضعیت */}
+              <div className="flex items-start justify-between gap-2 border-b border-stone-100 pb-2.5">
+                <div>
+                  <h4 className="font-bold text-xs text-stone-900 line-clamp-1">{r.productTitle}</h4>
+                  <span className="text-[10px] text-stone-400 font-mono">کد کالا: #{r.productId}</span>
+                </div>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold shrink-0 ${
+                    r.isApproved ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {r.isApproved ? "✓ منتشر شده" : "⏳ در انتظار تأیید"}
+                </span>
+              </div>
+
+              {/* نویسنده، امتیاز، سایز */}
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-stone-800">{r.authorName}</span>
+                  {r.isVerifiedBuyer && (
+                    <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                      خریدار تأییدشده
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <span className="flex text-amber-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`size-3 ${i < r.rating ? "fill-amber-400 text-amber-400" : "text-stone-200"}`}
+                      />
+                    ))}
+                  </span>
+                  <span className="text-[10px] font-mono text-stone-500">({toPersianDigits(r.rating)})</span>
+                </div>
+              </div>
+
+              {/* متن دیدگاه */}
+              <div className="rounded-2xl bg-stone-50 p-3 text-xs text-stone-700 leading-relaxed">
+                <p>{r.comment}</p>
+              </div>
+
+              {/* پاسخ ادمین */}
+              {r.adminReply && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 text-xs space-y-1">
+                  <span className="text-[10px] font-bold text-amber-900 block">👑 پاسخ مدیریت مینی رویال:</span>
+                  <p className="text-stone-800 leading-relaxed">{r.adminReply}</p>
+                </div>
+              )}
+
+              {/* فرم درج پاسخ در موبایل */}
+              {replyingId === r.id && (
+                <div className="space-y-2 rounded-2xl border border-stone-200 bg-stone-50 p-3 text-xs">
+                  <label className="block text-[11px] font-bold text-stone-700">متن پاسخ شما به مشتری:</label>
+                  <textarea
+                    rows={3}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    className="w-full rounded-xl border border-stone-200 bg-white p-2.5 text-xs outline-none focus:border-amber-500"
+                    placeholder="پاسخ محترمانه به نظر خریدار..."
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => void handleSaveReply(r.id)}
+                      disabled={busyId === r.id}
+                      className="rounded-xl bg-stone-950 px-3 py-1.5 text-xs font-bold text-white hover:bg-stone-800 transition"
+                    >
+                      {busyId === r.id ? "در حال ثبت..." : "ثبت پاسخ"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setReplyingId(null);
+                        setReplyText("");
+                      }}
+                      className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-600"
+                    >
+                      انصراف
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* دکمه‌های عملیاتی موبایل */}
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
+                <button
+                  onClick={() => {
+                    setReplyingId(r.id);
+                    setReplyText(r.adminReply || "");
+                  }}
+                  className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-[11px] font-bold text-stone-700 hover:bg-stone-50 transition"
+                >
+                  {r.adminReply ? "ویرایش پاسخ" : "ثبت پاسخ"}
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => void handleToggleApproval(r)}
+                    disabled={busyId === r.id}
+                    className={`rounded-xl px-3 py-1.5 text-[11px] font-bold transition shadow-xs ${
+                      r.isApproved
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                        : "bg-emerald-700 text-white"
+                    }`}
+                  >
+                    {r.isApproved ? "لغو انتشار" : "تأیید و انتشار"}
+                  </button>
+                  <button
+                    onClick={() => void handleDelete(r.id)}
+                    disabled={busyId === r.id}
+                    className="size-8 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 grid place-items-center"
+                    title="حذف"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* لیست دیدگاه‌ها برای دسکتاپ */}
+      <div className="hidden md:block overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead>

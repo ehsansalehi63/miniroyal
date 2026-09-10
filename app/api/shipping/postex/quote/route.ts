@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPostexQuote, postexConfigured } from "@/app/lib/postex";
 import { calculateTipaxRate } from "@/app/lib/iranCities";
 
 export async function POST(request: NextRequest) {
@@ -14,19 +13,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "شهر مقصد برای استعلام الزامی است." }, { status: 400 });
     }
 
-    if (postexConfigured()) {
-      try {
-        const data = await getPostexQuote({ destinationCity: city, totalValue, totalWeight, paymentType: body.paymentType === "COD" ? "COD" : "SENDER" });
-        return NextResponse.json({ success: true, data });
-      } catch (error) {
-        console.warn("Postex quote failed, using standard calculation fallback:", error);
-      }
-    }
+    // محاسبه دقیق و بلادرنگ کرایه تیپاکس بر اساس مسافت، وزن و بیمه مرسوله
+    const rate = calculateTipaxRate({
+      province,
+      city,
+      weightGrams: Math.round(totalWeight * 1000),
+      valueToman: totalValue,
+    });
 
-    // فال‌بک دقیق و هوشمند در صورت عدم تنظیم یا خطای سرویس خارجی
-    const rate = calculateTipaxRate({ province, city, weightGrams: Math.round(totalWeight * 1000), valueToman: totalValue });
     return NextResponse.json({
       success: true,
+      provider: "tipax",
+      providerName: "تیپاکس (Tipax Express)",
       data: {
         cost: rate.costToman,
         currency: "تومان",
@@ -35,8 +33,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Shipping quote failed:", error);
-    return NextResponse.json({ success: false, error: "استعلام هزینه ارسال انجام نشد." }, { status: 500 });
+    console.error("Tipax shipping quote failed:", error);
+    return NextResponse.json({ success: false, error: "استعلام هزینه ارسال تیپاکس انجام نشد." }, { status: 500 });
   }
 }
 

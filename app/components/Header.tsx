@@ -98,8 +98,27 @@ export default function Header() {
           </button>
         </div>
       )}
-      <div className="bg-stone-950 px-4 py-2 text-center text-[11px] font-bold tracking-wide text-amber-200">
-        ارسال رایگان خریدهای بالای ۵۰۰ هزار تومان <span className="mx-2 text-stone-500">•</span> پرو آنلاین هوشمند برای انتخاب سایز کودک
+      <div className="bg-stone-950 px-3 sm:px-4 py-1.5 text-center text-[11px] font-bold tracking-wide text-amber-200 flex items-center justify-between site-container mx-auto">
+        <div className="flex-1 text-center truncate">
+          ارسال رایگان با تیپاکس خریدهای بالای ۵۰۰ هزار تومان <span className="mx-1.5 text-stone-600 hidden sm:inline">•</span> <span className="hidden sm:inline">پرو آنلاین هوشمند برای انتخاب سایز کودک</span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/virtual-tryon"
+            className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-amber-300 hover:text-white transition"
+          >
+            <Sparkles className="size-3 text-amber-400" />
+            <span className="underline underline-offset-2">پرو آنلاین</span>
+          </Link>
+          <span className="text-stone-600">|</span>
+          <Link
+            href={customer ? "/account" : "/account?mode=login"}
+            className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-amber-300 hover:text-white transition"
+          >
+            <User className="size-3 text-amber-400" />
+            <span className="underline underline-offset-2">{customer ? "پنل من" : "ورود به سایت"}</span>
+          </Link>
+        </div>
       </div>
 
       <div className="mx-auto flex site-container items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-4 lg:gap-8">
@@ -185,10 +204,11 @@ export default function Header() {
 
           <Link
             href="/virtual-tryon"
-            className="hidden items-center gap-1.5 rounded-full bg-stone-950 px-3.5 py-2 text-[11px] font-black text-amber-300 shadow-md border border-amber-400/40 transition hover:-translate-y-0.5 hover:bg-stone-900 md:flex"
+            className="hidden items-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 px-4 py-2 text-xs sm:text-sm font-black text-stone-950 shadow-md border border-amber-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all md:flex"
+            aria-label="ورود به اتاق پرو آنلاین هوشمند"
           >
-            <Sparkles className="size-3.5 text-amber-400" />
-            <span>پرو آنلاین</span>
+            <Sparkles className="size-4 text-stone-950 animate-pulse" />
+            <span className="font-black text-stone-950">پرو آنلاین هوشمند</span>
           </Link>
 
           <Link

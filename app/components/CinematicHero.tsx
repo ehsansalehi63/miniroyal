@@ -106,7 +106,7 @@ export default function CinematicHero({ slides, videoSrc: _videoSrc }: Cinematic
               className={`hero-media hero-kenburns ${itemIndex === index ? "is-active" : ""}`}
             />
           ))}
-          <span className="hero-caption">
+          <span className="hero-caption hidden sm:block">
             <span className="text-amber-400 font-bold ml-1.5">{slide.badge}</span>
             <span>{slide.title}</span>
           </span>
@@ -118,7 +118,7 @@ export default function CinematicHero({ slides, videoSrc: _videoSrc }: Cinematic
           aria-hidden="true"
           width={560}
           height={315}
-          className="hero-reflection"
+          className="hero-reflection hidden lg:block"
           decoding="async"
           loading="lazy"
         />
@@ -131,7 +131,7 @@ export default function CinematicHero({ slides, videoSrc: _videoSrc }: Cinematic
       <div className="hero-bar hero-bar-bottom" aria-hidden="true" />
 
       {/* ── ۵. متن و فراخوان‌ها ──────────────────────────────────── */}
-      <div className="relative z-20 grid min-h-[520px] items-center gap-10 px-6 py-16 sm:min-h-[600px] sm:px-12 lg:grid-cols-[1.1fr_.9fr] lg:px-16">
+      <div className="relative z-20 grid items-center gap-6 px-4 pt-4 pb-20 sm:px-8 sm:py-12 lg:min-h-[600px] lg:grid-cols-[1.1fr_.9fr] lg:px-16 lg:py-16">
         <div className="max-w-xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3.5 py-1 text-[11px] font-black tracking-wider text-amber-300 backdrop-blur-md">
             <span>✨</span>
@@ -147,17 +147,17 @@ export default function CinematicHero({ slides, videoSrc: _videoSrc }: Cinematic
           <div className="mt-8 flex flex-wrap items-center gap-3.5">
             <Link
               href={slide.ctaLink}
-              className="inline-flex items-center gap-2.5 rounded-xl bg-amber-400 px-7 py-3.5 text-xs sm:text-sm font-black text-stone-950 shadow-lg shadow-amber-950/40 transition hover:bg-amber-300 active:scale-[0.98]"
+              className="inline-flex items-center gap-2.5 rounded-2xl bg-stone-900 border border-stone-700 hover:border-amber-400 px-6 py-3.5 text-xs sm:text-sm font-black text-stone-100 shadow-lg transition-all hover:bg-stone-800 active:scale-[0.98]"
             >
               <span>{slide.ctaText}</span>
               <ArrowLeft className="size-4" />
             </Link>
             <Link
               href="/virtual-tryon"
-              className="inline-flex items-center gap-2.5 rounded-xl border-2 border-amber-400 bg-stone-950/90 px-6 py-3.5 text-xs sm:text-sm font-black text-amber-300 shadow-xl shadow-amber-500/20 backdrop-blur-md transition hover:bg-amber-400 hover:text-stone-950 active:scale-[0.98] group"
+              className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 hover:brightness-105 px-6 py-3.5 text-xs sm:text-sm font-black text-stone-950 shadow-xl shadow-amber-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] border border-amber-300"
             >
-              <Sparkles className="size-4.5 text-amber-400 group-hover:text-stone-950 transition-colors" />
-              <span className="text-amber-200 group-hover:text-stone-950 transition-colors font-black">پرو آنلاین و انتخاب سایز کودک</span>
+              <Sparkles className="size-4.5 text-stone-950" />
+              <span className="text-stone-950 font-black tracking-wide">پرو آنلاین و انتخاب سایز کودک</span>
             </Link>
           </div>
         </div>

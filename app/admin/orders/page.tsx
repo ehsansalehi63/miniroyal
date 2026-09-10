@@ -60,8 +60,8 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<FullOrder | null>(null);
   const [fetchingInvoice, setFetchingInvoice] = useState(false);
 
-  // نمایش پیام یا رهگیری
-  const [trackingModal, setTrackingModal] = useState<{ title: string; content: string } | null>(null);
+  // نمایش پیام یا رهگیری تیپاکس
+  const [trackingModal, setTrackingModal] = useState<{ title: string; content: string; url?: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -109,7 +109,7 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const postexAction = async (orderNumber: string, action: "register" | "track") => {
+  const tipaxAction = async (orderNumber: string, action: "register" | "track") => {
     setBusy(`${action}:${orderNumber}`);
     setError("");
     try {
@@ -120,20 +120,23 @@ export default function AdminOrdersPage() {
       });
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || "عملیات Postex انجام نشد.");
+        throw new Error(result.error || "عملیات تیپاکس انجام نشد.");
       }
       if (action === "register") {
-        setSuccessMsg(`سفارش ${orderNumber} در سامانه پستکس ثبت شد.`);
+        setSuccessMsg(`سفارش ${orderNumber} با موفقیت در سامانه تیپاکس ثبت و بارکد اختصاص یافت.`);
         setTimeout(() => setSuccessMsg(""), 3000);
         await load();
       } else {
+        const barcode = result.tracking?.trackingCode || result.identifiers?.barcode || "";
+        const trackingUrl = result.trackingUrl || (barcode ? `https://tipaxco.com/tracking?id=${encodeURIComponent(barcode)}` : "");
         setTrackingModal({
-          title: `وضعیت رهگیری مرسوله ${orderNumber}`,
+          title: `وضعیت رهگیری تیپاکس (سفارش ${orderNumber})`,
           content: typeof result.tracking === "object" ? JSON.stringify(result.tracking, null, 2) : String(result.tracking || "اطلاعاتی یافت نشد."),
+          url: trackingUrl,
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "عملیات پستی انجام نشد.");
+      setError(err instanceof Error ? err.message : "عملیات تیپاکس انجام نشد.");
     } finally {
       setBusy("");
     }
@@ -257,8 +260,118 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* جدول سفارش‌ها */}
-      <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+      {/* حالت موبایل: کارت‌های کامل و لمسی سفارشات */}
+      <div className="block md:hidden space-y-4">
+        {filtered.length === 0 ? (
+          <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center text-xs text-stone-400 shadow-sm">
+            {loading ? "در حال دریافت اطلاعات..." : "هیچ سفارشی مطابق جستجو یافت نشد."}
+          </div>
+        ) : (
+          filtered.map((order) => (
+            <div
+              key={`mob-${order.orderNumber}`}
+              className="rounded-3xl border border-stone-200 bg-white p-4.5 shadow-sm space-y-3"
+            >
+              {/* هدر کارت: شماره سفارش و وضعیت */}
+              <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+                <div>
+                  <span className="font-mono text-xs font-black text-amber-900">
+                    #{order.orderNumber}
+                  </span>
+                  <span className="block text-[10px] text-stone-400 font-sans mt-0.5">
+                    {new Date(order.createdAt).toLocaleString("fa-IR")}
+                  </span>
+                </div>
+                <div>
+                  <select
+                    value={order.status}
+                    disabled={busy === order.orderNumber}
+                    onChange={(event) => void handleStatusChange(order.orderNumber, event.target.value)}
+                    className="rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs font-black outline-none focus:border-amber-500"
+                  >
+                    <option value="processing">در حال پردازش</option>
+                    <option value="shipped">ارسال شده 🚚</option>
+                    <option value="delivered">تحویل شده ✅</option>
+                    <option value="cancelled">لغو شده ❌</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* مشخصات گیرنده */}
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-stone-900">{order.recipientName}</span>
+                  <a
+                    href={`tel:${order.phone}`}
+                    className="font-mono text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-lg text-[11px]"
+                    dir="ltr"
+                  >
+                    📞 {order.phone}
+                  </a>
+                </div>
+                <p className="text-[11px] text-stone-600 leading-5">
+                  {order.province ? `${order.province}، ${order.city}، ${order.address}` : "آدرس ثبت نشده"}
+                </p>
+                {order.postalCode && (
+                  <p className="font-mono text-[10px] text-stone-400">
+                    کدپستی: {order.postalCode}
+                  </p>
+                )}
+              </div>
+
+              {/* مبلغ و روش پرداخت */}
+              <div className="flex items-center justify-between rounded-xl bg-stone-50 p-2.5 text-xs">
+                <div>
+                  <span className="text-[10px] text-stone-500 block">مبلغ سفارش:</span>
+                  <span className="font-black text-stone-900 text-sm">
+                    {formatToman(order.finalTotal)}
+                  </span>
+                </div>
+                <span className="rounded-lg bg-white px-2 py-1 text-[10px] font-bold text-stone-700 border border-stone-200">
+                  {order.paymentMethod === "zarinpal" ? "💳 درگاه زرین‌پال" : "💵 پرداخت در محل"}
+                </span>
+              </div>
+
+              {/* تیپاکس و فاکتور */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div className="flex-1">
+                  {order.postexParcelNo ? (
+                    <span className="inline-block rounded-lg bg-amber-50 border border-amber-200 px-2 py-1 text-[10px] font-mono font-bold text-amber-950">
+                      تیپاکس: {order.postexParcelNo}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-stone-400 block">فاقد بارکد تیپاکس</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => void tipaxAction(order.orderNumber, order.postexParcelNo ? "track" : "register")}
+                    disabled={busy.includes(order.orderNumber)}
+                    className="rounded-xl bg-amber-400 px-3 py-2 text-[11px] font-black text-stone-950 hover:bg-amber-300 transition shadow-xs"
+                  >
+                    {busy.includes(order.orderNumber)
+                      ? "..."
+                      : order.postexParcelNo
+                      ? "رهگیری تیپاکس"
+                      : "ثبت تیپاکس"}
+                  </button>
+                  <button
+                    onClick={() => void handleViewInvoice(order)}
+                    className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-800 hover:bg-stone-100 transition shadow-xs"
+                  >
+                    <FileText className="size-3.5 text-amber-600" />
+                    <span>فاکتور</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* جدول سفارش‌ها برای دسکتاپ */}
+      <div className="hidden md:block overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-right text-xs">
             <thead className="bg-stone-50 text-stone-600 border-b border-stone-200">
@@ -267,7 +380,7 @@ export default function AdminOrdersPage() {
                 <th className="p-3.5 font-bold">گیرنده و آدرس ارسال</th>
                 <th className="p-3.5 font-bold">مبلغ و پرداخت</th>
                 <th className="p-3.5 font-bold">وضعیت سفارش</th>
-                <th className="p-3.5 font-bold">سامانه پستی / Postex</th>
+                <th className="p-3.5 font-bold">سامانه ارسال / تیپاکس (Tipax)</th>
                 <th className="p-3.5 font-bold text-center">فاکتور و عملیات</th>
               </tr>
             </thead>
@@ -329,27 +442,31 @@ export default function AdminOrdersPage() {
                     <td className="p-3.5">
                       <div className="text-[11px] font-bold text-stone-700">
                         {order.postexParcelNo ? (
-                          <span className="text-stone-800">بارکد: {order.postexParcelNo}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-mono text-amber-900 border border-amber-200">
+                              تیپاکس: {order.postexParcelNo}
+                            </span>
+                          </div>
                         ) : (
-                          <span className="text-stone-400">ثبت پستی نشده</span>
+                          <span className="text-stone-400">در انتظار صدور بارکد تیپاکس</span>
                         )}
                       </div>
-                      {order.trackingCode && (
+                      {order.trackingCode && order.trackingCode !== order.postexParcelNo && (
                         <div className="text-[10px] text-emerald-700 font-bold mt-0.5">
                           کد رهگیری: {order.trackingCode}
                         </div>
                       )}
                       <div className="mt-2 flex gap-1.5">
                         <button
-                          onClick={() => void postexAction(order.orderNumber, order.postexParcelNo ? "track" : "register")}
+                          onClick={() => void tipaxAction(order.orderNumber, order.postexParcelNo ? "track" : "register")}
                           disabled={busy.includes(order.orderNumber)}
-                          className="rounded-lg bg-stone-950 px-2.5 py-1 text-[10px] font-black text-white hover:bg-stone-800 transition"
+                          className="rounded-lg bg-amber-500 px-2.5 py-1 text-[10px] font-black text-stone-950 hover:bg-amber-400 transition"
                         >
                           {busy.includes(order.orderNumber)
                             ? "..."
                             : order.postexParcelNo
-                            ? "رهگیری مرسوله"
-                            : "ثبت در Postex"}
+                            ? "رهگیری تیپاکس"
+                            : "ثبت در تیپاکس"}
                         </button>
                       </div>
                     </td>
@@ -522,7 +639,18 @@ export default function AdminOrdersPage() {
             >
               {trackingModal.content}
             </pre>
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-stone-100">
+              {trackingModal.url ? (
+                <a
+                  href={trackingModal.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-400 px-3.5 py-2 text-xs font-black text-stone-950 hover:bg-amber-300 transition"
+                >
+                  <Truck className="size-3.5" />
+                  <span>پیگیری زنده در سایت تیپاکس</span>
+                </a>
+              ) : <div />}
               <button
                 onClick={() => setTrackingModal(null)}
                 className="rounded-xl bg-stone-950 px-4 py-2 text-xs font-bold text-white hover:bg-stone-800"

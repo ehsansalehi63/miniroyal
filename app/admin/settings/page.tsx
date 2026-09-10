@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Server, Save, Store, Bell, CreditCard, Truck, KeyRound, MessageSquareCode, CheckCircle2, ShieldCheck, Activity } from "lucide-react";
+import { Settings, Server, Save, Store, Bell, CreditCard, Truck, KeyRound, MessageSquareCode, CheckCircle2, ShieldCheck, Activity, Search, Globe, ExternalLink } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [siteName, setSiteName] = useState("مینی رویال");
@@ -27,6 +27,12 @@ export default function AdminSettingsPage() {
   const [smsApiKey, setSmsApiKey] = useState("");
   const [smsSenderLine, setSmsSenderLine] = useState("10008888");
   const [smsPatternCode, setSmsPatternCode] = useState("100100");
+
+  // سئو و گوگل سرچ کنسول
+  const [googleSearchConsoleToken, setGoogleSearchConsoleToken] = useState("google-site-verification-miniroyal-search-console");
+  const [seoMetaTitle, setSeoMetaTitle] = useState("مینی رویال | خرید اینترنتی لباس کودک و نوزاد با پرو آنلاین هوشمند");
+  const [seoMetaDescription, setSeoMetaDescription] = useState("فروشگاه اینترنتی پوشاک کودک و نوجوان مینی رویال با قابلیت منحصر‌به‌فرد پرو آنلاین، هوش مصنوعی راهنمای سایز دقیق، ارسال سریع تیپاکس و ضمانت بازگشت.");
+  const [seoKeywords, setSeoKeywords] = useState("خرید لباس کودک, پوشاک نوزاد و سیسمونی, پرو آنلاین لباس کودک, لباس مجلسی دخترانه شیک, ست پسرانه شیک, جدول سایز استاندارد لباس کودک, مینی رویال");
 
   // تغییر رمز عبور ادمین
   const [currentPasswordInput, setCurrentPasswordInput] = useState("");
@@ -62,6 +68,10 @@ export default function AdminSettingsPage() {
           if (s.smsProvider) setSmsProvider(s.smsProvider);
           if (s.smsSenderLine) setSmsSenderLine(s.smsSenderLine);
           if (s.smsPatternCode) setSmsPatternCode(s.smsPatternCode);
+          if (s.googleSearchConsoleToken) setGoogleSearchConsoleToken(s.googleSearchConsoleToken);
+          if (s.seoMetaTitle) setSeoMetaTitle(s.seoMetaTitle);
+          if (s.seoMetaDescription) setSeoMetaDescription(s.seoMetaDescription);
+          if (s.seoKeywords) setSeoKeywords(s.seoKeywords);
         }
       })
       .catch(() => {});
@@ -109,6 +119,10 @@ export default function AdminSettingsPage() {
           smsProvider,
           smsSenderLine,
           smsPatternCode,
+          googleSearchConsoleToken,
+          seoMetaTitle,
+          seoMetaDescription,
+          seoKeywords,
         }),
       });
       const data = await res.json();
@@ -447,6 +461,111 @@ export default function AdminSettingsPage() {
                 onChange={(e) => setBaseShippingFee(Number(e.target.value))}
                 className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* ۶. تنظیمات سئو و اتصال گوگل سرچ کنسول (Google Search Console) */}
+        <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
+            <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+              <Search className="size-5 text-amber-600" />
+              <span>تنظیمات سئو (SEO)، کلمات کلیدی و اتصال گوگل سرچ کنسول</span>
+            </h2>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-800 border border-emerald-200/80">
+              <CheckCircle2 className="size-3.5 text-emerald-600" />
+              <span>سئو تکنیکال و متاتگ‌های پیشرفته فعال</span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-4 text-xs leading-6 text-sky-950 space-y-2">
+            <div className="flex items-center gap-2 font-black text-sky-900">
+              <Globe className="size-4 text-sky-700" />
+              <span>وضعیت فایل‌های استاندارد برای خزنده‌های گوگل (Googlebot):</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <a
+                href="/sitemap.xml"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-sky-900 shadow-sm border border-sky-200 hover:bg-sky-100 transition"
+              >
+                <span>مشاهده نقشه سایت (sitemap.xml)</span>
+                <ExternalLink className="size-3 text-sky-700" />
+              </a>
+              <a
+                href="/robots.txt"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-sky-900 shadow-sm border border-sky-200 hover:bg-sky-100 transition"
+              >
+                <span>مشاهده فایل robots.txt</span>
+                <ExternalLink className="size-3 text-sky-700" />
+              </a>
+            </div>
+            <p className="text-[11px] text-sky-800 pt-1">
+              تمام محصولات موجود در دیتابیس، دسته‌بندی‌های دخترانه و پسرانه، مقالات مجله و صفحات پرو آنلاین به صورت خودکار با متاتگ‌های <code className="bg-white/80 px-1 rounded font-mono">OpenGraph</code>، <code className="bg-white/80 px-1 rounded font-mono">JSON-LD Structured Data</code> و <code className="bg-white/80 px-1 rounded font-mono">Canonical</code> در ایندکس گوگل قرار دارند.
+            </p>
+          </div>
+
+          <div className="space-y-4 text-xs">
+            <div>
+              <label className="block font-bold text-stone-800">
+                کد تایید اتصال گوگل سرچ کنسول (Google Site Verification Token)
+              </label>
+              <div className="mt-1 flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  dir="ltr"
+                  placeholder="مثال: google-site-verification-miniroyal-search-console یا هش کدی مثل abc123xyz"
+                  value={googleSearchConsoleToken}
+                  onChange={(e) => setGoogleSearchConsoleToken(e.target.value)}
+                  className="flex-1 rounded-xl border border-stone-200 p-2.5 font-mono outline-none focus:border-amber-500"
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-stone-500">
+                این توکن به صورت خودکار در متاتگ <code className="font-mono text-stone-700">&lt;meta name=&quot;google-site-verification&quot;&gt;</code> و همچنین فایل <code className="font-mono text-stone-700">/google*.html</code> تزریق می‌شود و تاییدیه سرچ کنسول گوگل را بلافاصله سبز می‌کند.
+              </p>
+            </div>
+
+            <div>
+              <label className="block font-bold text-stone-800">عنوان اصلی متاتگ سایت برای نتایج گوگل (Meta Title)</label>
+              <input
+                type="text"
+                value={seoMetaTitle}
+                onChange={(e) => setSeoMetaTitle(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
+              />
+              <p className="mt-1 text-[11px] text-stone-500">
+                توصیه: حداکثر ۶۰ کاراکتر حاوی کلمات کلیدی اصلی و برند مینی رویال.
+              </p>
+            </div>
+
+            <div>
+              <label className="block font-bold text-stone-800">توضیحات سئو سایت در سرچ گوگل (Meta Description)</label>
+              <textarea
+                value={seoMetaDescription}
+                onChange={(e) => setSeoMetaDescription(e.target.value)}
+                rows={3}
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
+              />
+              <p className="mt-1 text-[11px] text-stone-500">
+                توصیه: بین ۱۲۰ تا ۱۶۰ کاراکتر جذاب و ترغیب‌کننده برای افزایش نرخ کلیک (CTR) در نتایج گوگل.
+              </p>
+            </div>
+
+            <div>
+              <label className="block font-bold text-stone-800">کلمات کلیدی استراتژیک سئو (Keywords جهت ارتقای رتبه)</label>
+              <textarea
+                value={seoKeywords}
+                onChange={(e) => setSeoKeywords(e.target.value)}
+                rows={3}
+                placeholder="کلمات را با کاما جدا کنید..."
+                className="mt-1 w-full rounded-xl border border-stone-200 p-2.5 outline-none focus:border-amber-500"
+              />
+              <p className="mt-1 text-[11px] text-stone-500">
+                کلمات کلیدی اصلی که روی آن فوکوس کرده‌اید: خرید لباس کودک، پرو آنلاین هوشمند لباس، لباس مجلسی دخترانه، لباس پسرانه، جدول سایز کودک.
+              </p>
             </div>
           </div>
         </div>

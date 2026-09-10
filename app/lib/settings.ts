@@ -19,6 +19,10 @@ export interface StoreSettings {
   smsProvider: string;
   smsSenderLine: string;
   smsPatternCode: string;
+  googleSearchConsoleToken?: string;
+  seoMetaTitle?: string;
+  seoMetaDescription?: string;
+  seoKeywords?: string;
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -27,9 +31,9 @@ const DEFAULT_SETTINGS: StoreSettings = {
   phone: "۰۲۱-۸۸۸۸۹۹۹۹",
   mobile: "۰۹۱۲۳۴۵۶۷۸۹",
   address: "تهران، خیابان ولیعصر، مجتمع تجاری رویال، پلاک ۴۲",
-  announcementText: "👑 ارسال رایگان خریدهای بالای ۵۰۰ هزار تومان | 👗 پرو آنلاین لباس با تضمین سایز",
+  announcementText: "👑 ارسال رایگان خریدهای بالای ۵۰۰ هزار تومان با تیپاکس | 👗 پرو آنلاین لباس با تضمین سایز",
   heroTitle: "شیک‌ترین لباس‌های فصل برای فرشته‌های کوچک شما 👑",
-  heroSubtitle: "کالکشن جدید پاییزه و زمستانه با پارچه‌های ۱۰۰٪ پنبه ارگانیک ضد حساسیت",
+  heroSubtitle: "کالکشن جدید با پارچه‌های ۱۰۰٪ پنبه ارگانیک ضد حساسیت و تست تن‌خور آنلاین",
   freeShippingThreshold: 500000,
   baseShippingFee: 45000,
   activeGateway: "zarinpal",
@@ -38,6 +42,10 @@ const DEFAULT_SETTINGS: StoreSettings = {
   smsProvider: "iranpayamak",
   smsSenderLine: "10008888",
   smsPatternCode: "100100",
+  googleSearchConsoleToken: "google-site-verification-miniroyal-search-console",
+  seoMetaTitle: "مینی رویال | خرید اینترنتی لباس کودک و نوزاد با پرو آنلاین هوشمند",
+  seoMetaDescription: "فروشگاه اینترنتی پوشاک کودک و نوجوان مینی رویال با قابلیت منحصر‌به‌فرد پرو آنلاین، هوش مصنوعی راهنمای سایز دقیق، ارسال سریع تیپاکس و ضمانت بازگشت.",
+  seoKeywords: "خرید لباس کودک, پوشاک نوزاد و سیسمونی, پرو آنلاین لباس کودک, لباس مجلسی دخترانه شیک, ست پسرانه شیک, جدول سایز استاندارد لباس کودک, مینی رویال",
 };
 
 export async function ensureSettingsTable() {
@@ -76,6 +84,10 @@ export async function getStoreSettings(): Promise<StoreSettings> {
       smsProvider: map.smsProvider || DEFAULT_SETTINGS.smsProvider,
       smsSenderLine: map.smsSenderLine || DEFAULT_SETTINGS.smsSenderLine,
       smsPatternCode: map.smsPatternCode || DEFAULT_SETTINGS.smsPatternCode,
+      googleSearchConsoleToken: map.googleSearchConsoleToken || DEFAULT_SETTINGS.googleSearchConsoleToken,
+      seoMetaTitle: map.seoMetaTitle || DEFAULT_SETTINGS.seoMetaTitle,
+      seoMetaDescription: map.seoMetaDescription || DEFAULT_SETTINGS.seoMetaDescription,
+      seoKeywords: map.seoKeywords || DEFAULT_SETTINGS.seoKeywords,
     };
   } catch (err) {
     console.warn("getStoreSettings fallback:", err);

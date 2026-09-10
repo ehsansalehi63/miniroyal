@@ -611,7 +611,13 @@ export default function VirtualTryonBox({ product, customer }: Props) {
                   }}
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={onDrop}
-                  className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition ${
+                  onClick={(e) => {
+                    // اگر کاربر مستقیماً روی دکمه‌ها کلیک نکرده باشد، گالری را باز کند
+                    if ((e.target as HTMLElement).tagName !== "LABEL" && !(e.target as HTMLElement).closest("label")) {
+                      document.getElementById("tryon-gallery-upload")?.click();
+                    }
+                  }}
+                  className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition ${
                     isDragging
                       ? "border-amber-400 bg-amber-400/20"
                       : "border-amber-400/30 bg-stone-950/40 hover:border-amber-400/60 hover:bg-stone-950/70"
@@ -630,13 +636,14 @@ export default function VirtualTryonBox({ product, customer }: Props) {
                     بارگذاری عکس کودک برای پرو آنلاین هوشمند
                   </span>
                   <span className="mt-1 text-xs text-stone-300 max-w-sm">
-                    می‌توانید عکس را از <strong>گالری موبایل و فایل‌ها</strong> انتخاب کنید یا مستقیماً با <strong>دوربین</strong> عکس بگیرید.
+                    برای انتخاب عکس از <strong>گالری، آلبوم و فایل‌های گوشی</strong> یا عکاسی، کلیک کنید.
                   </span>
 
                   {/* دکمه‌های مجزا برای انتخاب از گالری یا دوربین */}
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
                     <label
                       htmlFor="tryon-gallery-upload"
+                      onClick={(e) => e.stopPropagation()}
                       className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 px-5 py-3 text-xs font-black text-stone-950 shadow-lg shadow-amber-500/20 hover:brightness-105 active:scale-[0.98] transition"
                     >
                       <ImageIcon className="size-4 text-stone-950" />
@@ -645,10 +652,11 @@ export default function VirtualTryonBox({ product, customer }: Props) {
 
                     <label
                       htmlFor="tryon-camera-upload"
+                      onClick={(e) => e.stopPropagation()}
                       className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-stone-700 bg-stone-800/90 px-4 py-3 text-xs font-bold text-stone-200 hover:bg-stone-700 hover:text-white active:scale-[0.98] transition"
                     >
                       <Camera className="size-4 text-amber-400" />
-                      <span>عکاسی مستقیم با دوربین</span>
+                      <span>دوربین یا گالری</span>
                     </label>
                   </div>
 
@@ -656,21 +664,20 @@ export default function VirtualTryonBox({ product, customer }: Props) {
                     فرمت‌های مجاز: JPG ،PNG یا WebP (حداکثر ۸ مگابایت)
                   </span>
 
-                  {/* اینپوت گالری/فایل بدون صفت capture برای باز کردن گالری و فایل‌های ذخیره شده */}
+                  {/* اینپوت گالری و فایل‌ها: بدون صفت capture تا گالری، فایل‌ها و دوربین در موبایل در دسترس باشد */}
                   <input
                     id="tryon-gallery-upload"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/*"
                     className="hidden"
                     onChange={onUpload}
                   />
 
-                  {/* اینپوت دوربین مستقیم با capture برای عکاسی درجا */}
+                  {/* اینپوت ثانویه عکس: با قابلیت انتخاب از تمام منابع */}
                   <input
                     id="tryon-camera-upload"
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    capture="environment"
+                    accept="image/*"
                     className="hidden"
                     onChange={onUpload}
                   />

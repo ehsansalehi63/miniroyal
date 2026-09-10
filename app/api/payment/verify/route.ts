@@ -5,8 +5,8 @@ import {
   toRial,
   getZarinpalApi,
 } from "@/app/lib/payment";
-import { findOrder, updatePayment, updatePostexShipment } from "@/app/lib/orders";
-import { extractPostexIdentifiers, postexConfigured, registerPostexOrder } from "@/app/lib/postex";
+import { findOrder, updatePayment, updateTipaxShipment } from "@/app/lib/orders";
+import { registerTipaxOrder } from "@/app/lib/tipax";
 
 export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
@@ -58,12 +58,17 @@ export async function GET(req: NextRequest) {
     }
 
     await updatePayment(orderNumber, { paymentStatus: "paid", refId: String(refId) });
-    if (postexConfigured() && !order.postexParcelNo) {
+    if (!order.postexParcelNo) {
       try {
-        const postexResult = await registerPostexOrder(order as Record<string, unknown>);
-        await updatePostexShipment(orderNumber, extractPostexIdentifiers(postexResult));
+        const tipaxResult = await registerTipaxOrder(order as Record<string, unknown>);
+        await updateTipaxShipment(orderNumber, {
+          barcode: tipaxResult.barcode,
+          orderNo: tipaxResult.orderNo,
+          trackingCode: tipaxResult.trackingCode,
+          trackingStatus: tipaxResult.status,
+        });
       } catch (shippingError) {
-        console.error("Automatic Postex registration after payment failed:", shippingError);
+        console.error("Automatic Tipax registration after payment failed:", shippingError);
       }
     }
 

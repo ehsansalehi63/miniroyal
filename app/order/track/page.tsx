@@ -50,30 +50,39 @@ export default function OrderTrackPage() {
   const [foundOrder, setFoundOrder] = useState<TrackedOrder | null>(null);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [postexEvents, setPostexEvents] = useState<{ title: string; time: string }[] | null>(null);
+  const [tipaxEvents, setTipaxEvents] = useState<{ title: string; time: string; location?: string }[] | null>(null);
+  const [tipaxTrackingUrl, setTipaxTrackingUrl] = useState<string>("");
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setSearched(true);
     setLoading(true);
-    setPostexEvents(null);
+    setTipaxEvents(null);
+    setTipaxTrackingUrl("");
     try {
       const response = await fetch(`/api/orders?identifier=${encodeURIComponent(query.trim())}`);
       const result = await response.json();
       const order = result.success ? result.order : null;
       setFoundOrder(order);
-      if (order?.postexParcelNo) {
+      const trackingIdentifier = order?.postexParcelNo || order?.trackingCode;
+      if (trackingIdentifier) {
+        setTipaxTrackingUrl(`https://tipaxco.com/tracking?id=${encodeURIComponent(trackingIdentifier)}`);
         try {
           const trackingResponse = await fetch(`/api/orders/tracking?identifier=${encodeURIComponent(query.trim())}`);
           const trackingResult = await trackingResponse.json();
-          if (trackingResult.success && Array.isArray(trackingResult.tracking?.entries)) {
-            setPostexEvents(
-              trackingResult.tracking.entries
-                .map((entry: { title?: string; time?: string }) => ({ title: String(entry.title || ""), time: String(entry.time || "") }))
-                .slice(0, 12)
-            );
+          if (trackingResult.success && trackingResult.tracking) {
+            const rawEvents = trackingResult.tracking.events;
+            if (Array.isArray(rawEvents)) {
+              setTipaxEvents(
+                rawEvents.map((entry: { title?: string; time?: string; location?: string }) => ({
+                  title: String(entry.title || ""),
+                  time: String(entry.time || ""),
+                  location: entry.location ? String(entry.location) : undefined,
+                }))
+              );
+            }
           }
-        } catch { /* رهگیری پستکس اختیاری است */ }
+        } catch { /* رهگیری تیپاکس اختیاری است */ }
       }
     } catch {
       setFoundOrder(null);
@@ -171,23 +180,37 @@ export default function OrderTrackPage() {
                     </span>
                   </p>
                   {foundOrder.postexParcelNo ? (
-                    <p><strong>شماره مرسوله پستکس:</strong> {toPersianDigits(foundOrder.postexParcelNo)}</p>
+                    <div className="space-y-1">
+                      <p><strong>بارکد رهگیری تیپاکس:</strong> <span className="font-mono font-bold text-amber-800">{foundOrder.postexParcelNo}</span></p>
+                      {tipaxTrackingUrl && (
+                        <a
+                          href={tipaxTrackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-1 text-[11px] font-black text-amber-700 hover:text-amber-800 underline"
+                        >
+                          <Truck className="size-3.5" />
+                          <span>پیگیری مستقیم در سایت رسمی تیپاکس</span>
+                        </a>
+                      )}
+                    </div>
                   ) : (
-                    <p className="flex items-center gap-1"><Clock className="size-3.5 text-amber-600" /> کد رهگیری: در انتظار صدور بارنامه</p>
+                    <p className="flex items-center gap-1"><Clock className="size-3.5 text-amber-600" /> کد رهگیری: در انتظار صدور بارکد تیپاکس</p>
                   )}
                 </div>
               </div>
 
-              {postexEvents && postexEvents.length > 0 && (
+              {tipaxEvents && tipaxEvents.length > 0 && (
                 <div className="mt-6 rounded-2xl border border-stone-100 bg-stone-50 p-4">
                   <h4 className="flex items-center gap-1.5 text-xs font-bold text-stone-800">
-                    <Truck className="size-4 text-amber-700" /> آخرین رویدادهای حمل‌ونقل پستکس:
+                    <Truck className="size-4 text-amber-700" /> آخرین وضعیت مرسوله در تیپاکس (Tipax):
                   </h4>
                   <ul className="mt-3 space-y-2 text-[11px] text-stone-600">
-                    {postexEvents.map((event, index) => (
+                    {tipaxEvents.map((event, index) => (
                       <li key={index} className="flex items-center gap-2">
                         <Package className="size-3.5 shrink-0 text-amber-600" />
-                        <span className="font-semibold text-stone-800">{event.title || "رویداد حمل"}</span>
+                        <span className="font-semibold text-stone-800">{event.title || "رویداد تیپاکس"}</span>
+                        {event.location && <span className="text-stone-500">[{event.location}]</span>}
                         {event.time && <span className="text-stone-400">({event.time})</span>}
                       </li>
                     ))}

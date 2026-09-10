@@ -225,16 +225,41 @@ export async function updatePayment(
   );
 }
 
-export async function updatePostexShipment(orderNumber: string, patch: { parcelNo?: string; postexOrderNo?: string; trackingCode?: string; trackingStatus?: string }) {
-  const fields: string[] = [];
+export async function updateTipaxShipment(
+  orderNumber: string,
+  patch: { barcode?: string; orderNo?: string; trackingCode?: string; trackingStatus?: string }
+) {
+  const fields: string[] = ["shipping_provider = 'tipax'"];
   const values: (string | number)[] = [];
-  if (patch.parcelNo) { fields.push("postex_parcel_no = ?"); values.push(patch.parcelNo); }
-  if (patch.postexOrderNo) { fields.push("postex_order_no = ?"); values.push(patch.postexOrderNo); }
-  if (patch.trackingCode) { fields.push("tracking_code = ?"); values.push(patch.trackingCode); }
-  if (patch.trackingStatus) { fields.push("tracking_status = ?"); values.push(patch.trackingStatus); }
-  if (!fields.length) return;
+  const tracking = patch.barcode || patch.trackingCode;
+  if (tracking) {
+    fields.push("postex_parcel_no = ?");
+    values.push(tracking);
+    fields.push("tracking_code = ?");
+    values.push(tracking);
+  }
+  if (patch.orderNo) {
+    fields.push("postex_order_no = ?");
+    values.push(patch.orderNo);
+  }
+  if (patch.trackingStatus) {
+    fields.push("tracking_status = ?");
+    values.push(patch.trackingStatus);
+  }
   values.push(orderNumber);
-  await pool.execute(`UPDATE orders SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE order_number = ?`, values);
+  await pool.execute(
+    `UPDATE orders SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE order_number = ?`,
+    values
+  );
+}
+
+export async function updatePostexShipment(orderNumber: string, patch: { parcelNo?: string; postexOrderNo?: string; trackingCode?: string; trackingStatus?: string }) {
+  return updateTipaxShipment(orderNumber, {
+    barcode: patch.parcelNo,
+    orderNo: patch.postexOrderNo,
+    trackingCode: patch.trackingCode,
+    trackingStatus: patch.trackingStatus,
+  });
 }
 
 export async function listOrders() {
@@ -333,4 +358,60 @@ export async function updateCustomer(
   if (!fields.length) return;
   values.push(id);
   await pool.execute(`UPDATE customers SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values);
+}
+
+export type SalesAnalytics = {
+  dailySales: { saleDate: string; orderCount: number; totalRevenue: number }[];
+  topProducts: { productId: number; title: string; totalSold: number; totalAmount: number }[];
+  statusBreakdown: { status: string; count: number }[];
+};
+
+export async function getSalesAnalytics(): Promise<SalesAnalytics> {
+  try {
+    const [dailyRows] = await pool.execute<RowDataPacket[]>(`
+      SELECT DATE(created_at) as saleDate, COUNT(*) as orderCount, COALESCE(SUM(final_amount), 0) as totalRevenue
+      FROM orders
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+      GROUP BY DATE(created_at)
+      ORDER BY saleDate ASC
+    `);
+
+    const [topProducts] = await pool.execute<RowDataPacket[]>(`
+      SELECT oi.product_id as productId, oi.product_title as title,
+             SUM(oi.quantity) as totalSold, SUM(oi.total_price) as totalAmount
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE o.status != 'cancelled'
+      GROUP BY oi.product_id, oi.product_title
+      ORDER BY totalSold DESC
+      LIMIT 5
+    `);
+
+    const [statusRows] = await pool.execute<RowDataPacket[]>(`
+      SELECT status, COUNT(*) as count
+      FROM orders
+      GROUP BY status
+    `);
+
+    return {
+      dailySales: (dailyRows as unknown[] as { saleDate: string; orderCount: number; totalRevenue: number }[]).map((r) => ({
+        saleDate: String(r.saleDate),
+        orderCount: Number(r.orderCount || 0),
+        totalRevenue: Number(r.totalRevenue || 0),
+      })),
+      topProducts: (topProducts as unknown[] as { productId: number; title: string; totalSold: number; totalAmount: number }[]).map((r) => ({
+        productId: Number(r.productId),
+        title: String(r.title),
+        totalSold: Number(r.totalSold || 0),
+        totalAmount: Number(r.totalAmount || 0),
+      })),
+      statusBreakdown: (statusRows as unknown[] as { status: string; count: number }[]).map((r) => ({
+        status: String(r.status),
+        count: Number(r.count || 0),
+      })),
+    };
+  } catch (err) {
+    console.warn("getSalesAnalytics offline fallback:", err);
+    return { dailySales: [], topProducts: [], statusBreakdown: [] };
+  }
 }

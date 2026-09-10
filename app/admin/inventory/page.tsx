@@ -314,8 +314,124 @@ export default function AdminInventoryPage() {
         </div>
       </div>
 
-      {/* جدول نمایش و ویرایش مستقیم موجودی */}
-      <section className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+      {/* کارت‌های لمسی انبارداری مخصوص موبایل */}
+      <div className="block md:hidden space-y-3.5">
+        {filteredRows.length === 0 ? (
+          <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center text-xs text-stone-400 shadow-sm">
+            {loading ? "در حال فراخوانی اطلاعات..." : "هیچ رکوردی مطابق فیلتر یافت نشد."}
+          </div>
+        ) : (
+          filteredRows.map((row) => {
+            const currentValue = editingStock[row.id] !== undefined ? editingStock[row.id] : row.stock;
+            const isDirty = editingStock[row.id] !== undefined && editingStock[row.id] !== row.stock;
+            const isSaving = savingId === row.id;
+
+            return (
+              <div
+                key={`mob-inv-${row.id}`}
+                className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg inline-block">
+                      {row.categoryName || "عمومی"}
+                    </span>
+                    <h4 className="font-bold text-xs text-stone-900 mt-1 line-clamp-2">
+                      {row.productTitle}
+                    </h4>
+                    <span className="block font-mono text-[10px] text-stone-400 mt-0.5">
+                      SKU: {row.sku}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-black shrink-0 ${
+                      row.stock === 0
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                        : row.stock <= 3
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    }`}
+                  >
+                    {row.stock === 0 ? "ناموجود" : row.stock <= 3 ? "رو به اتمام" : "موجود"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl bg-stone-50 p-2.5 text-xs">
+                  <span className="text-stone-600 font-bold">
+                    مشخصه: <strong className="text-stone-900">{row.size} · {row.color}</strong>
+                  </span>
+
+                  <div className="text-left">
+                    <span className="text-[10px] text-stone-400 ml-1">موجودی فعلی:</span>
+                    <span className="font-mono font-black text-sm text-stone-900">
+                      {formatNumber(row.stock)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* کنترلگر ویرایش مستقیم تعداد */}
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
+                  <span className="text-xs font-bold text-stone-600">تغییر موجودی:</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingStock((prev) => ({
+                          ...prev,
+                          [row.id]: Math.max(0, currentValue - 1),
+                        }))
+                      }
+                      className="size-8 rounded-xl border border-stone-300 bg-white grid place-items-center text-stone-700 hover:bg-stone-100"
+                    >
+                      <Minus className="size-3.5" />
+                    </button>
+
+                    <input
+                      type="number"
+                      min={0}
+                      value={currentValue}
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value) || 0);
+                        setEditingStock((prev) => ({ ...prev, [row.id]: val }));
+                      }}
+                      className="w-16 rounded-xl border border-stone-300 bg-white p-1.5 text-center font-mono font-bold text-xs"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingStock((prev) => ({
+                          ...prev,
+                          [row.id]: currentValue + 1,
+                        }))
+                      }
+                      className="size-8 rounded-xl border border-stone-300 bg-white grid place-items-center text-stone-700 hover:bg-stone-100"
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+
+                    {isDirty && (
+                      <button
+                        type="button"
+                        onClick={() => void handleUpdateStock(row.id, currentValue)}
+                        disabled={isSaving}
+                        className="rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-black text-white hover:bg-emerald-800 transition flex items-center gap-1 shadow-xs"
+                      >
+                        <Check className="size-3.5" />
+                        <span>{isSaving ? "..." : "ذخیره"}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* جدول نمایش و ویرایش مستقیم موجودی برای دسکتاپ */}
+      <section className="hidden md:block overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-right text-xs">
             <thead className="bg-stone-50 text-stone-600 border-b border-stone-200">

@@ -328,6 +328,14 @@ export default function ProductVariantsClient({ product }: ProductVariantsClient
 
               {/* سمت چپ: دکمه افزودن مستقیم به سبد خرید با فیدبک فیزیکی */}
               <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                <a
+                  href={`/virtual-tryon?product=${encodeURIComponent(product.slug)}`}
+                  className="flex items-center gap-1 rounded-xl bg-amber-400/90 hover:bg-amber-400 px-3 py-2.5 text-xs font-black text-stone-950 transition border border-amber-300 shadow-sm"
+                  title="پرو آنلاین هوشمند این لباس"
+                >
+                  <Sparkles className="size-3.5 text-stone-950" />
+                  <span className="hidden md:inline">پرو آنلاین</span>
+                </a>
                 {!isOutOfStock ? (
                   <button
                     type="button"

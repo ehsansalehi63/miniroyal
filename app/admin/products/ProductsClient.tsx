@@ -555,8 +555,207 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* جدول محصولات با قابلیت ویرایش سریع درجا */}
-      <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+      {/* حالت کارت‌های لمسی مخصوص موبایل */}
+      <div className="block md:hidden space-y-3.5">
+        {filtered.length === 0 ? (
+          <div className="rounded-3xl border border-stone-200 bg-white p-8 text-center text-xs text-stone-400 shadow-sm">
+            {loadingProducts ? "در حال دریافت محصولات..." : "هیچ محصولی مطابق فیلتر یافت نشد."}
+          </div>
+        ) : (
+          filtered.map((p) => {
+            const totalStock = p.variants?.reduce((sum, v) => sum + (v.stock || 0), 0) || 0;
+            const isQuickEditing = quickEditId === p.id;
+            const discount = calculateDiscountPercent(p.basePrice, p.salePrice ?? p.basePrice);
+
+            return (
+              <div
+                key={`mob-prod-${p.id}`}
+                className={`rounded-3xl border bg-white p-4 shadow-sm transition space-y-3 ${
+                  isQuickEditing ? "border-amber-400 ring-2 ring-amber-400/20" : "border-stone-200"
+                }`}
+              >
+                <div className="flex gap-3 items-start">
+                  <img
+                    src={p.images[0] || "/images/products/boy-hoodie.svg"}
+                    alt={p.title}
+                    className="size-16 rounded-2xl object-cover border border-stone-200 shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="rounded-lg bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                        {p.categoryName}
+                      </span>
+                      {p.status === "active" ? (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-bold text-emerald-800">
+                          فعال
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9px] font-bold text-stone-600">
+                          پیش‌نویس
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-xs text-stone-900 line-clamp-2 mt-1">
+                      {p.title}
+                    </h3>
+                    <span className="block font-mono text-[10px] text-stone-400 mt-0.5">
+                      SKU: {p.sku}
+                    </span>
+                  </div>
+                </div>
+
+                {/* قیمت و موجودی */}
+                <div className="flex items-center justify-between rounded-2xl bg-stone-50 p-2.5 text-xs">
+                  <div>
+                    <span className="text-[10px] text-stone-400 block">قیمت نهایی:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-black text-emerald-700 text-sm">
+                        {formatToman(p.salePrice ?? p.basePrice)}
+                      </span>
+                      {discount > 0 && (
+                        <span className="rounded bg-rose-600 px-1 py-0.5 text-[9px] font-black text-white">
+                          {toPersianDigits(discount)}٪
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-left">
+                    <span className="text-[10px] text-stone-400 block">موجودی:</span>
+                    {totalStock <= 0 ? (
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-black text-rose-800">
+                        ناموجود
+                      </span>
+                    ) : totalStock <= 3 ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">
+                        ⚠️ فقط {toPersianDigits(totalStock)}
+                      </span>
+                    ) : (
+                      <span className="font-black text-stone-800 text-xs">
+                        {toPersianDigits(totalStock)} عدد
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* دکمه‌های عملیات موبایل */}
+                <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-stone-100">
+                  <button
+                    onClick={() => handleOpenQuickEdit(p)}
+                    className="flex-1 flex items-center justify-center gap-1 rounded-xl bg-amber-400 py-2 text-[11px] font-black text-stone-950 hover:bg-amber-300 transition shadow-xs"
+                  >
+                    <Zap className="size-3.5" />
+                    <span>ویرایش سریع</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="flex items-center justify-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-[11px] font-bold text-stone-700 hover:bg-stone-50 transition"
+                  >
+                    <Edit className="size-3.5 text-amber-700" />
+                    <span>کامل</span>
+                  </button>
+
+                  <button
+                    onClick={() => void handleClone(p.id)}
+                    className="grid size-9 place-items-center rounded-xl border border-stone-200 bg-white text-stone-600 hover:bg-sky-50 transition"
+                    title="کپی"
+                  >
+                    <Copy className="size-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => void handleDelete(p.id)}
+                    className="grid size-9 place-items-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition"
+                    title="حذف"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+
+                {/* فرم ویرایش سریع موبایل */}
+                {isQuickEditing && (
+                  <div className="rounded-2xl bg-amber-50 p-3.5 border border-amber-300 space-y-3 mt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-stone-900">ویرایش قیمت و موجودی</span>
+                      <button onClick={() => setQuickEditId(null)} className="text-stone-500">
+                        <X className="size-4" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-[11px] font-bold text-stone-700 block">قیمت پایه (تومان)</label>
+                        <input
+                          type="number"
+                          value={quickEditBasePrice}
+                          onChange={(e) => setQuickEditBasePrice(Number(e.target.value))}
+                          className="w-full rounded-xl border border-stone-300 bg-white p-2 text-xs font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-stone-700 block">قیمت فروش با تخفیف (تومان)</label>
+                        <input
+                          type="number"
+                          value={quickEditSalePrice}
+                          onChange={(e) => setQuickEditSalePrice(Number(e.target.value))}
+                          className="w-full rounded-xl border border-stone-300 bg-white p-2 text-xs font-bold"
+                        />
+                      </div>
+                      {p.variants && p.variants.length > 0 ? (
+                        <div className="space-y-1 pt-1">
+                          <label className="text-[11px] font-bold text-stone-700 block">موجودی سایزها:</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {quickEditVariants.map((v, idx) => (
+                              <div key={v.id || idx} className="flex items-center justify-between rounded-lg bg-white p-1.5 border border-stone-200 text-xs">
+                                <span className="font-bold text-[10px] truncate max-w-20">{v.size} {v.color}</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={v.stock}
+                                  onChange={(e) => {
+                                    const val = Math.max(0, Number(e.target.value) || 0);
+                                    setQuickEditVariants((prev) =>
+                                      prev.map((item, i) => (i === idx ? { ...item, stock: val } : item))
+                                    );
+                                  }}
+                                  className="w-12 rounded border border-stone-300 p-1 text-center font-bold"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="text-[11px] font-bold text-stone-700 block">موجودی ساده (عدد)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={quickEditSimpleStock}
+                            onChange={(e) => setQuickEditSimpleStock(Math.max(0, Number(e.target.value) || 0))}
+                            className="w-full rounded-xl border border-stone-300 bg-white p-2 text-xs font-bold"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => void handleSaveQuickEdit(p)}
+                      disabled={quickEditSaving}
+                      className="w-full rounded-xl bg-stone-950 py-2.5 text-xs font-black text-white hover:bg-stone-800 transition"
+                    >
+                      {quickEditSaving ? "در حال ذخیره..." : "ذخیره تغییرات"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* جدول محصولات برای دسکتاپ */}
+      <div className="hidden md:block overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[780px] text-right text-xs">
             <thead>

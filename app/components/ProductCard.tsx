@@ -101,10 +101,10 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* دکمه شناور پروی آنلاین مینیاتوری در کارت عکس */}
         <Link
           href={tryOnHref}
-          className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-stone-950/90 border border-amber-400/60 px-2.5 py-1 text-[10px] font-black text-amber-300 shadow-md backdrop-blur-md transition duration-300 hover:bg-amber-400 hover:text-stone-950"
+          className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-amber-400 hover:bg-amber-300 border border-amber-500/80 px-2.5 py-1 text-[10px] font-black text-stone-950 shadow-md transition-all hover:scale-105 active:scale-95"
         >
-          <Sparkles className="size-3 text-amber-400" />
-          <span>پرو آنلاین</span>
+          <Sparkles className="size-3 text-stone-950" />
+          <span className="font-black text-stone-950">پرو آنلاین</span>
         </Link>
       </div>
 

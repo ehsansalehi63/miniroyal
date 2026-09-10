@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
     // (روی هاست اشتراکی بار CPU اضافه نمی‌کند).
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/google:token.html",
+        destination: "/api/google-verify?token=:token",
+      },
+    ];
+  },
   async headers() {
     return [
       {

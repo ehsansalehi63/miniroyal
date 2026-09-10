@@ -1,19 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findOrder } from "@/app/lib/orders";
-import { trackPostexParcel, postexConfigured } from "@/app/lib/postex";
+import { trackTipaxParcel } from "@/app/lib/tipax";
 
 export async function GET(request: NextRequest) {
   const identifier = request.nextUrl.searchParams.get("identifier")?.trim();
-  if (!identifier) return NextResponse.json({ success: false, error: "شماره سفارش الزامی است." }, { status: 400 });
-  if (!postexConfigured()) return NextResponse.json({ success: false, error: "رهگیری پستکس هنوز فعال نشده است." }, { status: 503 });
+  if (!identifier) {
+    return NextResponse.json({ success: false, error: "شماره سفارش یا کد رهگیری الزامی است." }, { status: 400 });
+  }
+
   try {
     const order = await findOrder(identifier);
-    if (!order) return NextResponse.json({ success: false, error: "سفارش پیدا نشد." }, { status: 404 });
-    if (!order.postexParcelNo) return NextResponse.json({ success: true, tracking: null, message: "مرسوله هنوز در پستکس ثبت نشده است." });
-    const tracking = await trackPostexParcel(String(order.postexParcelNo));
-    return NextResponse.json({ success: true, orderNumber: order.orderNumber, trackingCode: order.trackingCode, tracking });
+    if (!order) {
+      return NextResponse.json({ success: false, error: "سفارشی با این شناسه یافت نشد." }, { status: 404 });
+    }
+
+    const trackingBarcode = String(order.postexParcelNo || order.trackingCode || "");
+    if (!trackingBarcode) {
+      return NextResponse.json({
+        success: true,
+        orderNumber: order.orderNumber,
+        tracking: null,
+        message: "مرسوله هنوز در سامانه تیپاکس ثبت نشده یا بارکد صادر نشده است.",
+      });
+    }
+
+    const tracking = await trackTipaxParcel(trackingBarcode);
+    return NextResponse.json({
+      success: true,
+      orderNumber: order.orderNumber,
+      carrier: "تیپاکس (Tipax)",
+      trackingBarcode,
+      trackingUrl: `https://tipaxco.com/tracking?id=${encodeURIComponent(trackingBarcode)}`,
+      tracking,
+    });
   } catch (error) {
-    console.error("Postex tracking failed:", error);
-    return NextResponse.json({ success: false, error: "دریافت وضعیت مرسوله انجام نشد." }, { status: 502 });
+    console.error("Tipax tracking fetch failed:", error);
+    return NextResponse.json({ success: false, error: "دریافت وضعیت مرسوله از تیپاکس انجام نشد." }, { status: 502 });
   }
 }

@@ -34,15 +34,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const seen = new Set<string>();
   for (const category of kidsCategories) {
-    const slug = category.parentSlug || category.slug;
-    if (seen.has(slug)) continue;
-    seen.add(slug);
-    entries.push({
-      url: `${SITE_URL}/category/${slug}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.7,
-    });
+    if (!seen.has(category.slug)) {
+      seen.add(category.slug);
+      entries.push({
+        url: `${SITE_URL}/category/${category.slug}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.75,
+      });
+    }
+    if (category.parentSlug && !seen.has(category.parentSlug)) {
+      seen.add(category.parentSlug);
+      entries.push({
+        url: `${SITE_URL}/category/${category.parentSlug}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
+    }
   }
 
   for (const post of blogPosts) {
