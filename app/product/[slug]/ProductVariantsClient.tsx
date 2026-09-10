@@ -184,6 +184,15 @@ export default function ProductVariantsClient({ product }: ProductVariantsClient
             >
               {addedToCart ? "✓ به سبد خرید اضافه شد!" : "افزودن به سبد خرید 🛍️"}
             </button>
+
+            {/* دکمه اختصاصی پرو آنلاین محصول */}
+            <a
+              href={`/virtual-tryon?product=${encodeURIComponent(product.slug)}`}
+              className="flex items-center gap-1.5 rounded-2xl border-2 border-amber-400/80 bg-amber-50 px-4 py-3.5 text-xs font-black text-amber-950 transition hover:bg-amber-400 hover:text-stone-950"
+            >
+              <Sparkles className="size-4 text-amber-600" />
+              <span>پرو آنلاین لباس ✨</span>
+            </a>
           </>
         ) : (
           <div className="flex flex-1 flex-col gap-2">
@@ -254,7 +263,7 @@ export default function ProductVariantsClient({ product }: ProductVariantsClient
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 90, opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="fixed bottom-3 inset-x-3 sm:bottom-5 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-40 w-auto sm:w-[94%] max-w-4xl"
+            className="fixed bottom-18 inset-x-3 sm:bottom-5 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-40 w-auto sm:w-[94%] max-w-4xl"
           >
             <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 rounded-[20px] border border-stone-700/70 bg-stone-950/90 px-4 py-3 text-white shadow-[0_20px_50px_rgba(0,0,0,0.65)] backdrop-blur-2xl ring-1 ring-amber-400/20">
               {/* سمت راست: تامبنیل + عنوان + قیمت با فونت وزیرمتن فارسی */}

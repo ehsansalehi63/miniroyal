@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import ClientFooterWrapper from "./components/ClientFooterWrapper";
+import MobileBottomNav from "./components/MobileBottomNav";
 import LiveChatWidget from "./components/LiveChatWidget";
 import { vazirmatn } from "./fonts";
 import "./globals.css";
@@ -150,10 +152,13 @@ export default function RootLayout({
           * { box-sizing: border-box; }
         ` }} />
       </head>
-      <body className="min-h-screen bg-stone-50/50 text-stone-900 font-sans antialiased flex flex-col selection:bg-amber-100 selection:text-amber-950">
+      <body className="min-h-screen bg-stone-50/50 text-stone-900 font-sans antialiased flex flex-col selection:bg-amber-100 selection:text-amber-950 pb-16 lg:pb-0">
         <Header />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <ClientFooterWrapper>
+          <Footer />
+        </ClientFooterWrapper>
+        <MobileBottomNav />
         <LiveChatWidget />
       </body>
     </html>

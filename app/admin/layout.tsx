@@ -21,6 +21,8 @@ import {
   ScrollText,
   ShieldCheck,
   Landmark,
+  Menu,
+  X,
 } from "lucide-react";
 
 const adminNav = [
@@ -62,6 +64,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loginStep, setLoginStep] = useState<"phone" | "code">("phone");
   const [loginError, setLoginError] = useState("");
   const [adminRole, setAdminRole] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     fetch("/api/admin/auth/session", { cache: "no-store" })
@@ -171,31 +178,156 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex min-h-screen bg-stone-100/70 font-sans text-stone-900 dir-rtl">
-      {/* سایدبار مدیریت */}
-      <aside className="sticky top-0 h-screen w-64 shrink-0 border-l border-stone-200 bg-stone-900 text-white flex flex-col p-4">
+    <div className="min-h-screen bg-stone-100/70 font-sans text-stone-900 dir-rtl lg:flex">
+      {/* هدر مخصوص موبایل با دکمه همبرگری و دکمه‌های اقدام سریع */}
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stone-800 bg-stone-900 px-4 py-3 text-white lg:hidden shadow-md">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="grid size-10 place-items-center rounded-xl bg-stone-800 border border-stone-700 text-stone-200 transition hover:bg-stone-700 hover:text-white"
+            aria-label="باز کردن منوی مدیریت"
+          >
+            <Menu className="size-5 text-amber-400" />
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="grid size-8 overflow-hidden rounded-lg bg-stone-800 border border-amber-500/30 shadow-xs">
+              <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
+            </span>
+            <div>
+              <span className="block font-black text-xs text-white">مدیریت مینی رویال</span>
+              <span className="text-[9px] font-bold text-amber-400">{adminRole || "پنل مدیر"}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-1 rounded-xl bg-stone-800 px-2.5 py-2 text-[11px] font-bold text-stone-300 hover:bg-stone-700 hover:text-white"
+            title="مشاهده فروشگاه اصلی"
+          >
+            <Globe className="size-3.5" />
+            <span className="hidden sm:inline">فروشگاه</span>
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="grid size-9 place-items-center rounded-xl bg-rose-950/60 border border-rose-800/40 text-rose-300 hover:bg-rose-900"
+            title="خروج از حساب"
+            aria-label="خروج از حساب"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
+      </header>
+
+      {/* منوی کشویی موبایل (Mobile Off-canvas Drawer) */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* پس‌زمینه نیمه‌شفاف برای بستن با کلیک */}
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          <aside className="fixed inset-y-0 right-0 z-50 flex w-72 max-w-[85vw] flex-col border-l border-stone-800 bg-stone-900 p-4 text-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-9 overflow-hidden rounded-xl bg-stone-800 border border-amber-500/30">
+                  <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
+                </span>
+                <div>
+                  <span className="block font-black text-xs text-white">مدیریت مینی رویال</span>
+                  <span className="text-[10px] font-bold text-amber-400">{adminRole || "پنل کنترل اصلی"}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="grid size-9 place-items-center rounded-xl bg-stone-800 text-stone-400 hover:bg-stone-700 hover:text-white"
+                aria-label="بستن منو"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <nav className="mt-3 flex-1 space-y-1 overflow-y-auto py-2">
+              {adminNav.map((item) => {
+                const Icon = item.icon;
+                const targetHref = `${adminBase}${item.href.replace(/^\/admin/, "")}`;
+                const isActive = pathname === targetHref || (item.href !== "/admin" && pathname.startsWith(targetHref));
+                return (
+                  <Link
+                    key={item.href}
+                    href={targetHref}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-xs font-bold transition ${
+                      isActive
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                        : "text-stone-300 hover:bg-stone-800 hover:text-white"
+                    }`}
+                  >
+                    <Icon className={`size-4 ${isActive ? "text-amber-300" : "text-amber-400"}`} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="border-t border-stone-800 pt-3 space-y-2">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl bg-stone-800 py-2.5 text-xs font-bold text-stone-300 hover:bg-stone-700 hover:text-white"
+              >
+                <Globe className="size-4" />
+                <span>مشاهده فروشگاه اصلی</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-rose-950/60 border border-rose-800/40 py-2.5 text-xs font-bold text-rose-300 hover:bg-rose-900"
+              >
+                <LogOut className="size-4" />
+                <span>خروج از حساب</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* سایدبار ثابت دسکتاپ */}
+      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col border-l border-stone-200 bg-stone-900 text-white p-4">
         <div className="flex items-center justify-between border-b border-stone-800 pb-4">
           <div className="flex items-center gap-3">
             <span className="grid size-10 overflow-hidden rounded-2xl bg-stone-800 border border-amber-500/30 text-xl shadow-md">
               <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
             </span>
-              <div>
-                <span className="block font-black text-sm text-white">مدیریت مینی رویال</span>
-                <span className="text-[10px] font-bold text-amber-400">{adminRole || "پنل کنترل اصلی"}</span>
-              </div>
+            <div>
+              <span className="block font-black text-sm text-white">مدیریت مینی رویال</span>
+              <span className="text-[10px] font-bold text-amber-400">{adminRole || "پنل کنترل اصلی"}</span>
+            </div>
           </div>
         </div>
 
         <nav className="mt-4 flex-1 space-y-1 overflow-y-auto">
           {adminNav.map((item) => {
             const Icon = item.icon;
+            const targetHref = `${adminBase}${item.href.replace(/^\/admin/, "")}`;
+            const isActive = pathname === targetHref || (item.href !== "/admin" && pathname.startsWith(targetHref));
             return (
               <Link
                 key={item.href}
-                href={`${adminBase}${item.href.replace(/^\/admin/, "")}`}
-                className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold text-stone-300 transition hover:bg-stone-800 hover:text-white"
+                href={targetHref}
+                className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                  isActive
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                    : "text-stone-300 hover:bg-stone-800 hover:text-white"
+                }`}
               >
-                <Icon className="size-4 text-amber-400" />
+                <Icon className={`size-4 ${isActive ? "text-amber-300" : "text-amber-400"}`} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -211,6 +343,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span>مشاهده فروشگاه اصلی</span>
           </Link>
           <button
+            type="button"
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-rose-950/60 border border-rose-800/40 py-2.5 text-xs font-bold text-rose-300 hover:bg-rose-900"
           >
@@ -220,8 +353,55 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* محتوای صفحات ادمین */}
-      <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      {/* بخش اصلی محتوای پنل مدیریت */}
+      <div className="flex-1 flex flex-col min-w-0 max-w-full">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+          {children}
+        </main>
+      </div>
+
+      {/* نوار دسترسی سریع پایین صفحه برای موبایل (Admin Mobile Bottom Nav) */}
+      <nav
+        aria-label="دسترسی سریع مدیریت در موبایل"
+        className="fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-stone-800 bg-stone-950/95 px-2 py-2 text-[10px] font-bold text-stone-400 backdrop-blur-xl lg:hidden shadow-2xl"
+      >
+        <Link
+          href={`${adminBase}`}
+          className={`flex flex-col items-center gap-1 p-1 transition ${pathname === adminBase ? "text-amber-400 font-black" : "hover:text-white"}`}
+        >
+          <LayoutDashboard className="size-4.5" />
+          <span>پیشخوان</span>
+        </Link>
+        <Link
+          href={`${adminBase}/products`}
+          className={`flex flex-col items-center gap-1 p-1 transition ${pathname.includes("/products") ? "text-amber-400 font-black" : "hover:text-white"}`}
+        >
+          <ShoppingBag className="size-4.5" />
+          <span>محصولات</span>
+        </Link>
+        <Link
+          href={`${adminBase}/orders`}
+          className={`flex flex-col items-center gap-1 p-1 transition ${pathname.includes("/orders") ? "text-amber-400 font-black" : "hover:text-white"}`}
+        >
+          <PackageCheck className="size-4.5" />
+          <span>سفارش‌ها</span>
+        </Link>
+        <Link
+          href={`${adminBase}/inventory`}
+          className={`flex flex-col items-center gap-1 p-1 transition ${pathname.includes("/inventory") ? "text-amber-400 font-black" : "hover:text-white"}`}
+        >
+          <Warehouse className="size-4.5" />
+          <span>انبار</span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center gap-1 p-1 text-amber-400 hover:text-amber-300"
+        >
+          <Menu className="size-4.5" />
+          <span>کل منو</span>
+        </button>
+      </nav>
     </div>
   );
 }

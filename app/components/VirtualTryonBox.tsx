@@ -7,6 +7,7 @@ import {
   Check,
   Crown,
   Download,
+  ImageIcon,
   LogIn,
   RotateCcw,
   Scan,
@@ -175,7 +176,7 @@ export default function VirtualTryonBox({ product, customer }: Props) {
     event.target.value = "";
   };
 
-  const onDrop = (event: DragEvent<HTMLLabelElement>) => {
+  const onDrop = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     setIsDragging(false);
     void acceptFile(event.dataTransfer.files?.[0]);
@@ -603,52 +604,117 @@ export default function VirtualTryonBox({ product, customer }: Props) {
               </div>
             ) : (
               <>
-                <label
+                <div
                   onDragOver={(event) => {
                     event.preventDefault();
                     setIsDragging(true);
                   }}
                   onDragLeave={() => setIsDragging(false)}
                   onDrop={onDrop}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition ${
+                  className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition ${
                     isDragging
                       ? "border-amber-400 bg-amber-400/20"
                       : "border-amber-400/30 bg-stone-950/40 hover:border-amber-400/60 hover:bg-stone-950/70"
                   }`}
                 >
-                  <Camera className="size-10 text-amber-400 drop-shadow" />
-                  <span className="mt-3 text-sm font-black">انتخاب عکس تمام‌قد کودک</span>
-                  <span className="mt-2 text-xs text-stone-400">فرمت JPG یا PNG، حداکثر ۸ مگابایت</span>
+                  <div className="flex items-center justify-center gap-3 text-amber-400">
+                    <span className="grid size-12 place-items-center rounded-2xl bg-amber-400/10 border border-amber-400/30 shadow-inner">
+                      <ImageIcon className="size-6 text-amber-400" />
+                    </span>
+                    <span className="grid size-12 place-items-center rounded-2xl bg-stone-800/80 border border-stone-700">
+                      <Camera className="size-6 text-stone-300" />
+                    </span>
+                  </div>
+
+                  <span className="mt-3.5 text-sm sm:text-base font-black text-white">
+                    بارگذاری عکس کودک برای پرو آنلاین هوشمند
+                  </span>
+                  <span className="mt-1 text-xs text-stone-300 max-w-sm">
+                    می‌توانید عکس را از <strong>گالری موبایل و فایل‌ها</strong> انتخاب کنید یا مستقیماً با <strong>دوربین</strong> عکس بگیرید.
+                  </span>
+
+                  {/* دکمه‌های مجزا برای انتخاب از گالری یا دوربین */}
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+                    <label
+                      htmlFor="tryon-gallery-upload"
+                      className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 px-5 py-3 text-xs font-black text-stone-950 shadow-lg shadow-amber-500/20 hover:brightness-105 active:scale-[0.98] transition"
+                    >
+                      <ImageIcon className="size-4 text-stone-950" />
+                      <span>انتخاب از گالری و فایل‌ها</span>
+                    </label>
+
+                    <label
+                      htmlFor="tryon-camera-upload"
+                      className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-stone-700 bg-stone-800/90 px-4 py-3 text-xs font-bold text-stone-200 hover:bg-stone-700 hover:text-white active:scale-[0.98] transition"
+                    >
+                      <Camera className="size-4 text-amber-400" />
+                      <span>عکاسی مستقیم با دوربین</span>
+                    </label>
+                  </div>
+
+                  <span className="mt-3 text-[11px] text-stone-400">
+                    فرمت‌های مجاز: JPG ،PNG یا WebP (حداکثر ۸ مگابایت)
+                  </span>
+
+                  {/* اینپوت گالری/فایل بدون صفت capture برای باز کردن گالری و فایل‌های ذخیره شده */}
                   <input
+                    id="tryon-gallery-upload"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    capture="user"
                     className="hidden"
                     onChange={onUpload}
                   />
-                </label>
+
+                  {/* اینپوت دوربین مستقیم با capture برای عکاسی درجا */}
+                  <input
+                    id="tryon-camera-upload"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    capture="environment"
+                    className="hidden"
+                    onChange={onUpload}
+                  />
+                </div>
 
                 {personImage && (
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <div className="overflow-hidden rounded-xl border border-stone-800 bg-black/40 p-1">
-                      <p className="mb-1 text-[10px] font-bold text-stone-400 pr-1">عکس ورودی شما</p>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={personImage}
-                        alt="پیش‌نمایش عکس کاربر"
-                        className="aspect-square w-full rounded-lg object-contain"
-                      />
+                  <div className="mt-4 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="overflow-hidden rounded-xl border border-stone-800 bg-black/40 p-1">
+                        <p className="mb-1 text-[10px] font-bold text-stone-400 pr-1">عکس ورودی شما</p>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={personImage}
+                          alt="پیش‌نمایش عکس کاربر"
+                          className="aspect-square w-full rounded-lg object-contain"
+                        />
+                      </div>
+                      <div className="overflow-hidden rounded-xl border border-stone-800 bg-black/40 p-1">
+                        <p className="mb-1 text-[10px] font-bold text-amber-300 pr-1">
+                          {resultImage ? "نتیجه آتلیه" : "مرجع لباس"}
+                        </p>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={resultImage ?? garmentSource}
+                          alt={resultImage ? "نتیجه پرو آنلاین" : `مرجع لباس ${product.title}`}
+                          className="aspect-square w-full rounded-lg bg-stone-100 object-contain p-2"
+                        />
+                      </div>
                     </div>
-                    <div className="overflow-hidden rounded-xl border border-stone-800 bg-black/40 p-1">
-                      <p className="mb-1 text-[10px] font-bold text-amber-300 pr-1">
-                        {resultImage ? "نتیجه آتلیه" : "مرجع لباس"}
-                      </p>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={resultImage ?? garmentSource}
-                        alt={resultImage ? "نتیجه پرو آنلاین" : `مرجع لباس ${product.title}`}
-                        className="aspect-square w-full rounded-lg bg-stone-100 object-contain p-2"
-                      />
+                    <div className="flex items-center justify-between text-xs pt-1 px-1">
+                      <label
+                        htmlFor="tryon-gallery-upload"
+                        className="cursor-pointer inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition"
+                      >
+                        <ImageIcon className="size-3.5" />
+                        <span>تغییر عکس از گالری</span>
+                      </label>
+                      <label
+                        htmlFor="tryon-camera-upload"
+                        className="cursor-pointer inline-flex items-center gap-1.5 text-[11px] font-bold text-stone-400 hover:text-stone-200 transition"
+                      >
+                        <Camera className="size-3.5" />
+                        <span>عکاسی مجدد با دوربین</span>
+                      </label>
                     </div>
                   </div>
                 )}

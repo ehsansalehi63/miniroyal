@@ -111,7 +111,7 @@ export default async function AdminDashboardPage() {
         </h2>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-right text-xs">
+          <table className="w-full min-w-[650px] text-right text-xs">
             <thead>
               <tr className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <th className="p-3 font-bold">نام محصول</th>

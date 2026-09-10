@@ -558,7 +558,7 @@ export default function AdminProductsPage() {
       {/* جدول محصولات با قابلیت ویرایش سریع درجا */}
       <div className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
+          <table className="w-full min-w-[780px] text-right text-xs">
             <thead>
               <tr className="border-b border-stone-200 bg-stone-50 text-stone-600">
                 <th className="p-3.5 font-bold">تصویر</th>

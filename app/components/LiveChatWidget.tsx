@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { MessageCircle, X, Send, Bot, User } from "lucide-react";
 
 const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/\D/g, "");
@@ -16,6 +17,7 @@ interface Message {
 }
 
 export default function LiveChatWidget() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -64,8 +66,12 @@ export default function LiveChatWidget() {
     }, 1000);
   };
 
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin")) {
+    return null;
+  }
+
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans dir-rtl">
+    <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 font-sans dir-rtl">
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}

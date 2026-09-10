@@ -147,17 +147,17 @@ export default function CinematicHero({ slides, videoSrc: _videoSrc }: Cinematic
           <div className="mt-8 flex flex-wrap items-center gap-3.5">
             <Link
               href={slide.ctaLink}
-              className="inline-flex items-center gap-2.5 rounded-xl bg-amber-400 px-7 py-3.5 text-xs font-black text-stone-950 shadow-lg shadow-amber-950/40 transition hover:bg-amber-300 active:scale-[0.98]"
+              className="inline-flex items-center gap-2.5 rounded-xl bg-amber-400 px-7 py-3.5 text-xs sm:text-sm font-black text-stone-950 shadow-lg shadow-amber-950/40 transition hover:bg-amber-300 active:scale-[0.98]"
             >
               <span>{slide.ctaText}</span>
               <ArrowLeft className="size-4" />
             </Link>
             <Link
               href="/virtual-tryon"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-stone-900/80 px-6 py-3.5 text-xs font-black text-white shadow-md backdrop-blur-md transition hover:bg-stone-800 active:scale-[0.98]"
+              className="inline-flex items-center gap-2.5 rounded-xl border-2 border-amber-400 bg-stone-950/90 px-6 py-3.5 text-xs sm:text-sm font-black text-amber-300 shadow-xl shadow-amber-500/20 backdrop-blur-md transition hover:bg-amber-400 hover:text-stone-950 active:scale-[0.98] group"
             >
-              <Sparkles className="size-4 text-amber-400" />
-              <span>پرو آنلاین سایز کودک</span>
+              <Sparkles className="size-4.5 text-amber-400 group-hover:text-stone-950 transition-colors" />
+              <span className="text-amber-200 group-hover:text-stone-950 transition-colors font-black">پرو آنلاین و انتخاب سایز کودک</span>
             </Link>
           </div>
         </div>

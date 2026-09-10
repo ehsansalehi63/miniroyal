@@ -98,10 +98,10 @@ export default function ProductCard({ product }: { product: Product }) {
           </button>
         </div>
 
-        {/* دکمه شناور پروی آنلاین مینیاتوری در هاور */}
+        {/* دکمه شناور پروی آنلاین مینیاتوری در کارت عکس */}
         <Link
           href={tryOnHref}
-          className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-full bg-stone-950/90 px-3 py-1.5 text-[10px] font-black text-white shadow-lg backdrop-blur-md opacity-0 transition duration-300 group-hover:opacity-100 hover:bg-amber-500 hover:text-stone-950"
+          className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded-full bg-stone-950/90 border border-amber-400/60 px-2.5 py-1 text-[10px] font-black text-amber-300 shadow-md backdrop-blur-md transition duration-300 hover:bg-amber-400 hover:text-stone-950"
         >
           <Sparkles className="size-3 text-amber-400" />
           <span>پرو آنلاین</span>
@@ -200,10 +200,10 @@ export default function ProductCard({ product }: { product: Product }) {
             </button>
             <Link
               href={tryOnHref}
-              className="flex items-center justify-center gap-1 rounded-xl border border-stone-200 bg-stone-50 py-2 text-[10px] font-black text-stone-800 transition hover:border-amber-500 hover:bg-amber-50"
+              className="flex items-center justify-center gap-1 rounded-xl border border-amber-300/80 bg-amber-50/90 py-2 text-[10px] font-black text-amber-950 transition hover:border-amber-500 hover:bg-amber-100"
             >
               <Sparkles className="size-3 text-amber-600" />
-              پرو آتلیه
+              <span>پرو آنلاین</span>
             </Link>
           </div>
         </div>
