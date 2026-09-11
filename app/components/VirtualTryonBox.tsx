@@ -88,7 +88,6 @@ async function sourceToDataUrl(source: string) {
 }
 
 export default function VirtualTryonBox({ product, customer }: Props) {
-  const [tab, setTab] = useState<"fit" | "photo">("fit");
   const [heightCm, setHeightCm] = useState(104);
   const [weightKg, setWeightKg] = useState(17);
   const [chestCm, setChestCm] = useState(56);
@@ -309,24 +308,16 @@ export default function VirtualTryonBox({ product, customer }: Props) {
           ) : null}
 
           {/* کلید تغییر حالت‌های آتلیه */}
-          <div className="flex rounded-xl border border-stone-700/60 bg-stone-900/90 p-1 backdrop-blur">
+          <div className="hidden">
             <button
-              onClick={() => setTab("fit")}
-              className={`rounded-lg px-4 py-2 text-xs font-black transition ${
-                tab === "fit"
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-md"
-                  : "text-stone-400 hover:text-white"
-              }`}
+              onClick={() => undefined}
+              className="rounded-lg px-4 py-2 text-xs font-black transition"
             >
               آنالیز سایز
             </button>
             <button
-              onClick={() => setTab("photo")}
-              className={`rounded-lg px-4 py-2 text-xs font-black transition ${
-                tab === "photo"
-                  ? "bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-md"
-                  : "text-stone-400 hover:text-white"
-              }`}
+              onClick={() => undefined}
+              className="rounded-lg px-4 py-2 text-xs font-black transition"
             >
               عکاسی و پرو با عکس
             </button>
@@ -334,7 +325,7 @@ export default function VirtualTryonBox({ product, customer }: Props) {
         </div>
       </div>
 
-      {tab === "fit" ? (
+      <>
         <div className="relative z-10 mt-6 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
           {/* فرم کنترلرهای ابعاد با فیدبک فیزیکی بدون تاخیر */}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -524,17 +515,10 @@ export default function VirtualTryonBox({ product, customer }: Props) {
                 </p>
               )}
 
-              <button
-                type="button"
-                onClick={() => setTab("photo")}
-                className="w-full rounded-xl border border-amber-500/40 bg-stone-900/80 py-3 text-xs font-black text-amber-300 hover:bg-amber-500/20 transition shadow-sm"
-              >
-                مرحلهٔ بعد: پرو زنده روی عکس کودک ←
-              </button>
             </div>
           </div>
         </div>
-      ) : (
+      
         <div className="relative z-10 mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="rounded-[24px] border border-amber-500/20 bg-stone-900/50 p-6 backdrop-blur-xl">
             {/* کارت خلاصه لباس */}
@@ -871,6 +855,39 @@ export default function VirtualTryonBox({ product, customer }: Props) {
                 />
               )}
 
+              <div className="mt-6 rounded-2xl border border-amber-400/25 bg-gradient-to-br from-amber-950/45 via-stone-900/80 to-stone-950/90 p-5 text-right shadow-lg">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-400">Royal fit report</p>
+                    <h3 className="mt-1 text-base font-black text-amber-100">تحلیل حرفه‌ای تن‌خور و پیشنهاد سایز</h3>
+                  </div>
+                  <div className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-200">
+                    سایز پیشنهادی: {fit.size} · {toPersianDigits(fit.confidence)}٪ اطمینان
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 text-xs leading-6 text-stone-300 sm:grid-cols-2">
+                  <div className="rounded-xl border border-stone-700/70 bg-stone-950/45 p-3">
+                    <p className="font-black text-stone-100">مبنای تحلیل</p>
+                    <p className="mt-1">قد {toPersianDigits(heightCm)} سانتی‌متر، وزن {toPersianDigits(weightKg)} کیلوگرم، سن {toPersianDigits(Math.floor(ageMonths / 12))} سال، دور سینه {toPersianDigits(chestCm)} و دور کمر {toPersianDigits(waistCm)} سانتی‌متر.</p>
+                  </div>
+                  <div className="rounded-xl border border-stone-700/70 bg-stone-950/45 p-3">
+                    <p className="font-black text-stone-100">نتیجه تطبیق با محصول</p>
+                    <p className="mt-1">این پیشنهاد با جدول اندازه همین محصول و الگوی تن‌خور {product.fitType === "tight" ? "جذب" : product.fitType === "loose" ? "آزاد" : "نرمال"} محاسبه شده است{fit.chartRow?.heightCm ? `؛ بازه قدی سایز ${fit.size}: ${fit.chartRow.heightCm} سانتی‌متر` : ""}.</p>
+                  </div>
+                </div>
+                <ul className="mt-4 space-y-2 text-xs leading-6 text-stone-300">
+                  {fit.reasons.map((reason) => (
+                    <li key={`report-${reason}`} className="flex items-start gap-2">
+                      <span className="mt-2 size-1.5 shrink-0 rounded-full bg-amber-400" />
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3 text-[11px] leading-6 text-amber-100">
+                  این نتیجه از عکس واقعی، اندازه‌های واردشده و جدول اندازه محصول به‌صورت هم‌زمان استفاده می‌کند. برای خرید دقیق، اگر اندازه‌گیری دستی دور سینه یا قد با مقدار پیشنهادی اختلاف دارد، مقدار دستی را ملاک نهایی قرار دهید.
+                </p>
+              </div>
+
               {/* اکشن بار پایین نتیجه */}
               <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-stone-800 pt-4">
                 <div className="text-xs text-stone-300">
@@ -901,7 +918,7 @@ export default function VirtualTryonBox({ product, customer }: Props) {
             </div>
           )}
         </div>
-      )}
+      </>
     </section>
   );
 }
