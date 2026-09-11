@@ -8,8 +8,28 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        // مسیرهای بدون ارزش ایندکس و بخش‌های خصوصی
-        disallow: ["/admin", "/ehsanpaneladmin", "/api/", "/checkout", "/payment", "/cart", "/account"],
+        // مسیرهای بدون ارزش ایندکس و بخش‌های خصوصی و اداری
+        disallow: [
+          "/admin",
+          "/admin/",
+          "/ehsanpaneladmin",
+          "/ehsanpaneladmin/",
+          "/api/",
+          "/checkout",
+          "/payment/",
+          "/cart",
+          "/account",
+        ],
+      },
+      {
+        userAgent: "Googlebot",
+        allow: ["/", "/images/", "/fonts/", "/uploads/"],
+        disallow: ["/admin/", "/ehsanpaneladmin/", "/api/", "/checkout", "/payment/", "/cart", "/account"],
+      },
+      {
+        userAgent: "Googlebot-Image",
+        allow: ["/", "/images/", "/uploads/"],
+        disallow: ["/admin/", "/ehsanpaneladmin/"],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

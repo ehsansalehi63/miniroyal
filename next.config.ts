@@ -5,21 +5,7 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
-    // All artwork is self-hosted under /public — no external image CDNs,
-    // so the storefront renders fully with or without VPN/DNS filtering.
-    //
-    // تصاویر از قبل با scripts/optimize-images.mjs به WebP بهینه شده‌اند و با
-    // <img> معمولی سرو می‌شوند؛ بنابراین به بهینه‌ساز زمان اجرا نیازی نیست
-    // (روی هاست اشتراکی بار CPU اضافه نمی‌کند).
     unoptimized: true,
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/google:token.html",
-        destination: "/api/google-verify?token=:token",
-      },
-    ];
   },
   async headers() {
     return [

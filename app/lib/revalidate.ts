@@ -16,6 +16,8 @@ export function refreshProductCatalog(productSlug?: string) {
     revalidatePath("/");
     revalidatePath("/shop");
     revalidatePath("/search");
+    revalidatePath("/sitemap.xml");
+    revalidatePath("/robots.txt");
     if (productSlug) {
       revalidatePath(`/product/${productSlug}`);
     }

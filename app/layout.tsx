@@ -4,6 +4,7 @@ import Footer from "./components/Footer";
 import ClientFooterWrapper from "./components/ClientFooterWrapper";
 import MobileBottomNav from "./components/MobileBottomNav";
 import LiveChatWidget from "./components/LiveChatWidget";
+import { getStoreSettings } from "./lib/settings";
 import { vazirmatn } from "./fonts";
 import "./globals.css";
 
@@ -12,6 +13,7 @@ const SITE_NAME = "Mini Royal";
 const SITE_NAME_FA = "مینی رویال";
 const SITE_DESCRIPTION =
   "فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین و هوش مصنوعی توصیه سایز، جدول سایز سانتی‌متری و ارسال سریع به سراسر کشور.";
+const DEFAULT_DESCRIPTION = SITE_DESCRIPTION;
 
 export const viewport: Viewport = {
   themeColor: "#080706",
@@ -20,79 +22,108 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: `${SITE_NAME_FA} | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین هوشمند`,
-    template: `%s | ${SITE_NAME_FA}`,
-  },
-  description: SITE_DESCRIPTION,
-  applicationName: SITE_NAME_FA,
-  keywords: [
-    "خرید لباس کودک",
-    "پوشاک کودک و نوجوان",
-    "لباس بچه گانه شیک",
-    "لباس دخترانه مجلسی",
-    "ست پسرانه شیک",
-    "لباس نوزاد و سیسمونی",
-    "پرو آنلاین لباس کودک",
-    "اتاق پرو مجازی هوشمند",
-    "تست تن خور آنلاین",
-    "جدول سایز استاندارد لباس کودک",
-    "خرید لباس کودک آنلاین",
-    "هوش مصنوعی سایز کودک",
-    "ارسال تیپاکس پوشاک کودک",
-    "فروشگاه اینترنتی لباس بچه",
-    "مینی رویال",
-    "Mini Royal",
-    "Mini Royal Shop",
-  ],
-  alternates: {
-    canonical: SITE_URL,
-    languages: {
-      "fa-IR": SITE_URL,
+const DEFAULT_KEYWORDS = [
+  "خرید لباس کودک",
+  "پوشاک کودک و نوجوان",
+  "لباس بچه گانه شیک",
+  "لباس دخترانه مجلسی",
+  "ست پسرانه شیک",
+  "لباس نوزاد و سیسمونی",
+  "پرو آنلاین لباس کودک",
+  "اتاق پرو مجازی هوشمند",
+  "تست تن خور آنلاین",
+  "جدول سایز استاندارد لباس کودک",
+  "خرید لباس کودک آنلاین",
+  "هوش مصنوعی سایز کودک",
+  "ارسال تیپاکس پوشاک کودک",
+  "فروشگاه اینترنتی لباس بچه",
+  "مینی رویال",
+  "Mini Royal",
+  "Mini Royal Shop",
+];
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getStoreSettings().catch(() => null);
+  const siteName = settings?.siteName || SITE_NAME_FA;
+  const title = settings?.seoMetaTitle || `${siteName} | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین هوشمند`;
+  const description = settings?.seoMetaDescription || DEFAULT_DESCRIPTION;
+  const googleToken =
+    settings?.googleSearchConsoleToken ||
+    process.env.GOOGLE_SITE_VERIFICATION ||
+    "google-site-verification-miniroyal-search-console";
+
+  const customKeywords = settings?.seoKeywords
+    ? settings.seoKeywords
+        .split(/[,،]/)
+        .map((k) => k.trim())
+        .filter(Boolean)
+    : [];
+
+  const allKeywords = Array.from(new Set([...customKeywords, ...DEFAULT_KEYWORDS]));
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: title,
+      template: `%s | ${siteName}`,
     },
-  },
-  verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION || "google-site-verification-miniroyal-search-console",
-  },
-  other: {
-    "geo.region": "IR-07",
-    "geo.placename": "Tehran",
-    "theme-color": "#fbf8f5",
-    "google": "notranslate",
-  },
-  openGraph: {
-    type: "website",
-    locale: "fa_IR",
-    url: SITE_URL,
-    siteName: `${SITE_NAME_FA} (${SITE_NAME})`,
-    title: `${SITE_NAME_FA} | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین هوشمند`,
-    description: SITE_DESCRIPTION,
-    images: [{ url: "/images/hero-poster.webp", width: 1600, height: 893, alt: `${SITE_NAME_FA} — پوشاک کودک و نوجوان با پرو آنلاین` }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${SITE_NAME_FA} | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین هوشمند`,
-    description: SITE_DESCRIPTION,
-    images: ["/images/hero-poster.webp"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+    description,
+    applicationName: siteName,
+    keywords: allKeywords,
+    alternates: {
+      canonical: SITE_URL,
+      languages: {
+        "fa-IR": SITE_URL,
+      },
+    },
+    verification: {
+      google: googleToken,
+    },
+    other: {
+      "geo.region": "IR-07",
+      "geo.placename": "Tehran",
+      "theme-color": "#fbf8f5",
+      google: "notranslate",
+    },
+    openGraph: {
+      type: "website",
+      locale: "fa_IR",
+      url: SITE_URL,
+      siteName: `${siteName} (${SITE_NAME})`,
+      title,
+      description,
+      images: [
+        {
+          url: "/images/hero-poster.webp",
+          width: 1600,
+          height: 893,
+          alt: `${siteName} — پوشاک کودک و نوجوان با پرو آنلاین`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/images/hero-poster.webp"],
+    },
+    robots: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-  },
-  icons: {
-    icon: "/favicon.ico",
-  },
-  formatDetection: { telephone: true },
-};
+    icons: {
+      icon: "/favicon.ico",
+    },
+    formatDetection: { telephone: true },
+  };
+}
 
 const rootStructuredData = {
   "@context": "https://schema.org",
