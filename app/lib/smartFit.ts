@@ -35,16 +35,25 @@ export function recommendSize(product: Product, input: SmartFitInput): SmartFitR
   const variants = product.variants.filter((variant) => variant.stock > 0);
   const availableSizes = new Set(variants.map((variant) => variant.size));
 
-  const scored = rows
+  const scoredRows = rows
     .filter((row) => availableSizes.size === 0 || availableSizes.has(row.size))
     .map((row) => {
       const height = numbersFrom(row.heightCm);
       const chest = numbersFrom(row.chestCm);
+      const waist = numbersFrom(row.waistCm);
       const ageBonus = ageInRange(input.ageMonths, row.ageRange) ? 18 : 0;
       const heightDistance = height === undefined ? 40 : Math.abs(height - input.heightCm);
-      const estimatedChest = input.chestCm ?? input.weightKg * 1.9 + 22;
-      const chestDistance = chest === undefined ? 0 : Math.abs(chest - estimatedChest);
-      let score = Math.max(0, 100 - heightDistance * 3 - chestDistance * 1.5) + ageBonus;
+      const chestTarget = input.chestCm ?? input.weightKg * 1.9 + 22;
+      const chestDistance = chest === undefined ? 0 : Math.abs(chest - chestTarget);
+      const waistDistance = input.waistCm === undefined || waist === undefined ? 0 : Math.abs(waist - input.waistCm);
+
+      // Height is the strongest signal for children's sizing; chest and waist
+      // then refine the choice against the actual product chart. This avoids
+      // treating weight as a direct clothing measurement.
+      let score = Math.max(
+        0,
+        100 - heightDistance * 3.2 - chestDistance * 2.4 - waistDistance * 1.4
+      ) + ageBonus;
 
       if (input.buyForGrowth) {
         score -= height !== undefined && height < input.heightCm + 5 ? 8 : 0;
@@ -55,9 +64,11 @@ export function recommendSize(product: Product, input: SmartFitInput): SmartFitR
         score += Math.max(0, 8 - Math.abs(product.fitProfile.easeCm - (product.fitType === "tight" ? 4 : product.fitType === "loose" ? 10 : 7)));
       }
 
-      return { row, score, heightDistance };
+      return { row, score, heightDistance, chestDistance, waistDistance };
     })
-    .sort((a, b) => b.score - a.score)[0];
+    .sort((a, b) => b.score - a.score);
+
+  const scored = scoredRows[0];
 
   if (!scored) {
     const fallback = variants[0]?.size ?? "سایز نامشخص";
@@ -68,10 +79,15 @@ export function recommendSize(product: Product, input: SmartFitInput): SmartFitR
     };
   }
 
-  const confidence = Math.max(62, Math.min(96, Math.round(scored.score)));
+  const runnerUp = scoredRows[1];
+  const separation = runnerUp ? Math.max(0, scored.score - runnerUp.score) : 12;
+  const confidence = Math.max(
+    62,
+    Math.min(97, Math.round(Math.max(0, Math.min(100, scored.score)) + Math.min(8, separation)))
+  );
   const reasons = [
     `قد ${input.heightCm} سانتی‌متر با بازهٔ این سایز مقایسه شد.`,
-    `سن ${Math.floor(input.ageMonths / 12)} سال، وزن ${input.weightKg} کیلوگرم${input.chestCm ? ` و دور سینه ${input.chestCm} سانتی‌متر` : ""} در پیشنهاد لحاظ شد.`,
+    `سن ${Math.floor(input.ageMonths / 12)} سال، وزن ${input.weightKg} کیلوگرم${input.chestCm ? `، دور سینه ${input.chestCm} سانتی‌متر` : ""}${input.waistCm ? ` و دور کمر ${input.waistCm} سانتی‌متر` : ""} در پیشنهاد لحاظ شد.`,
     product.fitType === "tight"
       ? "این مدل تن‌خور جذب دارد؛ در صورت تردید یک سایز بزرگ‌تر را بررسی کنید."
       : product.fitType === "loose"
