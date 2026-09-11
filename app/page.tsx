@@ -123,13 +123,13 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-10 lg:space-y-14 pb-12">
+    <div className="space-y-5 sm:space-y-8 lg:space-y-10 pb-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className="px-3 pt-3.5 sm:px-4 sm:pt-5">
+      <div className="px-3 pt-3 sm:px-4 sm:pt-5">
         <CinematicHero slides={DEFAULT_HOME_SLIDES} videoSrc={heroVideoSrc} />
       </div>
       {homeBanners("home_hero").map((banner) => <a key={banner.id} href={banner.linkUrl || "#"} className="mx-auto block w-full max-w-7xl overflow-hidden rounded-3xl px-4"><img src={banner.imageUrl} alt={banner.title} className="h-auto max-h-[420px] w-full object-cover" /></a>)}
