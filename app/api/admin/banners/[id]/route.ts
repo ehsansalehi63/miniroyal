@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import { ensureBannerTable } from "@/app/lib/banners";
 import pool from "@/app/lib/mysql";
+import { refreshProductCatalog } from "@/app/lib/revalidate";
 
 const placements = ["home_hero", "home_after_categories", "home_before_footer", "shop_top", "category_top", "product_top"];
 const idOf = async (context: { params: Promise<{ id: string }> }) => Number((await context.params).id);
@@ -18,6 +19,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   if (!Number.isSafeInteger(id) || id < 1 || !fields.length) return NextResponse.json({ success: false, error: "اطلاعات ویرایش بنر معتبر نیست." }, { status: 400 });
   await ensureBannerTable();
   await pool.execute(`UPDATE site_banners SET ${fields.map(([column]) => `\`${column}\` = ?`).join(", ")} WHERE id = ?`, [...fields.map(([, value]) => value), id] as Array<string | number | null>);
+  refreshProductCatalog();
   return NextResponse.json({ success: true });
 }
 
@@ -25,5 +27,6 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
   const admin = await currentAdmin();
   if (!admin || !canManage(admin, "products.write")) return NextResponse.json({ success: false, error: "دسترسی حذف بنر ندارید." }, { status: 403 });
   const id = await idOf(context); await ensureBannerTable(); await pool.execute("DELETE FROM site_banners WHERE id = ?", [id]);
+  refreshProductCatalog();
   return NextResponse.json({ success: true });
 }

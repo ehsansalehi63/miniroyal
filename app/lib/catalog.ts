@@ -9,7 +9,7 @@ const staticCategories = [...mockCategories, ...kidsCategories];
 // کش درون‌حافظه‌ای جهت کاهش چشمگیر کوئری‌های تکراری و بالا بردن سرعت لود صفحات (TTFB)
 let cachedCategories: { data: Category[]; timestamp: number } | null = null;
 let cachedActiveProducts: { data: Product[]; timestamp: number } | null = null;
-const CACHE_TTL_MS = 45_000; // ۴۵ ثانیه
+const CACHE_TTL_MS = 5_000; // ۵ ثانیه (پس از هر تغییر توسط متد invalidate فوری ریست می‌شود)
 
 export function invalidateCatalogCache() {
   cachedCategories = null;
@@ -144,6 +144,7 @@ export async function getProducts(params: CatalogFilterParams = {}): Promise<{
   if (params.minPrice !== undefined) list = list.filter((product) => (product.salePrice ?? product.basePrice) >= params.minPrice!);
   if (params.maxPrice !== undefined) list = list.filter((product) => (product.salePrice ?? product.basePrice) <= params.maxPrice!);
   if (params.isSpecialOffer) list = list.filter((product) => product.isSpecialOffer);
+  if (params.isFeatured !== undefined) list = list.filter((product) => product.isFeatured === params.isFeatured);
   if (params.search?.trim()) {
     const query = params.search.trim().toLowerCase();
     list = list.filter((product) => [product.title, product.shortDesc, product.categoryName, ...(product.features || [])].some((value) => value.toLowerCase().includes(query)));
@@ -173,7 +174,16 @@ export async function getProductById(id: number): Promise<Product | null> {
   return products.find((p) => p.id === id) || mockProducts.find((p) => p.id === id) || null;
 }
 
-export async function getFeaturedProducts(limit = 8): Promise<Product[]> { return (await getProducts({ sort: "recommended", limit })).products.filter((product) => product.isFeatured); }
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
+  const { products: all } = await getProducts({ sort: "recommended", limit: 60 });
+  const featured = all.filter((product) => product.isFeatured);
+  if (featured.length >= limit) {
+    return featured.slice(0, limit);
+  }
+  const seen = new Set(featured.map((p) => p.id));
+  const remaining = all.filter((p) => !seen.has(p.id));
+  return [...featured, ...remaining].slice(0, limit);
+}
 export async function getSpecialOfferProducts(limit = 8): Promise<Product[]> { return (await getProducts({ isSpecialOffer: true, limit })).products; }
 export async function getLatestProducts(limit = 8): Promise<Product[]> { return (await getProducts({ sort: "newest", limit })).products; }
 export async function getBestSellerProducts(limit = 8): Promise<Product[]> { return (await getProducts({ sort: "bestselling", limit })).products; }

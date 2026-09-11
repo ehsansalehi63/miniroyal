@@ -5,6 +5,7 @@ import pool from "@/app/lib/mysql";
 import { validateMediaUrl } from "@/app/lib/media-validation";
 import { replaceProductAttributes, getProductAttributes } from "@/app/lib/product-attributes";
 import { ensureProductAttributeTables } from "@/app/lib/product-attribute-schema";
+import { refreshProductCatalog } from "@/app/lib/revalidate";
 
 type Context = { params: Promise<{ id: string }> };
 const allowedStatuses = ["draft", "review", "active", "archived"];
@@ -71,6 +72,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
     if (Array.isArray(body.attributes)) await replaceProductAttributes(connection, id, body.attributes);
     await connection.commit();
+    refreshProductCatalog(typeof body.slug === "string" ? body.slug : undefined);
     return NextResponse.json({ success: true, id });
   } catch (error) { await connection.rollback(); console.error("Admin product update failed:", error); const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "SKU یا slug تکراری است." : error instanceof Error && /collation|charset/i.test(error.message) ? "خطای هماهنگی زبان دیتابیس رخ داد؛ لطفاً دوباره تلاش کنید." : "ویرایش محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }
 }
@@ -81,5 +83,6 @@ export async function DELETE(_request: NextRequest, context: Context) {
   const id = await getId(context); if (!id) return NextResponse.json({ success: false, error: "شناسهٔ محصول معتبر نیست." }, { status: 400 });
   const [result] = await pool.execute<ResultSetHeader>("UPDATE products SET status = 'archived', updated_by = ? WHERE id = ?", [admin.id, id]);
   if (!result.affectedRows) return NextResponse.json({ success: false, error: "محصول پیدا نشد." }, { status: 404 });
+  refreshProductCatalog();
   return NextResponse.json({ success: true });
 }

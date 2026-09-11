@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
+import { refreshProductCatalog } from "@/app/lib/revalidate";
 
 export async function PATCH(request: NextRequest) {
   const admin = await currentAdmin();
@@ -46,6 +47,8 @@ export async function PATCH(request: NextRequest) {
       "SELECT id, stock FROM product_variants WHERE id = ? LIMIT 1",
       [variantId]
     ) as unknown as [Array<{ id: number; stock: number }>];
+
+    refreshProductCatalog();
 
     return NextResponse.json({
       success: true,

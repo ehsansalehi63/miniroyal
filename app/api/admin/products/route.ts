@@ -5,6 +5,7 @@ import pool from "@/app/lib/mysql";
 import { validateMediaUrl } from "@/app/lib/media-validation";
 import { replaceProductAttributes } from "@/app/lib/product-attributes";
 import { ensureProductAttributeTables } from "@/app/lib/product-attribute-schema";
+import { refreshProductCatalog } from "@/app/lib/revalidate";
 
 const allowedStatuses = ["draft", "review", "active", "archived"] as const;
 const allowedGenders = ["boy", "girl", "unisex"] as const;
@@ -112,6 +113,7 @@ export async function POST(request: NextRequest) {
     for (const [index, media] of (input.mediaAngles || []).entries()) await connection.execute("INSERT INTO product_media_angles (product_id, angle, url, alt, is_ai_optimized, is_tryon_ready, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)", [productId, media.angle, media.url, media.alt || input.title, media.isAiOptimized ? 1 : 0, media.isTryOnReady ? 1 : 0, media.sortOrder ?? index]);
     await replaceProductAttributes(connection, productId, input.attributes);
     await connection.commit();
+    refreshProductCatalog(slug);
     return NextResponse.json({ success: true, id: productId, slug }, { status: 201 });
   } catch (error) { await connection.rollback(); console.error("Admin product create failed:", error); if (error instanceof Error && /duplicate|unique/i.test(error.message) && /sku/i.test(error.message)) { const [existing] = await connection.execute<RowDataPacket[]>("SELECT id, title, slug, sku, status, category_id AS categoryId, base_price AS basePrice, sale_price AS salePrice FROM products WHERE sku = ? LIMIT 1", [input.sku.trim()]); return NextResponse.json({ success: false, error: "این کد محصول قبلاً ثبت شده است.", duplicate: existing[0] || null }, { status: 409 }); } const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "یکی از اطلاعات یکتا قبلاً ثبت شده است." : error instanceof Error && /collation|charset/i.test(error.message) ? "خطای هماهنگی زبان دیتابیس رخ داد؛ لطفاً دوباره تلاش کنید." : "ذخیرهٔ محصول انجام نشد."; return NextResponse.json({ success: false, error: message }, { status: 400 }); } finally { connection.release(); }
 }

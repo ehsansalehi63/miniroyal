@@ -158,6 +158,7 @@ export interface CatalogFilterParams {
   minPrice?: number;
   maxPrice?: number;
   isSpecialOffer?: boolean;
+  isFeatured?: boolean;
   search?: string;
   sort?: "recommended" | "newest" | "price_asc" | "price_desc" | "bestselling" | "popular";
   page?: number;

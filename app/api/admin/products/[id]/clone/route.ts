@@ -3,6 +3,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
 import { ensureProductAttributeTables } from "@/app/lib/product-attribute-schema";
+import { refreshProductCatalog } from "@/app/lib/revalidate";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -35,6 +36,7 @@ export async function POST(_request: NextRequest, context: Context) {
     const [attributes] = await connection.execute<RowDataPacket[]>("SELECT definition_id, field_key, label, value_text, value_json, unit, is_custom, sort_order FROM product_attributes WHERE product_id = ? ORDER BY sort_order, id", [id]);
     for (const attribute of attributes) await connection.execute("INSERT INTO product_attributes (product_id, definition_id, field_key, label, value_text, value_json, unit, is_custom, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [productId, attribute.definition_id, attribute.field_key, attribute.label, attribute.value_text, attribute.value_json, attribute.unit, attribute.is_custom, attribute.sort_order]);
     await connection.commit();
+    refreshProductCatalog(slug);
     return NextResponse.json({ success: true, id: productId, title, sku, slug }, { status: 201 });
   } catch (error) {
     await connection.rollback();

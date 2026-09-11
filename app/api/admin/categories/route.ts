@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import pool from "@/app/lib/mysql";
+import { refreshProductCatalog } from "@/app/lib/revalidate";
 
 function slugify(value: string) {
   return value.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-+|-+$/g, "").slice(0, 140);
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     const sortOrder = Number.isInteger(body.sortOrder) ? Number(body.sortOrder) : 0;
     const [result] = await pool.execute<ResultSetHeader>("INSERT INTO categories (parent_id, name, slug, description, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?)", [body.parentId || null, name, slug, body.description?.trim() || null, body.icon?.trim() || "👕", sortOrder]);
+    refreshProductCatalog();
     return NextResponse.json({ success: true, category: { id: result.insertId, parentId: body.parentId || null, name, slug, description: body.description || "", icon: body.icon || "👕", sortOrder: body.sortOrder || 0 } }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error && /duplicate|unique/i.test(error.message) ? "این اسلاگ قبلاً ثبت شده است." : "ثبت دسته‌بندی انجام نشد.";

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { canManage, currentAdmin } from "@/app/lib/admin-auth";
 import { getHomeSlides, saveHomeSlides } from "@/app/lib/settings";
+import { refreshProductCatalog } from "@/app/lib/revalidate";
 
 export async function GET() {
   try {
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     await saveHomeSlides(body.slides);
+    refreshProductCatalog();
     return NextResponse.json({ success: true, message: "اسلایدر با موفقیت در دیتابیس بروز شد." });
   } catch (error) {
     console.error("Save slides failed:", error);

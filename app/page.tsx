@@ -13,7 +13,8 @@ import { getActiveBanners } from "./lib/banners";
 import { blogPosts } from "./lib/blogPosts";
 import { ShieldCheck, Truck, RotateCcw, Headset, ArrowLeft, Star } from "lucide-react";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "مینی رویال | فروشگاه تخصصی پوشاک کودک و نوجوان با پرو آنلاین",

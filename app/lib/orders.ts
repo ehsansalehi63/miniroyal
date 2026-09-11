@@ -1,5 +1,6 @@
 import pool from "./mysql";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import { refreshProductCatalog } from "./revalidate";
 
 export type OrderItemInput = {
   product: {
@@ -157,6 +158,7 @@ export async function createOrder(input: CreateOrderInput) {
     }
 
     await connection.commit();
+    refreshProductCatalog();
     return { orderNumber, orderId: orderResult.insertId };
   } catch (error) {
     await connection.rollback();
