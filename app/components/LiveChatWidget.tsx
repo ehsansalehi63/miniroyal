@@ -1,174 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { Bot, MessageCircle, Send, User, X } from "lucide-react";
 
-const whatsappNumber = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "").replace(/\D/g, "");
-const whatsappHref = whatsappNumber
-  ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("سلام، برای انتخاب لباس و سایز راهنمایی می‌خواهم.")}`
-  : "#";
+type SuggestedProduct = { title: string; slug: string; image: string; price: number; sizes: string[]; stock: number; category: string };
+type Message = { id: string; sender: "bot" | "user"; text: string; time: string; products?: SuggestedProduct[]; whatsappUrl?: string | null };
 
-interface Message {
-  id: string;
-  sender: "bot" | "user";
-  text: string;
-  time: string;
-}
+const now = () => new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" });
+const toman = (value: number) => new Intl.NumberFormat("fa-IR").format(value);
 
 export default function LiveChatWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      sender: "bot",
-      text: "سلام! 👋 خوش آمدید به مینی رویال. من مشاور آنلاین انتخاب لباس کودک هستم. چطور می‌تونم در انتخاب سایز یا ست پاییزی راهنماییتون کنم؟",
-      time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-    },
+    { id: "welcome", sender: "bot", text: "سلام! من مشاور تخصصی پوشاک کودک و نوجوان مینی رویال هستم. درباره مدل، موجودی، قیمت یا سایز سؤال دارید؟ قد، وزن و سن کودک را بفرستید تا دقیق‌تر راهنمایی کنم.", time: now() },
   ]);
 
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin")) return null;
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      sender: "user",
-      text: input.trim(),
-      time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+  const handleSend = async (event: FormEvent) => {
+    event.preventDefault();
+    const question = input.trim();
+    if (!question || busy) return;
+    setMessages((previous) => [...previous, { id: `${Date.now()}-u`, sender: "user", text: question, time: now() }]);
     setInput("");
-
-    // پاسخ هوشمند آنلاین خودکار
-    setTimeout(() => {
-      let reply = "ممنون از پیامتان! کارشناسان پشتیبانی مینی رویال پیام شما را دریافت کردند و تا لحظاتی دیگر پاسخ می‌دهند.";
-      
-      const lower = userMsg.text.toLowerCase();
-      if (lower.includes("سایز") || lower.includes("قد") || lower.includes("وزن")) {
-        reply = "برای انتخاب سایز دقیق پیشنهاد می‌کنم از ابزار «پرو آنلاین» بالای سایت استفاده کنید یا قد و وزن کودک را اینجا بفرستید تا دقیقاً سایز مناسب را براتون محاسبه کنم! 👗";
-      } else if (lower.includes("ارسال") || lower.includes("پست") || lower.includes("تیپاکس")) {
-        reply = "ارسال‌های بالای ۵۰۰ هزار تومان کاملاً رایگان است! مرسوله‌ها با پست پیشتاز یا تیپاکس ظرف ۲۴ الی ۴۸ ساعت ارسال می‌شوند. 🚚";
-      } else if (lower.includes("قیمت") || lower.includes("تخفیف")) {
-        reply = "کدهای تخفیف MINI10 (ده درصد) و ROYAL50 (پنجاه هزار تومان) هم‌اکنون فعال هستند و می‌توانید در سبد خرید اعمال کنید! 🏷️";
-      }
-
-      const botReply: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: "bot",
-        text: reply,
-        time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, botReply]);
-    }, 1000);
+    setBusy(true);
+    try {
+      const response = await fetch("/api/shop-chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }) });
+      const data = await response.json();
+      setMessages((previous) => [...previous, {
+        id: `${Date.now()}-b`, sender: "bot",
+        text: data.success ? data.answer : (data.error || "ارتباط با مشاور فروشگاه برقرار نشد."),
+        time: now(), products: data.products || [], whatsappUrl: data.whatsappUrl,
+      }]);
+    } catch {
+      setMessages((previous) => [...previous, { id: `${Date.now()}-e`, sender: "bot", text: "ارتباط با مشاور فروشگاه موقتاً برقرار نشد. لطفاً از واتساپ با کارشناس تماس بگیرید.", time: now() }]);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin")) {
-    return null;
-  }
-
   return (
-    <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 font-sans dir-rtl">
+    <div className="fixed bottom-20 right-4 z-40 font-sans sm:bottom-6 sm:right-6">
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 rounded-full bg-stone-950 px-5 py-3.5 text-white shadow-2xl transition-all hover:scale-105 border border-amber-500/30"
-          aria-label="چت آنلاین و مشاوره خرید"
-        >
-          <span className="relative flex size-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex size-3 rounded-full bg-amber-400" />
-          </span>
+        <button onClick={() => setIsOpen(true)} className="group flex items-center gap-3 rounded-full border border-amber-500/30 bg-stone-950 px-5 py-3.5 text-white shadow-2xl transition hover:scale-105" aria-label="چت مشاور خرید">
+          <span className="relative flex size-3"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" /><span className="relative inline-flex size-3 rounded-full bg-amber-400" /></span>
           <MessageCircle className="size-5 text-amber-400" />
           <span className="text-xs font-black">مشاوره خرید و چت آنلاین</span>
         </button>
       )}
 
       {isOpen && (
-        <div className="flex h-[500px] w-[360px] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl transition-all sm:w-[400px]">
-          {/* هدر چت */}
-          <div className="flex items-center justify-between bg-stone-950 p-4 text-white border-b border-amber-500/30">
-            <div className="flex items-center gap-3">
-              <span className="grid size-10 overflow-hidden rounded-2xl bg-white/20 shadow-inner">
-                <img src="/images/brand/miniroyal-logo.png" alt="لوگوی مینی رویال" className="size-full object-cover" />
-              </span>
-              <div>
-                <span className="block text-sm font-black text-amber-100">پشتیبانی آنلاین مینی رویال</span>
-                <span className="flex items-center gap-1 text-[10px] text-emerald-300 font-bold">
-                  <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                  پاسخگویی آنلاین و مشاوره سایز
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="rounded-full bg-white/10 p-1.5 hover:bg-white/20"
-              aria-label="بستن"
-            >
-              <X className="size-5" />
-            </button>
+        <div className="flex h-[590px] w-[360px] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl sm:w-[420px]">
+          <div className="flex items-center justify-between border-b border-amber-500/30 bg-stone-950 p-4 text-white">
+            <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-2xl bg-amber-400/15"><Bot className="size-5 text-amber-300" /></span><div><span className="block text-sm font-black text-amber-100">مشاور تخصصی مینی رویال</span><span className="text-[10px] font-bold text-emerald-300">موجودی و محصولات واقعی سایت</span></div></div>
+            <button onClick={() => setIsOpen(false)} className="rounded-full bg-white/10 p-1.5 hover:bg-white/20" aria-label="بستن"><X className="size-5" /></button>
           </div>
 
-          {/* متن پیام‌ها */}
           <div className="flex-1 space-y-3 overflow-y-auto bg-stone-50 p-4 text-xs">
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex gap-2.5 ${m.sender === "user" ? "flex-row-reverse" : "flex-row"}`}
-              >
-                <div
-                  className={`grid size-7 shrink-0 place-items-center rounded-xl text-xs font-bold ${
-                    m.sender === "user"
-                      ? "bg-amber-700 text-white"
-                      : "bg-stone-200 text-stone-800"
-                  }`}
-                >
-                  {m.sender === "user" ? <User className="size-3.5" /> : <Bot className="size-3.5" />}
-                </div>
-
-                <div
-                  className={`max-w-[78%] rounded-2xl p-3 shadow-sm ${
-                    m.sender === "user"
-                      ? "bg-stone-900 text-white rounded-br-none"
-                      : "bg-white text-stone-800 border border-stone-200 rounded-bl-none"
-                  }`}
-                >
-                  <p className="leading-5">{m.text}</p>
-                  <span
-                    className={`mt-1 block text-[9px] ${
-                      m.sender === "user" ? "text-stone-300" : "text-stone-400"
-                    }`}
-                  >
-                    {m.time}
-                  </span>
+            {messages.map((message) => (
+              <div key={message.id} className={`flex gap-2.5 ${message.sender === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className={`grid size-7 shrink-0 place-items-center rounded-xl ${message.sender === "user" ? "bg-amber-700 text-white" : "bg-stone-200 text-stone-800"}`}>{message.sender === "user" ? <User className="size-3.5" /> : <Bot className="size-3.5" />}</div>
+                <div className={`max-w-[86%] rounded-2xl p-3 shadow-sm ${message.sender === "user" ? "rounded-br-none bg-stone-900 text-white" : "rounded-bl-none border border-stone-200 bg-white text-stone-800"}`}>
+                  <p className="whitespace-pre-line leading-5">{message.text}</p>
+                  {message.products?.length ? <div className="mt-3 space-y-2">{message.products.map((product) => <a key={product.slug} href={`/product/${product.slug}`} className="flex items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 p-2 transition hover:border-amber-400 hover:bg-amber-50"><img src={product.image} alt={product.title} className="size-12 rounded-lg bg-white object-contain" /><span className="min-w-0 flex-1"><strong className="block truncate text-[11px]">{product.title}</strong><span className="mt-1 block text-[10px] text-stone-500">{toman(product.price)} تومان · {product.sizes.length ? `سایز ${product.sizes.join("، ")}` : "موجود"}</span></span><span className="text-[10px] font-black text-amber-800">مشاهده</span></a>)}</div> : null}
+                  {message.whatsappUrl ? <a href={message.whatsappUrl} target="_blank" rel="noreferrer" className="mt-3 block rounded-xl bg-emerald-600 px-3 py-2.5 text-center text-[11px] font-black text-white hover:bg-emerald-700">ارتباط مستقیم با کارشناس در واتساپ</a> : null}
+                  <span className={`mt-1 block text-[9px] ${message.sender === "user" ? "text-stone-300" : "text-stone-400"}`}>{message.time}</span>
                 </div>
               </div>
             ))}
+            {busy ? <div className="mr-9 rounded-2xl rounded-bl-none border border-stone-200 bg-white p-3 text-[11px] text-stone-500">در حال بررسی کاتالوگ و موجودی واقعی…</div> : null}
           </div>
 
-          {/* فرم ارسال پیام */}
-          <form onSubmit={handleSend} className="border-t border-stone-200 bg-white p-3 flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="سوال خود را بنویسید..."
-              className="flex-1 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs outline-none focus:border-amber-500 focus:bg-white"
-            />
-            <button
-              type="submit"
-              className="grid size-10 place-items-center rounded-2xl bg-stone-950 text-amber-400 shadow-md hover:bg-stone-800 transition"
-              aria-label="ارسال"
-            >
-              <Send className="size-4 rotate-180" />
-            </button>
+          <form onSubmit={handleSend} className="flex gap-2 border-t border-stone-200 bg-white p-3">
+            <input type="text" value={input} onChange={(event) => setInput(event.target.value)} placeholder="مثلاً لباس دخترانه برای ۶ سال…" className="flex-1 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-2.5 text-xs outline-none focus:border-amber-500 focus:bg-white" />
+            <button type="submit" disabled={busy} className="grid size-10 place-items-center rounded-2xl bg-stone-950 text-amber-400 shadow-md transition hover:bg-stone-800 disabled:opacity-50" aria-label="ارسال"><Send className="size-4 rotate-180" /></button>
           </form>
-          <a href={whatsappHref} target="_blank" rel="noreferrer" className={`m-3 flex items-center justify-center rounded-xl py-3 text-xs font-black text-white ${whatsappNumber ? "bg-emerald-600 hover:bg-emerald-700" : "cursor-not-allowed bg-stone-300"}`} aria-disabled={!whatsappNumber}>
-            انتقال مستقیم گفتگو به واتساپ
-          </a>
         </div>
       )}
     </div>
