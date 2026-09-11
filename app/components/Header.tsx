@@ -80,8 +80,8 @@ export default function Header() {
     setShowTryonNotice(false);
   };
 
-  // پنهان‌سازی هدر عمومی فروشگاه در پنل مدیریت برای آزاد شدن تمام صفحه برای ادمین
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin")) {
+  // پنهان‌سازی هدر عمومی فروشگاه در پنل مدیریت و صفحه پروپوزال دلتادشت
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin") || pathname?.startsWith("/deltadasht-proposal")) {
     return null;
   }
 

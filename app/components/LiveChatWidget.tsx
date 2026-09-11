@@ -19,7 +19,7 @@ export default function LiveChatWidget() {
     { id: "welcome", sender: "bot", text: "سلام! من مشاور تخصصی پوشاک کودک و نوجوان مینی رویال هستم. درباره مدل، موجودی، قیمت یا سایز سؤال دارید؟ قد، وزن و سن کودک را بفرستید تا دقیق‌تر راهنمایی کنم.", time: now() },
   ]);
 
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin")) return null;
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin") || pathname?.startsWith("/deltadasht-proposal")) return null;
 
   const handleSend = async (event: FormEvent) => {
     event.preventDefault();

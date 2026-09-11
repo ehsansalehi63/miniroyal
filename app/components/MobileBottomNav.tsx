@@ -51,8 +51,8 @@ export default function MobileBottomNav() {
     return () => window.removeEventListener("miniroyal:auth-changed", refresh);
   }, []);
 
-  // در پنل ادمین پنهان می‌شود (ادمین دارای نوار اختصاصی است)
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin")) {
+  // در پنل ادمین و صفحه پروپوزال دلتادشت پنهان می‌شود
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/ehsanpaneladmin") || pathname?.startsWith("/deltadasht-proposal")) {
     return null;
   }
 
