@@ -1001,7 +1001,24 @@ async function callHfVton(
         : typeof file?.path === "string"
           ? `${spaceUrl}/gradio_api/file=${file.path}`
           : null;
-    return typeof imageUrl === "string" && imageUrl.startsWith("http") ? imageUrl : null;
+    if (typeof imageUrl !== "string" || !imageUrl.startsWith("http")) return null;
+
+    // Return the generated image through the shop response itself. Hugging
+    // Face's temporary /tmp/gradio file can be readable directly but fail as
+    // a cross-origin <img> inside the storefront (rendering a black panel).
+    // Keeping the bytes in a data URL also avoids the temporary file expiring
+    // before the customer opens the result or downloads it.
+    const imageResponse = await fetch(imageUrl, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!imageResponse.ok) {
+      attempts.push({ provider: "huggingface-vton", status: imageResponse.status, detail: "generated file could not be fetched" });
+      return null;
+    }
+    const contentType = imageResponse.headers.get("content-type") || "image/webp";
+    const bytes = Buffer.from(await imageResponse.arrayBuffer());
+    return `data:${contentType};base64,${bytes.toString("base64")}`;
   } catch (error) {
     const detail = shortDetail(error, "Hugging Face Space unavailable");
     console.warn("Hugging Face VTON failed:", detail);
