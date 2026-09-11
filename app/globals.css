@@ -110,15 +110,15 @@ img {
    همه با CSS خالص؛ بدون کتابخانهٔ سه‌بعدی و بدون دارایی خارجی.
    ══════════════════════════════════════════════════════════════════ */
 .hero-stage {
-  min-height: 520px;
+  min-height: auto;
   isolation: isolate;
   background:
     radial-gradient(120% 80% at 50% -10%, #1e1b18 0%, #120f0d 42%, #080706 100%);
   perspective: 1400px;
 }
 
-@media (min-width: 640px) {
-  .hero-stage { min-height: 600px; }
+@media (min-width: 1024px) {
+  .hero-stage { min-height: 580px; }
 }
 
 /* نور متمرکز استودیو از بالا */
@@ -137,6 +137,7 @@ img {
 
 /* کف استودیو با شبکهٔ پرسپکتیو */
 .hero-floor {
+  display: none;
   position: absolute;
   inset: auto 0 0;
   height: 42%;
@@ -149,6 +150,12 @@ img {
   transform: perspective(600px) rotateX(62deg);
   transform-origin: bottom center;
   opacity: .55;
+}
+
+@media (min-width: 1024px) {
+  .hero-floor {
+    display: block;
+  }
 }
 
 /* اشعه‌های نور چرخان */
@@ -172,11 +179,11 @@ img {
 
 /* ── نام و لوگوی سه‌بعدی پشت سوژه ───────────────────────────── */
 .hero-logo3d-wrap {
+  display: none;
   position: absolute;
   top: 50%;
   left: 50%;
   z-index: 2;
-  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
@@ -184,6 +191,12 @@ img {
   transform-style: preserve-3d;
   translate: -50% -54%;
   transition: transform 420ms cubic-bezier(.22, 1, .36, 1);
+}
+
+@media (min-width: 640px) {
+  .hero-logo3d-wrap {
+    display: flex;
+  }
 }
 
 .hero-logo3d-mark {
@@ -236,10 +249,11 @@ img {
 .hero-subject {
   position: relative;
   z-index: 3;
-  width: min(92vw, 460px);
+  width: 100%;
+  max-width: 480px;
   margin-inline: auto;
-  padding-top: 1.5rem;
-  pointer-events: none;
+  padding-top: 0;
+  pointer-events: auto;
   transition: transform 520ms cubic-bezier(.22, 1, .36, 1);
 }
 
@@ -249,6 +263,7 @@ img {
     top: 50%;
     left: 5%;
     width: min(42vw, 540px);
+    max-width: none;
     margin-inline: 0;
     padding-top: 0;
     translate: 0 -50%;
@@ -309,7 +324,7 @@ img {
 
 /* بازتاب سوژه روی کف استودیو */
 .hero-reflection {
-  display: block;
+  display: none;
   width: 100%;
   height: auto;
   margin-top: -6%;
@@ -320,8 +335,15 @@ img {
   -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .85), transparent 72%);
 }
 
+@media (min-width: 1024px) {
+  .hero-reflection {
+    display: block;
+  }
+}
+
 /* ── بافت فیلم، وینیت و نوارهای سینمایی ─────────────────────── */
 .hero-grain {
+  display: none;
   position: absolute;
   inset: 0;
   z-index: 4;
@@ -331,7 +353,14 @@ img {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
 }
 
+@media (min-width: 1024px) {
+  .hero-grain {
+    display: block;
+  }
+}
+
 .hero-vignette {
+  display: none;
   position: absolute;
   inset: 0;
   z-index: 5;
@@ -341,13 +370,26 @@ img {
     radial-gradient(120% 90% at 50% 50%, transparent 46%, rgba(5, 4, 3, .92) 100%);
 }
 
+@media (min-width: 1024px) {
+  .hero-vignette {
+    display: block;
+  }
+}
+
 .hero-bar {
+  display: none;
   position: absolute;
   inset-inline: 0;
   z-index: 6;
   height: 26px;
   pointer-events: none;
   background: #080706;
+}
+
+@media (min-width: 1024px) {
+  .hero-bar {
+    display: block;
+  }
 }
 
 .hero-bar-top { top: 0; }
